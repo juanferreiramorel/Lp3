@@ -24,7 +24,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3c8dbc 0%, #367fa9 100%);
             position: relative;
             overflow-x: hidden;
             padding: 20px 0;
@@ -316,7 +316,7 @@
         .btn-register {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #3c8dbc 0%, #367fa9 100%);
             border: none;
             border-radius: 12px;
             color: #fff;
@@ -324,14 +324,14 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.4s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+            box-shadow: 0 4px 15px rgba(60, 141, 188, 0.4);
             margin-top: 10px;
         }
 
         .btn-register:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(245, 87, 108, 0.6);
-            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            box-shadow: 0 6px 25px rgba(60, 141, 188, 0.6);
+            background: linear-gradient(135deg, #367fa9 0%, #3c8dbc 100%);
         }
 
         .btn-register:active {
@@ -353,8 +353,8 @@
         }
 
         .register-footer a:hover {
-            color: #f093fb;
-            text-shadow: 0 0 10px rgba(240, 147, 251, 0.5);
+            color: #5dade2;
+            text-shadow: 0 0 10px rgba(93, 173, 226, 0.5);
         }
 
         /* Autocomplete fix */
