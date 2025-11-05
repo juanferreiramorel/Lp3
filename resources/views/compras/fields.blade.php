@@ -110,9 +110,12 @@
                     // prop es para asignar una propiedad al campo input y decirle no requerido
                     $("#intervalo").prop('required', false);
                     $("#cantidad_cuotas").prop('required', false);
+                    // Limpiar los valores cuando es CONTADO
+                    $("#intervalo").val('');
+                    $("#cantidad_cuotas").val('');
                 } else {
                     //show es para mostrar
-                    $("#div-intervalo").show(); 
+                    $("#div-intervalo").show();
                     $("#div-cantidad-cuota").show();
                     // prop es para asignar una propiedad al campo input y decirle es requerido
                     $("#intervalo").prop('required', true);

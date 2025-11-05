@@ -35,6 +35,12 @@
                         <td class="text-right">{{ number_format($compra->total ?? 0, 0, ',', '.') }}</td>
                         <td width="120">
                             <div class="btn-group">
+                                <!-- boton pagos -->
+                                @if($compra->estado != 'ANULADO' && $compra->estado != 'PAGADO' && $compra->condicion_compra == 'CONTADO')
+                                    <a href="{{ route('pagos.index', ['id_compra' => $compra->id_compra]) }}" class="btn btn-warning btn-xs" title="Pagar">
+                                        <i class="far fa-money-bill-alt"></i>
+                                    </a>
+                                @endif
                                 <a href="{{ route('compras.show', $compra->id_compra) }}" class="btn btn-default btn-xs"
                                     title="Ver"><i class="far fa-eye"></i></a>
                                 @if ($compra->estado != 'ANULADO')

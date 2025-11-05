@@ -63,14 +63,18 @@ class CobroController extends Controller
                         return redirect()->route('cobros.index', ['id_venta' => $input['id_venta']]);
                     }
 
-                    $importe = str_replace('.', '', $input['importe'][$key]);
-                    // guardar acumuldador de cobros
-                    $total_cobros += $importe;
-                    // validar que el importe sea un numero
-                    if (!is_numeric($importe) || $importe <= 0) {
+                    $importe = str_replace('.', '', $input['importe'][$key] ?? '0');
+                    // Convertir a numérico para evitar errores de tipos
+                    $importe = (int)$importe;
+
+                    // validar que el importe sea un numero mayor a 0
+                    if ($importe <= 0) {
                         Alert::toast('El importe debe ser un numero mayor a 0', 'error');
                         return redirect()->route('cobros.index', ['id_venta' => $input['id_venta']]);
                     }
+
+                    // guardar acumulador de cobros
+                    $total_cobros += $importe;
 
                     // registrar el cobro
                     DB::insert(
