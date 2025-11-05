@@ -43,6 +43,7 @@ Route::resource('compras', App\Http\Controllers\ComprasController::class);
 Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);
 Route::resource('cobros', App\Http\Controllers\CobroController::class);
+Route::resource('pagos', App\Http\Controllers\PagoController::class);
 Route::resource('cuentasacobrar', App\Http\Controllers\CuentasACobrarController::class);
 Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil']);
 Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserController::class, 'cambiarPassword']);
