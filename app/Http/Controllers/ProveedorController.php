@@ -6,12 +6,34 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProveedorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $proveedores = DB::select('SELECT * FROM proveedores');
+
+        // Definimos los valores de paginación
+        $page = $request->input('page', 1);   // página actual (por defecto 1)
+        $perPage = 10;                        // cantidad de registros por página
+        $total = count($proveedores);        // total de registros
+
+        // Cortamos el array para solo devolver los registros de la página actual
+        $items = array_slice($proveedores, ($page - 1) * $perPage, $perPage);
+
+        // Creamos el paginador manualmente
+        $proveedores = new LengthAwarePaginator(
+            $items,        // registros de esta página
+            $total,        // total de registros
+            $perPage,      // registros por página
+            $page,         // página actual
+            [
+                'path'  => $request->url(),     // mantiene la ruta base
+                'query' => $request->query(),   // mantiene parámetros como "buscar"
+            ]
+        );
+
         return view('proveedores.index')->with('proveedores', $proveedores);
     }
     public function create()

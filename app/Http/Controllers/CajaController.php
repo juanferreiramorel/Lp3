@@ -6,10 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CajaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $cajas = DB::select(
             'SELECT c.*, s.descripcion as sucursal
@@ -18,6 +19,27 @@ class CajaController extends Controller
         ORDER BY c.id_caja DESC
         '
         );
+
+        // Definimos los valores de paginación
+        $page = $request->input('page', 1);   // página actual (por defecto 1)
+        $perPage = 10;                        // cantidad de registros por página
+        $total = count($cajas);              // total de registros
+
+        // Cortamos el array para solo devolver los registros de la página actual
+        $items = array_slice($cajas, ($page - 1) * $perPage, $perPage);
+
+        // Creamos el paginador manualmente
+        $cajas = new LengthAwarePaginator(
+            $items,        // registros de esta página
+            $total,        // total de registros
+            $perPage,      // registros por página
+            $page,         // página actual
+            [
+                'path'  => $request->url(),     // mantiene la ruta base
+                'query' => $request->query(),   // mantiene parámetros como "buscar"
+            ]
+        );
+
         return view('cajas.index')->with('cajas', $cajas);
     }
     public function create()

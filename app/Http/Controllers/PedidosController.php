@@ -8,11 +8,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PedidosController extends Controller
 {
     /** LISTADO */
-    public function index()
+    public function index(Request $request)
     {
         // Igual que ventas.index: incluimos usuario (JOIN users) y cliente
         $pedidos = DB::select(
@@ -22,6 +23,26 @@ class PedidosController extends Controller
                JOIN clientes c ON p.id_cliente = c.id_cliente
             JOIN users u   ON p.id_usuario = u.id
            ORDER BY p.fecha_pedido DESC"
+        );
+
+        // Definimos los valores de paginación
+        $page = $request->input('page', 1);   // página actual (por defecto 1)
+        $perPage = 10;                        // cantidad de registros por página
+        $total = count($pedidos);            // total de registros
+
+        // Cortamos el array para solo devolver los registros de la página actual
+        $items = array_slice($pedidos, ($page - 1) * $perPage, $perPage);
+
+        // Creamos el paginador manualmente
+        $pedidos = new LengthAwarePaginator(
+            $items,        // registros de esta página
+            $total,        // total de registros
+            $perPage,      // registros por página
+            $page,         // página actual
+            [
+                'path'  => $request->url(),     // mantiene la ruta base
+                'query' => $request->query(),   // mantiene parámetros como "buscar"
+            ]
         );
 
         return view('pedidos.index')->with('pedidos', $pedidos);

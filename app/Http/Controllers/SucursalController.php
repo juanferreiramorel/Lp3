@@ -6,16 +6,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class SucursalController extends Controller
 {
-    public function index(){
+    public function index(Request $request){
        $sucursales = DB::select(
        'SELECT s.*, c.descripcion as ciudades
 	    FROM sucursales s
 	    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
 	    ORDER BY s.id_sucursal DESC'
         );
+
+        // Definimos los valores de paginación
+        $page = $request->input('page', 1);   // página actual (por defecto 1)
+        $perPage = 10;                        // cantidad de registros por página
+        $total = count($sucursales);         // total de registros
+
+        // Cortamos el array para solo devolver los registros de la página actual
+        $items = array_slice($sucursales, ($page - 1) * $perPage, $perPage);
+
+        // Creamos el paginador manualmente
+        $sucursales = new LengthAwarePaginator(
+            $items,        // registros de esta página
+            $total,        // total de registros
+            $perPage,      // registros por página
+            $page,         // página actual
+            [
+                'path'  => $request->url(),     // mantiene la ruta base
+                'query' => $request->query(),   // mantiene parámetros como "buscar"
+            ]
+        );
+
         return view('sucursales.index')->with('sucursales', $sucursales);
     }
     public function create(){

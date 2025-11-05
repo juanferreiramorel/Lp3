@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PermissionController extends Controller
 {
@@ -19,10 +20,30 @@ class PermissionController extends Controller
         $this->middleware('permission:permissions destroy')->only(['destroy']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // Listar permisos existentes
         $permisos = DB::select('SELECT * FROM permissions order by id desc');
+
+        // Definimos los valores de paginación
+        $page = $request->input('page', 1);   // página actual (por defecto 1)
+        $perPage = 10;                        // cantidad de registros por página
+        $total = count($permisos);           // total de registros
+
+        // Cortamos el array para solo devolver los registros de la página actual
+        $items = array_slice($permisos, ($page - 1) * $perPage, $perPage);
+
+        // Creamos el paginador manualmente
+        $permisos = new LengthAwarePaginator(
+            $items,        // registros de esta página
+            $total,        // total de registros
+            $perPage,      // registros por página
+            $page,         // página actual
+            [
+                'path'  => $request->url(),     // mantiene la ruta base
+                'query' => $request->query(),   // mantiene parámetros como "buscar"
+            ]
+        );
 
         return view('permissions.index')->with('permisos', $permisos);
     }

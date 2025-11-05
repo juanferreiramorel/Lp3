@@ -10,7 +10,8 @@ Examen Final Proyecto
 9. Manejar errores de borrado de registros que siendo utilizados en otro lugar. Utililzar los try catch para en destroy
 10. Todas las vistas deben tener el buscador generico.
 11. Reportes de movimientos con filtros.
- 
+<!-- 12. Todos los html del index deben poseer paginadores -->
+13. Todos los html del index deben poseer el buscador, y debe filtrar por todas las columnas visibles del index
 
 
 
