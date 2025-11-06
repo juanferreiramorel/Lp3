@@ -260,7 +260,7 @@ class ProductoController extends Controller
         return redirect(route('productos.index'));
     }
 
-    public function destroy($id) 
+    public function destroy($id)
     {
         // Verificar si el producto existe
         $producto = DB::selectOne('SELECT * FROM productos WHERE id_producto = ?', [$id]);
@@ -270,11 +270,13 @@ class ProductoController extends Controller
             return redirect(route('productos.index'));
         }
 
-        // Eliminar el producto de la base de datos
-        DB::delete('DELETE FROM productos WHERE id_producto = ?', [$id]);
-
-        // Redirigir a la lista de productos con un mensaje de éxito
-        Flash::success('Producto eliminado correctamente.');
+        try {
+            // Eliminar el producto de la base de datos
+            DB::delete('DELETE FROM productos WHERE id_producto = ?', [$id]);
+            Flash::success('Producto eliminado correctamente.');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar este producto porque está siendo utilizado en otros registros.');
+        }
 
         return redirect(route('productos.index'));
     }

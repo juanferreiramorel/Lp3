@@ -7,8 +7,8 @@ Examen Final Proyecto
 6. Agregar algo personalizado al proyecto que podria ser ejemplo: pedidos de ventas, orden de compras y asociar a compras, transferencias de mercaderias entre sucursales o ajustes de stock.
 7. Agregar ayuda interactiva que debe estar incluida dentro del sistema, puede ser un pdf o video instructivo de como utilizar el sistema desde el inicio a fin.
 8. Tener bien configurado los roles y permisos. Todas las vistas deben depender de ello.
-9. Manejar errores de borrado de registros que siendo utilizados en otro lugar. Utililzar los try catch para en destroy
-<!-- 10. Todas las vistas deben tener el buscador generico. -->
+<!-- 9. Manejar errores de borrado de registros que siendo utilizados en otro lugar. Utililzar los try catch para en destroy -->
+10. Todas las vistas deben tener el buscador generico.
 11. Reportes de movimientos con filtros.
 <!-- 12. Todos los html del index deben poseer paginadores -->
 <!-- 13. Todos los html del index deben poseer el buscador, y debe filtrar por todas las columnas visibles del index -->

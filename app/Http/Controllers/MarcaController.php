@@ -134,8 +134,14 @@ class MarcaController extends Controller
             Alert::toast('Marca no encontrada', 'error');
             return redirect()->route('marcas.index');
         }
-        DB::delete('DELETE FROM marcas WHERE id_marca = ?', [$id]);
-        Alert::toast('Marca eliminada con exito', 'success');
+
+        try {
+            DB::delete('DELETE FROM marcas WHERE id_marca = ?', [$id]);
+            Alert::toast('Marca eliminada con exito', 'success');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar esta marca porque está siendo utilizada en otros registros.');
+        }
+
         return redirect()->route('marcas.index');
     }
 }

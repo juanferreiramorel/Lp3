@@ -161,17 +161,20 @@ class SucursalController extends Controller
         return redirect()->route('sucursales.index');
     }
     public function destroy($id){
-        //Validar si el producto no existe
-        $sucursal = DB::delete('DELETE FROM sucursales WHERE id_sucursal = ?', [$id]);
+        //Validar si la sucursal existe
+        $sucursal = DB::selectOne('SELECT * FROM sucursales WHERE id_sucursal = ?', [$id]);
         if (empty($sucursal)) {
             Alert::toast('Sucursal no encontrada', 'error');
             return redirect()->route('sucursales.index');
         }
-        //Eliminar el producto de la base de datos
-        DB::delete('DELETE FROM sucursales WHERE id_sucursal = ?', [$id]);
-        
-        //Redirigir a la lista de productos con un mesaje de exito
-        Alert::toast('Sucursal eliminada con exito', 'success');
+
+        try {
+            //Eliminar la sucursal de la base de datos
+            DB::delete('DELETE FROM sucursales WHERE id_sucursal = ?', [$id]);
+            Alert::toast('Sucursal eliminada con exito', 'success');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar esta sucursal porque está siendo utilizada en otros registros.');
+        }
 
         return redirect(route('sucursales.index'));
     }

@@ -170,17 +170,21 @@ class CajaController extends Controller
     }
     public function destroy($id)
     {
-        //Validar si el producto no existe
-        $cajas = DB::delete('DELETE FROM cajas WHERE id_caja = ?', [$id]);
+        //Validar si la caja existe
+        $cajas = DB::selectOne('SELECT * FROM cajas WHERE id_caja = ?', [$id]);
         if (empty($cajas)) {
             Alert::toast('Caja no encontrada', 'error');
             return redirect()->route('cajas.index');
         }
-        //Eliminar la caja de la base de datos
-        DB::delete('DELETE FROM cajas WHERE id_caja = ?', [$id]);
-        //Redirigir a la lista de productos con un mesaje de éxito
-        Alert::toast('Caja eliminada con éxito', 'success');
-        //flash('Caja eliminada con éxito');
+
+        try {
+            //Eliminar la caja de la base de datos
+            DB::delete('DELETE FROM cajas WHERE id_caja = ?', [$id]);
+            Alert::toast('Caja eliminada con éxito', 'success');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar esta caja porque está siendo utilizada en otros registros.');
+        }
+
         return redirect(route('cajas.index'));
     }
 }

@@ -143,9 +143,14 @@ class ProveedorController extends Controller
             Alert::toast('Proveedor no encontrado', 'error');
             return redirect()->route('proveedores.index');
         }
-        DB::delete('DELETE FROM proveedores 
-        WHERE id_proveedor = ?', [$id]);
-        Alert::toast('El proveedor eliminado con exito', 'success');
+
+        try {
+            DB::delete('DELETE FROM proveedores WHERE id_proveedor = ?', [$id]);
+            Alert::toast('El proveedor eliminado con exito', 'success');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar este proveedor porque está siendo utilizado en otros registros.');
+        }
+
         return redirect()->route('proveedores.index');
     }
 }

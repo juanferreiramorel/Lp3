@@ -159,20 +159,22 @@ class CargoController extends Controller
 
     public function destroy($id)
     {
-        // Obtener el cargo por su ID utilizando la función select de la base de datos segun $id recibido
+        // Obtener el cargo por su ID
         $cargo = DB::selectOne('select * from cargos where id_cargo = ?', [$id]);
         // Verificar si el cargo existe y no está vacío
         if (empty($cargo)) {
             Alert::toast('El cargo no fue encontrado.', 'error');
-            // Redirigir a la vista index si el cargo no existe
             return redirect()->route('cargos.index');
         }
 
-        // Eliminar el cargo utilizando la función delete de la base de datos
-        DB::delete('delete from cargos where id_cargo = ?', [$id]);
+        try {
+            // Eliminar el cargo utilizando la función delete de la base de datos
+            DB::delete('delete from cargos where id_cargo = ?', [$id]);
+            Alert::toast('El cargo fue eliminado con éxito.', 'success');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se puede eliminar este cargo porque está siendo utilizado en otros registros.');
+        }
 
-        // Imprimir mensaje de éxito y redirigir a la vista index
-       Alert::toast('El cargo fue eliminado con éxito.', 'success');
         return redirect(route('cargos.index'));
     }
 }
