@@ -6,11 +6,11 @@
 % 4. Tener en cuenta que se debe capturar el usuario quien realizo dicho evento que esta registrado en la web.
 
 ---------------------------Trabajo Practico 2--------------------------------
-1. Modificar los trigger de cuentas a cobrar y cuentas a pagar, debe permitir realizar modificaciones y borrados de cuentas.
-2. Como deberia funcionar: si el usuario modifica algun dato de compra o ventas que tienen
-condicion CREDITO se deben actualizar todas las cuentas relacionadas a esa compra o venta.
-3. Si el usuario borra una compra o venta que tiene condicion CREDITO se deben borrar todas las cuentas relacionadas a esa compra o venta.
-4. Tener en cuenta que si la compra o venta ya tiene pagos realizados no se podra modificar ni borrar.
+% 1. Modificar los trigger de cuentas a cobrar y cuentas a pagar, debe permitir realizar modificaciones y borrados de cuentas.
+% 2. Como deberia funcionar: si el usuario modifica algun dato de compra o ventas que tienen
+% condicion CREDITO se deben actualizar todas las cuentas relacionadas a esa compra o venta.
+% 3. Si el usuario borra una compra o venta que tiene condicion CREDITO se deben borrar todas las cuentas relacionadas a esa compra o venta.
+% 4. Tener en cuenta que si la compra o venta ya tiene pagos realizados no se podra modificar ni borrar.
 
 
 ---------------------------Trabajo Practico 3--------------------------------
