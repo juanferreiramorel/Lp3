@@ -121,8 +121,13 @@
       if (r.estado==='changed'){ trClass='diff-changed'; badge='<span class="badge badge-warning">Cambiado</span>'; }
       if (r.estado==='added'){   trClass='diff-added';   badge='<span class="badge badge-success">Agregado</span>'; }
       if (r.estado==='removed'){ trClass='diff-removed'; badge='<span class="badge badge-danger">Eliminado</span>'; }
-      const va = maskIfSensitive(r.key, pretty(r.va));
-      const vb = maskIfSensitive(r.key, pretty(r.vb));
+      const vaRaw = maskIfSensitive(r.key, pretty(r.va));
+      const vbRaw = maskIfSensitive(r.key, pretty(r.vb));
+
+      // Escapar HTML solo si no contiene tags HTML válidos
+      const va = vaRaw.includes('<em class=') ? vaRaw : escapeHtml(vaRaw);
+      const vb = vbRaw.includes('<em class=') ? vbRaw : escapeHtml(vbRaw);
+
       $tbody.append(`
         <tr class="${trClass}">
           <td><code>${escapeHtml(r.key)}</code></td>
@@ -140,7 +145,14 @@
   // === Helpers nuevos ===
   function b64ToText(b64){
     if (!b64) return '';
-    try { return atob(b64); } catch(e){ return ''; }
+    try {
+      // Decodificar base64 y manejar caracteres UTF-8 correctamente
+      const text = atob(b64);
+      return decodeURIComponent(escape(text));
+    } catch(e){
+      console.error('Error decodificando base64:', e);
+      return '';
+    }
   }
   function parseJsonFlexible(txt){
     if (!txt || !txt.trim()) return {};
