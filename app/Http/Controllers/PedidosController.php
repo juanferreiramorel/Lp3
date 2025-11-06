@@ -223,6 +223,12 @@ class PedidosController extends Controller
             return redirect()->route('pedidos.index');
         }
 
+        // Validar que el pedido no esté PROCESADO o CANCELADO para permitir edición
+        if ($pedido->estado == 'PROCESADO' || $pedido->estado == 'CANCELADO') {
+            Alert::warning('Advertencia', 'No se puede modificar un pedido que ya está ' . $pedido->estado);
+            return redirect()->route('pedidos.index');
+        }
+
         $validacion = Validator::make(
             $input,
             [
@@ -234,8 +240,12 @@ class PedidosController extends Controller
                 'codigo.*'     => 'required|integer',
                 'cantidad'     => 'required|array|min:1',
                 'cantidad.*'   => 'required|numeric|min:1',
-                'precio_unitario'       => 'required|array|min:1',
-                'precio_unitario.*'     => 'required'
+                'precio'       => 'required|array|min:1',
+                'precio.*'     => 'required'
+            ],
+            [
+                'codigo.required' => 'Debe agregar al menos un producto al pedido',
+                'codigo.min' => 'Debe agregar al menos un producto al pedido',
             ]
         );
 
@@ -245,6 +255,25 @@ class PedidosController extends Controller
 
         DB::beginTransaction();
         try {
+            // Obtener todos los productos actuales del pedido
+            $productosActuales = collect($input['codigo'] ?? []);
+
+            // Obtener todos los detalles existentes del pedido
+            $detallesExistentes = DB::select(
+                'SELECT id_producto FROM detalle_pedido WHERE id_pedido = ?',
+                [$id]
+            );
+
+            // Eliminar items que fueron removidos de la lista
+            foreach ($detallesExistentes as $detalle) {
+                if (!$productosActuales->contains($detalle->id_producto)) {
+                    DB::delete(
+                        'DELETE FROM detalle_pedido WHERE id_pedido = ? AND id_producto = ?',
+                        [$id, $detalle->id_producto]
+                    );
+                }
+            }
+
             // Recalcular total
             $total = 0;
             foreach ($input['codigo'] as $i => $codigo) {
@@ -253,7 +282,7 @@ class PedidosController extends Controller
                 $total += ($cantidad * (float)$monto);
             }
 
-            // Actualizar cabecera (no cambiamos id_usuario aquí)
+            // Actualizar cabecera
             DB::update(
                 'UPDATE pedidos SET fecha_pedido = ?, total_pedido = ?, id_sucursal = ?, estado = ? WHERE id_pedido = ?',
                 [
@@ -265,7 +294,7 @@ class PedidosController extends Controller
                 ]
             );
 
-            // Upsert de detalle por id_producto
+            // Actualizar o insertar detalles
             foreach ($input['codigo'] as $i => $codigo) {
                 $monto = str_replace('.', '', $input['precio'][$i] ?? '0');
 
@@ -275,6 +304,7 @@ class PedidosController extends Controller
                 );
 
                 if (!empty($detalle)) {
+                    // Actualizar detalle existente
                     DB::update(
                         'UPDATE detalle_pedido SET cantidad = ?, precio_unitario = ? WHERE id_pedido = ? AND id_producto = ?',
                         [
@@ -285,6 +315,7 @@ class PedidosController extends Controller
                         ]
                     );
                 } else {
+                    // Insertar nuevo detalle
                     DB::table('detalle_pedido')->insert([
                         'id_pedido'       => $id,
                         'id_producto'     => (int)$codigo,
@@ -298,7 +329,8 @@ class PedidosController extends Controller
         } catch (\Exception $e) {
             Log::info('Error al actualizar el pedido: ' . $e->getMessage());
             DB::rollback();
-            return redirect()->back()->withErrors($e->getMessage());
+            Alert::error('Error', 'Error al actualizar el pedido: ' . $e->getMessage());
+            return redirect()->back()->withInput();
         }
 
         Alert::success('Éxito', 'Pedido actualizado exitosamente.');
@@ -368,5 +400,44 @@ class PedidosController extends Controller
         $data = ['<h1>Pedido</h1>'];
         $pdf = Pdf::loadView('pedidos.invoice', compact('data'));
         return $pdf->download('pedido.pdf');
+    }
+
+    /** OBTENER PEDIDOS PENDIENTES PARA VENTA */
+    public function getPendientes()
+    {
+        try {
+            $pedidos = DB::select(
+                "SELECT p.id_pedido,
+                        p.fecha_pedido,
+                        p.total_pedido,
+                        p.estado,
+                        CONCAT(c.clie_nombre, ' ', c.clie_apellido) AS cliente
+                 FROM pedidos p
+                 JOIN clientes c ON p.id_cliente = c.id_cliente
+                 WHERE p.estado = 'PENDIENTE'
+                 ORDER BY p.fecha_pedido DESC"
+            );
+
+            // Formatear los datos
+            $pedidosFormateados = array_map(function($pedido) {
+                return [
+                    'id_pedido' => $pedido->id_pedido,
+                    'cliente' => $pedido->cliente,
+                    'fecha_pedido' => \Carbon\Carbon::parse($pedido->fecha_pedido)->format('d/m/Y'),
+                    'total_pedido' => number_format($pedido->total_pedido, 0, ',', '.'),
+                    'estado' => $pedido->estado
+                ];
+            }, $pedidos);
+
+            return response()->json([
+                'success' => true,
+                'pedidos' => $pedidosFormateados
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los pedidos: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

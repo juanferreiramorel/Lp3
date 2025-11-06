@@ -233,6 +233,10 @@ class VentaController extends Controller
         // Si la validación pasa, continuar con el almacenamiento de la venta
         // Recuperamos el usuario en session
         $user_id = auth()->user()->id;
+
+        // Limpiar el formato del total (quitar separadores de miles)
+        $total = isset($input['total']) ? str_replace('.', '', $input['total']) : 0;
+
         // Utilizamos insertGetId para obtener el ID de la venta registrada
         // Agregar transacciones
         DB::beginTransaction();
@@ -245,10 +249,11 @@ class VentaController extends Controller
                 'fecha_venta' => $input['fecha_venta'],
                 'factura_nro' => $input['factura_nro'] ?? '0',
                 'user_id' => $user_id,
-                'total' => $input['total'] ?? 0,
+                'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
                 'estado' => 'COMPLETADO',
                 'id_apertura' => $input['id_apertura'],
+                'id_pedido' => !empty($input['id_pedido']) ? $input['id_pedido'] : null,
             ], 'id_venta');
 
             // insertar detalle ventas
@@ -291,12 +296,21 @@ class VentaController extends Controller
                 // 001-002-0000001
                 $factura_nro = explode('-', $input['factura_nro'])[2];
                 // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
-                DB::update('UPDATE cajas SET ultima_factura_impresa = ? 
+                DB::update('UPDATE cajas SET ultima_factura_impresa = ?
                 WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
                     (int) $factura_nro, // convertir a entero para quitar ceros a la izquierda
                     $input['id_apertura']
                 ]);
             }
+
+            // Si la venta se creó desde un pedido, actualizar el estado del pedido a PROCESADO
+            if (!empty($input['id_pedido'])) {
+                DB::update('UPDATE pedidos SET estado = ? WHERE id_pedido = ?', [
+                    'PROCESADO',
+                    $input['id_pedido']
+                ]);
+            }
+
             // Si todo esta bien realiza el envio e inserta la venta y detalle
             DB::commit();
         } catch (\Exception $e) {
@@ -625,5 +639,105 @@ class VentaController extends Controller
         return view('ventas.factura')->with('ventas', $ventas)
             ->with('detalle_venta', $detalle_venta)
             ->with('numero_a_letras', $numero_a_letras);
+    }
+
+    /** CREAR VENTA DESDE PEDIDO */
+    public function crearDesdePedido($id)
+    {
+        try {
+            // Obtener el pedido
+            $pedido = DB::selectOne('SELECT * FROM pedidos WHERE id_pedido = ?', [$id]);
+
+            if (empty($pedido)) {
+                Alert::error('Error', 'Pedido no encontrado');
+                return redirect()->route('ventas.index');
+            }
+
+            // Validar que el pedido esté PENDIENTE
+            if ($pedido->estado != 'PENDIENTE') {
+                Alert::warning('Advertencia', 'Solo se pueden procesar pedidos en estado PENDIENTE');
+                return redirect()->route('ventas.index');
+            }
+
+            // Obtener los detalles del pedido y mapearlos al formato que espera la vista de ventas
+            $detalle_venta = DB::select(
+                "SELECT d.id_producto, d.cantidad, d.precio_unitario as precio, p.descripcion
+                 FROM detalle_pedido d
+                 JOIN productos p ON d.id_producto = p.id_producto
+                 WHERE d.id_pedido = ?",
+                [$id]
+            );
+
+            // Obtener datos necesarios para la vista de ventas
+            $clientes = DB::table('clientes')
+                ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
+                ->pluck('cliente', 'id_cliente');
+
+            $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+
+            $usuario = auth()->user()->name ?? '';
+
+            $condicion_venta = [
+                'CONTADO' => 'CONTADO',
+                'CREDITO' => 'CREDITO'
+            ];
+
+            // Intervalo de vencimiento
+            $intervalo_vencimiento = [
+                '7'  => '7 Días',
+                '15' => '15 Días',
+                '30' => '30 Días'
+            ];
+
+            $cantidad_cuotas = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $cantidad_cuotas[(string)$i] = (string)$i;
+            }
+
+            // Enviar datos de apertura de caja a ventas
+            $apertura_caja = DB::selectOne(
+                "SELECT ap.id_apertura,
+                    ap.fecha_apertura,
+                    lpad('1', 3, '0')as establecimiento,
+                    lpad(cast(c.punto_expedicion as text), 3, '0')as punto_expedicion,
+                    lpad(cast(coalesce(max(c.ultima_factura_impresa), 0) + 1 as text), 7, '0') as nro_factura,
+                    c.id_caja
+                FROM apertura_cierre_cajas ap
+                JOIN cajas c ON c.id_caja = ap.id_caja
+                WHERE ap.user_id = ? AND ap.estado = 'ABIERTA'
+                GROUP BY
+                    ap.id_apertura,
+                    ap.fecha_apertura,
+                    c.punto_expedicion,
+                    c.ultima_factura_impresa,
+                    c.id_caja",
+                [auth()->user()->id]
+            );
+
+            // Crear un objeto venta simulado con los datos del pedido para pre-llenar el formulario
+            $venta = new \stdClass();
+            $venta->id_cliente = $pedido->id_cliente;
+            $venta->id_sucursal = $pedido->id_sucursal;
+            $venta->total = $pedido->total_pedido;
+
+            // Pasar el pedido y sus detalles a la vista de crear venta
+            return view('ventas.create', compact(
+                'pedido',
+                'detalle_venta',
+                'venta',
+                'clientes',
+                'sucursales',
+                'usuario',
+                'condicion_venta',
+                'intervalo_vencimiento',
+                'cantidad_cuotas',
+                'apertura_caja'
+            ))->with('desde_pedido', true);
+
+        } catch (\Exception $e) {
+            Log::error('Error al crear venta desde pedido: ' . $e->getMessage());
+            Alert::error('Error', 'Error al procesar el pedido: ' . $e->getMessage());
+            return redirect()->route('ventas.index');
+        }
     }
 }

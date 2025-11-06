@@ -2,6 +2,10 @@
 {!! Form::hidden('id_apertura', isset($apertura_caja) ? $apertura_caja->id_apertura : null, [
     'class' => 'form-control',
 ]) !!}
+<!-- Id Pedido Field (si viene desde pedido) -->
+{!! Form::hidden('id_pedido', isset($pedido) ? $pedido->id_pedido : null, [
+    'class' => 'form-control',
+]) !!}
 <!-- Fecha Venta Field -->
 <div class="form-group col-sm-4">
     {!! Form::label('fecha_venta', 'Fecha Venta:') !!}
@@ -35,7 +39,7 @@
 <!-- Id Cliente Field -->
 <div class="form-group col-sm-4">
     {!! Form::label('id_cliente', 'Cliente:') !!}
-    {!! Form::select('id_cliente', $clientes, null, [
+    {!! Form::select('id_cliente', $clientes, isset($venta) ? $venta->id_cliente : null, [
         'class' => 'form-control select2',
         'required',
         'placeholder' => 'Seleccione un cliente',
@@ -55,7 +59,7 @@
 <!-- sucursal -->
 <div class="form-group col-sm-4">
     {!! Form::label('id_sucursal', 'Sucursal:') !!}
-    {!! Form::select('id_sucursal', $sucursales, null, [
+    {!! Form::select('id_sucursal', $sucursales, isset($venta) ? $venta->id_sucursal : null, [
         'class' => 'form-control',
         'id' => 'id_sucursal',
         'required',
@@ -91,7 +95,7 @@
 <!-- Total Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('total', 'Total:') !!}
-    {!! Form::text('total', isset($ventas) ? number_format($ventas->total, 0, ',', '.') : null, [
+    {!! Form::text('total', isset($venta) ? number_format($venta->total, 0, ',', '.') : (isset($ventas) ? number_format($ventas->total, 0, ',', '.') : null), [
         'class' => 'form-control',
         'id' => 'total',
         'readonly',
@@ -180,6 +184,60 @@
                         detalle.cantidad || 1
                     );
                 });
+            }
+
+            // Función para formatear números con separador de miles
+            function formatMoney(n) {
+                return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            // Función para limpiar formato de número
+            function cleanNumber(str) {
+                return parseFloat(str.toString().replace(/\./g, '')) || 0;
+            }
+
+            // Calcular subtotal y total cuando cambia cantidad
+            $(document).on('change keyup', '.cantidad-input', function() {
+                let row = $(this).closest('tr');
+                let cantidad = parseInt($(this).val()) || 0;
+                let precioInput = row.find('.precio-input');
+                let precio = cleanNumber(precioInput.val());
+                let subtotal = cantidad * precio;
+
+                row.find('.subtotal-input').val(formatMoney(subtotal));
+                calcularTotal();
+            });
+
+            // Calcular subtotal y total cuando cambia precio
+            $(document).on('change keyup', '.precio-input', function() {
+                let row = $(this).closest('tr');
+                let cantidad = parseInt(row.find('.cantidad-input').val()) || 0;
+                let precio = cleanNumber($(this).val());
+                let subtotal = cantidad * precio;
+
+                row.find('.subtotal-input').val(formatMoney(subtotal));
+
+                // Reformatear el precio mientras el usuario escribe
+                $(this).val(formatMoney(precio));
+
+                calcularTotal();
+            });
+
+            // Eliminar fila
+            $(document).on('click', '.remove-item', function() {
+                if(confirm('¿Está seguro de eliminar este item?')) {
+                    $(this).closest('tr').remove();
+                    calcularTotal();
+                }
+            });
+
+            // Función para calcular el total general
+            function calcularTotal() {
+                let total = 0;
+                $('.subtotal-input').each(function() {
+                    total += cleanNumber($(this).val());
+                });
+                $('#total').val(formatMoney(total));
             }
         });
     </script>

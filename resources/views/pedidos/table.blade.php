@@ -34,7 +34,7 @@
                                     <i class="far fa-eye"></i>
                                 </a>
                                 <!-- validacion para mostrar los botones de borrar y editar si la pedido es cancelada -->
-                                @if($pedido->estado != 'CANCELADO')
+                                @if($pedido->estado != 'CANCELADO' && $pedido->estado != 'PROCESADO')
                                     <a href="{{ route('pedidos.edit', [$pedido->id_pedido]) }}" class='btn btn-default btn-xs'>
                                         <i class="far fa-edit"></i>
                                     </a>

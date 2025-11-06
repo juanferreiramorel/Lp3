@@ -48,22 +48,32 @@
                                     {!! Form::hidden('id_producto[]', $value->id_producto) !!}
                                     {!! Form::hidden('id_det_pedido[]', $value->id_detalle_pedido) !!}
                                 </td>
-                            
+
                                 <td class="text-center">
-                                    <input class="text-center form-control" type="number" min="1" name="cantidad[]" readonly
-                                        style="text-align: center" value="{!! $value->cantidad !!}">
+                                    <input class="text-center form-control cantidad-input" type="number" min="1" name="cantidad[]"
+                                        style="text-align: center" value="{!! $value->cantidad !!}"
+                                        data-precio="{!! $value->precio_unitario !!}"
+                                        @if(isset($pedido) && ($pedido->estado == 'PROCESADO' || $pedido->estado == 'CANCELADO')) readonly @endif>
                                 </td>
-                            
+
                                 <td class="text-center" style="width: 20%">
-                                    <input class="text-center form-control" type="text" name="precio_unitario[]" readonly
-                                        style="text-align: center" value="{!! number_format($value->precio_unitario, 0, ',', '.') !!}">
+                                    <input class="text-center form-control precio-input" type="text" name="precio[]"
+                                        style="text-align: center" value="{!! number_format($value->precio_unitario, 0, ',', '.') !!}"
+                                        @if(isset($pedido) && ($pedido->estado == 'PROCESADO' || $pedido->estado == 'CANCELADO')) readonly @endif>
                                 </td>
-                            
+
                                 <td class="text-center">
-                                    <input class="text-center form-control" type="text" name="subtotal[]" readonly
+                                    <input class="text-center form-control subtotal-input" type="text" name="subtotal[]" readonly
                                         value="{!! number_format($value->precio_unitario * $value->cantidad, 0, ',', '.') !!}" style="text-align: center">
                                 </td>
-                            
+
+                                <td class="text-center">
+                                    @if(isset($pedido) && $pedido->estado != 'PROCESADO' && $pedido->estado != 'CANCELADO')
+                                        <button type="button" class="btn btn-danger btn-sm remove-item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endif
+                                </td>
                             </tr>
                             @endforeach
                         @endif

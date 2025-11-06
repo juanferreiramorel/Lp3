@@ -19,6 +19,17 @@
                         </a>
                     @endif
 
+                    <!-- Boton Incluir Pedido -->
+                    <!-- Verificar si la caja esta abierta y es del dia actual entonces muestro el boton incluir pedido -->
+                    @if (
+                        !empty($caja_abierta) &&
+                            \Carbon\Carbon::parse($caja_abierta->fecha_apertura)->format('Y-m-d') == \Carbon\Carbon::now()->format('Y-m-d'))
+                        <a class="btn btn-info float-right mr-2" data-toggle="modal" data-target="#modalPedidos" href="#">
+                            <i class="fas fa-file-invoice"></i>
+                            Incluir Pedido
+                        </a>
+                    @endif
+
                     <!-- Boton Abrir Caja -->
                     <!-- Verificar si la caja esta cerrada entonces muestro el boton abrir caja -->
                     @if (empty($caja_abierta))
@@ -34,8 +45,8 @@
                     @if (
                         !empty($caja_abierta) &&
                             \Carbon\Carbon::parse($caja_abierta->fecha_apertura)->format('Y-m-d') <= \Carbon\Carbon::now()->format('Y-m-d'))
-                        <a class="btn btn-success float-right mr-2" href="#" 
-                            id="cerrar" 
+                        <a class="btn btn-success float-right mr-2" href="#"
+                            id="cerrar"
                             data-id="{{ isset($caja_abierta) ? $caja_abierta->id_apertura : null }}">
                             <i class="fas fa-cart-plus"></i>
                             Cerrar Caja
@@ -66,6 +77,9 @@
 
     <!-- llamar a modal cerrar -->
     @include('ventas.modal_cerrar', ['cajas' => $cajas])
+
+    <!-- Modal para incluir pedidos -->
+    @includeIf('ventas.modal_pedidos')
 
 @endsection
 

@@ -26,6 +26,10 @@ Auth::routes();
 // Login
 Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
 
+// Rutas específicas de pedidos (ANTES del resource para evitar conflictos)
+Route::get('pedidos/pendientes', [App\Http\Controllers\PedidosController::class, 'getPendientes'])->name('pedidos.getPendientes');
+Route::get('ventas/crear-desde-pedido/{id}', [App\Http\Controllers\VentaController::class, 'crearDesdePedido'])->name('ventas.crearDesdePedido');
+
 // Recursos principales
 Route::resource('cargos', App\Http\Controllers\CargoController::class);
 Route::resource('departamentos', App\Http\Controllers\DepartamentoController::class);
