@@ -15,15 +15,48 @@ class PedidosController extends Controller
     /** LISTADO */
     public function index(Request $request)
     {
-        // Igual que ventas.index: incluimos usuario (JOIN users) y cliente
-        $pedidos = DB::select(
-            "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
-                    u.name AS usuario
-               FROM pedidos p
-               JOIN clientes c ON p.id_cliente = c.id_cliente
-            JOIN users u   ON p.id_usuario = u.id
-           ORDER BY p.fecha_pedido DESC"
-        );
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
+            $buscarMonto = str_replace('.', '', $buscar);
+
+            $pedidos = DB::select(
+                "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
+                        u.name AS usuario
+                   FROM pedidos p
+                   JOIN clientes c ON p.id_cliente = c.id_cliente
+                   JOIN users u ON p.id_usuario = u.id
+                   WHERE cast(p.id_pedido as text) ILIKE ?
+                   OR c.clie_ci ILIKE ?
+                   OR CONCAT(c.clie_nombre,' ', c.clie_apellido) ILIKE ?
+                   OR cast(p.fecha_pedido as text) ILIKE ?
+                   OR TO_CHAR(p.fecha_pedido, 'DD/MM/YYYY') ILIKE ?
+                   OR cast(p.total_pedido as text) ILIKE ?
+                   OR TO_CHAR(p.total_pedido, 'FM999G999G999G999G999') ILIKE ?
+                   OR u.name ILIKE ?
+                   OR p.estado ILIKE ?
+                   ORDER BY p.fecha_pedido DESC",
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscarMonto . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $pedidos = DB::select(
+                "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
+                        u.name AS usuario
+                   FROM pedidos p
+                   JOIN clientes c ON p.id_cliente = c.id_cliente
+                   JOIN users u ON p.id_usuario = u.id
+                   ORDER BY p.fecha_pedido DESC"
+            );
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -44,6 +77,11 @@ class PedidosController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('pedidos.table')->with('pedidos', $pedidos);
+        }
 
         return view('pedidos.index')->with('pedidos', $pedidos);
     }

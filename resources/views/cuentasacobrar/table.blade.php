@@ -19,7 +19,7 @@
                             <td>{{ $fila->nro_cuenta }}</td>
                             <td>{{ $fila->cliente }}</td>
                             <td>{{ $fila->factura_nro }}</td>
-                            <td>{{ $fila->fecha_venta }}</td>
+                            <td>{{ \Carbon\Carbon::parse($fila->fecha_venta)->format('d/m/Y') }}</td>
                             <td>{{ number_format($fila->importe?? 0, 0, ',', '.') }}</td>
                             <td>
                             @if ($fila->estado == 'PENDIENTE')
@@ -29,8 +29,8 @@
                             @endif
                             
                             </td>
-                            
-                            <td>{{ $fila->vencimiento }}</td>
+
+                            <td>{{ \Carbon\Carbon::parse($fila->vencimiento)->format('d/m/Y') }}</td>
                             <td>{{ $fila->nro_cuotas }}</td>
                         </tr>
                     @endforeach

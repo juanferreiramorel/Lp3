@@ -19,9 +19,22 @@
                             <td>{{ $fila->id }}</td>
                             <td>{{ $fila->sucursal }}</td>
                             <td>{{ $fila->usuario }}</td>
-                            <td>{{ $fila->operacion }}</td>
+                            <td>
+                                @php
+                                    $operacion = trim($fila->operacion);
+                                @endphp
+                                @if($operacion == 'AGREGA')
+                                    <span class="badge bg-success">{{ $operacion }}</span>
+                                @elseif($operacion == 'MODIFICA')
+                                    <span class="badge bg-warning">{{ $operacion }}</span>
+                                @elseif($operacion == 'ELIMINA')
+                                    <span class="badge bg-danger">{{ $operacion }}</span>
+                                @else
+                                    <span class="badge bg-info">{{ $operacion }}</span>
+                                @endif
+                            </td>
                             <td>{{ $fila->tabla }}</td>
-                            <td>{{ $fila->fecha }}</td>
+                            <td>{{ \Carbon\Carbon::parse($fila->fecha)->format('d/m/Y H:i:s') }}</td>
                             <td style="width: 120px">
                                 <div class='btn-group'>
                                     <a class='btn btn-info btn-xs'

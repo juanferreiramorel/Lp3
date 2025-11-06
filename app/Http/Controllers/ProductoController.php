@@ -28,23 +28,34 @@ class ProductoController extends Controller
     {
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
-        // validar que contenga un valor el buscar
-        $sql = '';// definir una variable sql vacia
 
         if (!empty($buscar)) {
-            $sql = " WHERE p.descripcion iLIKE '%" . $buscar . "%' 
-            or m.descripcion iLIKE '%" . $buscar . "%' 
-            or cast(p.id_producto as text) iLIKE '%" . $buscar . "%'"; // si tiene valor agregar la condicion a la variable sql
+            // Limpiar separadores de miles para búsqueda de precios
+            $buscarPrecio = str_replace('.', '', $buscar);
+
+            // Consulta con parámetros preparados para seguridad
+            $productos = DB::select(
+                'SELECT p.*, m.descripcion as marcas
+                 FROM productos p
+                    JOIN marcas m ON p.id_marca = m.id_marca
+                 WHERE p.descripcion ILIKE ?
+                 OR m.descripcion ILIKE ?
+                 OR cast(p.id_producto as text) ILIKE ?
+                 OR cast(p.precio as text) ILIKE ?
+                 OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
+                 OR cast(p.tipo_iva as text) ILIKE ?
+                 ORDER BY p.id_producto DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarPrecio . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            // Consulta para obtener los productos con la marca asociada
+            $productos = DB::select(
+                'SELECT p.*, m.descripcion as marcas
+                 FROM productos p
+                    JOIN marcas m ON p.id_marca = m.id_marca
+                 ORDER BY p.id_producto DESC'
+            );
         }
-        
-        // Consulta para obtener los productos con la marca asociada y si posee filtros
-        $productos = DB::select(
-            'SELECT p.*, m.descripcion as marcas 
-             FROM productos p
-                JOIN marcas m ON p.id_marca = m.id_marca
-             ' . $sql . '
-             ORDER BY p.id_producto desc'
-        );
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

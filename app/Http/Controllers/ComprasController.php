@@ -13,18 +13,56 @@ class ComprasController extends Controller
 {
     public function index(Request $request)
     {
-        // Incluimos sucursal y usuario para mostrar en la tabla
-        $compras = DB::select(
-            "SELECT c.*,
-                    p.descripcion AS proveedor,
-                    u.name        AS usuario,
-                    s.descripcion AS sucursal
-               FROM compras c
-          LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
-          LEFT JOIN users u       ON c.user_id = u.id
-          LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
-           ORDER BY c.fecha_compra DESC, c.id_compra DESC"
-        );
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
+            $buscarMonto = str_replace('.', '', $buscar);
+
+            $compras = DB::select(
+                "SELECT c.*,
+                        p.descripcion AS proveedor,
+                        u.name        AS usuario,
+                        s.descripcion AS sucursal
+                   FROM compras c
+              LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
+              LEFT JOIN users u       ON c.user_id = u.id
+              LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
+                   WHERE cast(c.id_compra as text) ILIKE ?
+                   OR cast(c.fecha_compra as text) ILIKE ?
+                   OR TO_CHAR(c.fecha_compra, 'DD/MM/YYYY') ILIKE ?
+                   OR c.condicion_compra ILIKE ?
+                   OR c.factura ILIKE ?
+                   OR p.descripcion ILIKE ?
+                   OR cast(c.id_proveedor as text) ILIKE ?
+                   OR u.name ILIKE ?
+                   OR c.estado ILIKE ?
+                   OR cast(c.total as text) ILIKE ?
+                   OR TO_CHAR(c.total, 'FM999G999G999G999G999') ILIKE ?
+                   ORDER BY c.fecha_compra DESC, c.id_compra DESC",
+                ['%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarMonto . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $compras = DB::select(
+                "SELECT c.*,
+                        p.descripcion AS proveedor,
+                        u.name        AS usuario,
+                        s.descripcion AS sucursal
+                   FROM compras c
+              LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
+              LEFT JOIN users u       ON c.user_id = u.id
+              LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
+                   ORDER BY c.fecha_compra DESC, c.id_compra DESC"
+            );
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -45,6 +83,11 @@ class ComprasController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('compras.table')->with('compras', $compras);
+        }
 
         return view('compras.index', compact('compras'));
     }

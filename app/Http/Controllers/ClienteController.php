@@ -18,19 +18,38 @@ class ClienteController extends Controller
         $buscar = $request->get('buscar');
 
         if ($buscar) {
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            // Búsqueda con formato de fecha para TO_CHAR
             $clientes = DB::select(
-                '
-            SELECT c.*, ciu.descripcion as ciudad,
-            d.descripcion as departamento
-            FROM clientes c
-                JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
-                JOIN departamentos d ON d.id_departamento = c.id_departamento
-            WHERE c.clie_nombre ILIKE ? OR c.clie_apellido ILIKE ? 
-                    OR c.clie_ci ILIKE ? OR c.id_cliente::text ILIKE ?',
+                'SELECT c.*, ciu.descripcion as ciudad,
+                d.descripcion as departamento
+                FROM clientes c
+                    JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
+                    JOIN departamentos d ON d.id_departamento = c.id_departamento
+                WHERE c.clie_nombre ILIKE ?
+                OR c.clie_apellido ILIKE ?
+                OR c.clie_ci ILIKE ?
+                OR c.clie_telefono ILIKE ?
+                OR ciu.descripcion ILIKE ?
+                OR d.descripcion ILIKE ?
+                OR cast(c.id_cliente as text) ILIKE ?
+                OR cast(c.clie_fecha_nac as text) ILIKE ?
+                OR TO_CHAR(c.clie_fecha_nac, \'DD/MM/YYYY\') ILIKE ?
+                ORDER BY c.id_cliente DESC',
                 [
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscarFecha . '%',
                     '%' . $buscar . '%'
                 ]
             );
@@ -41,6 +60,7 @@ class ClienteController extends Controller
                 FROM clientes c
                 JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
                 JOIN departamentos d ON d.id_departamento = c.id_departamento
+                ORDER BY c.id_cliente DESC
             ');
         }
 

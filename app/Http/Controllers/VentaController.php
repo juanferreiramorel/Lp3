@@ -32,25 +32,50 @@ class VentaController extends Controller
         $buscar = $request->get('buscar');
 
         if ($buscar) {
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            // Limpiar separadores de miles para búsqueda de montos
+            $buscarMonto = str_replace('.', '', $buscar);
+
             $ventas = DB::select(
                 "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
                 users.name as usuario
                 FROM ventas v
                     JOIN clientes c ON v.id_cliente = c.id_cliente
                     JOIN users ON v.user_id = users.id
-                WHERE (CAST(v.id_venta AS TEXT) iLIKE ? OR CAST(c.clie_nombre AS TEXT) 
-                iLIKE ? OR CAST(c.clie_apellido AS TEXT) iLIKE ? OR CAST(v.factura_nro AS TEXT) iLIKE ?
-                OR CAST(c.clie_ci AS TEXT) iLIKE ?)
-                order by v.fecha_venta desc",
+                WHERE CAST(v.id_venta AS TEXT) iLIKE ?
+                OR CAST(c.clie_nombre AS TEXT) iLIKE ?
+                OR CAST(c.clie_apellido AS TEXT) iLIKE ?
+                OR CAST(v.factura_nro AS TEXT) iLIKE ?
+                OR CAST(c.clie_ci AS TEXT) iLIKE ?
+                OR CAST(v.fecha_venta AS TEXT) ILIKE ?
+                OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE ?
+                OR v.condicion_venta ILIKE ?
+                OR CAST(v.total AS TEXT) ILIKE ?
+                OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE ?
+                OR users.name ILIKE ?
+                OR v.estado ILIKE ?
+                ORDER BY v.fecha_venta DESC",
                 [
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
                     '%' . $buscar . '%',
+                    '%' . $buscarFecha . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscarMonto . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%',
+                    '%' . $buscar . '%'
                 ]
             );
-        } else {
+        } else{
             $ventas = DB::select(
                 "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario

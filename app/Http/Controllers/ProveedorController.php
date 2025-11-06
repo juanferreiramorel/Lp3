@@ -12,7 +12,23 @@ class ProveedorController extends Controller
 {
     public function index(Request $request)
     {
-        $proveedores = DB::select('SELECT * FROM proveedores');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            $proveedores = DB::select(
+                'SELECT * FROM proveedores
+                WHERE descripcion ILIKE ?
+                OR direccion ILIKE ?
+                OR telefono ILIKE ?
+                OR cast(id_proveedor as text) ILIKE ?
+                ORDER BY id_proveedor DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $proveedores = DB::select('SELECT * FROM proveedores ORDER BY id_proveedor DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -33,6 +49,11 @@ class ProveedorController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('proveedores.table')->with('proveedores', $proveedores);
+        }
 
         return view('proveedores.index')->with('proveedores', $proveedores);
     }

@@ -26,12 +26,41 @@ class UserController extends Controller
     }
     public function index(Request $request)
     {
-        # Listar datos de usuarios
-        $users = DB::select('SELECT u.*, r.name as rol, s.descripcion as sucursal
-        FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
-        ORDER BY id DESC');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            $users = DB::select(
+                'SELECT u.*, r.name as rol, s.descripcion as sucursal
+                FROM users u
+                    LEFT JOIN roles r ON u.role_id = r.id
+                    LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+                WHERE cast(u.id as text) ILIKE ?
+                OR u.name ILIKE ?
+                OR u.email ILIKE ?
+                OR u.ci ILIKE ?
+                OR u.telefono ILIKE ?
+                OR cast(u.fecha_ingreso as text) ILIKE ?
+                OR TO_CHAR(u.fecha_ingreso, \'DD/MM/YYYY\') ILIKE ?
+                OR r.name ILIKE ?
+                OR s.descripcion ILIKE ?
+                ORDER BY u.id DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else{
+            $users = DB::select('SELECT u.*, r.name as rol, s.descripcion as sucursal
+            FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+            ORDER BY u.id DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -52,6 +81,11 @@ class UserController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('users.table')->with('users', $users);
+        }
 
         return view('users.index')->with('users', $users);
     }

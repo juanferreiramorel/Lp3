@@ -22,7 +22,21 @@ class DepartamentoController extends Controller
     }
     public function index(Request $request)
     {
-        $departamentos = DB::select('SELECT * FROM departamentos');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            $departamentos = DB::select(
+                'SELECT * FROM departamentos
+                WHERE descripcion ILIKE ?
+                OR cast(id_departamento as text) ILIKE ?
+                ORDER BY id_departamento DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $departamentos = DB::select('SELECT * FROM departamentos ORDER BY id_departamento DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -43,6 +57,11 @@ class DepartamentoController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('departamentos.table')->with('departamentos', $departamentos);
+        }
 
         return view('departamentos.index')->with('departamentos', $departamentos);
     }
@@ -97,7 +116,7 @@ class DepartamentoController extends Controller
         }
 
         // Retornar la vista con el formulario de edición
-        return view('departamentos.edit')->with('departamentos', $departamento);
+        return view('departamentos.edit')->with('departamento', $departamento);
     }
 
     public function update(Request $request, $id)

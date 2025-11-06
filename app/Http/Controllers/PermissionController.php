@@ -22,8 +22,20 @@ class PermissionController extends Controller
 
     public function index(Request $request)
     {
-        // Listar permisos existentes
-        $permisos = DB::select('SELECT * FROM permissions order by id desc');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            $permisos = DB::select(
+                'SELECT * FROM permissions
+                WHERE name ILIKE ?
+                ORDER BY id DESC',
+                ['%' . $buscar . '%']
+            );
+        } else {
+            $permisos = DB::select('SELECT * FROM permissions ORDER BY id DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -44,6 +56,11 @@ class PermissionController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('permissions.table')->with('permisos', $permisos);
+        }
 
         return view('permissions.index')->with('permisos', $permisos);
     }

@@ -11,12 +11,31 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class SucursalController extends Controller
 {
     public function index(Request $request){
-       $sucursales = DB::select(
-       'SELECT s.*, c.descripcion as ciudades
-	    FROM sucursales s
-	    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
-	    ORDER BY s.id_sucursal DESC'
-        );
+       // Obtener el término de búsqueda
+       $buscar = $request->get('buscar');
+
+       // Construir consulta con filtros de búsqueda por todos los campos visibles
+       if ($buscar) {
+           $sucursales = DB::select(
+               'SELECT s.*, c.descripcion as ciudades
+                FROM sucursales s
+                JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                WHERE s.descripcion ILIKE ?
+                OR s.direccion ILIKE ?
+                OR s.telefono ILIKE ?
+                OR c.descripcion ILIKE ?
+                OR cast(s.id_sucursal as text) ILIKE ?
+                ORDER BY s.id_sucursal DESC',
+               ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+           );
+       } else {
+           $sucursales = DB::select(
+               'SELECT s.*, c.descripcion as ciudades
+                FROM sucursales s
+                JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                ORDER BY s.id_sucursal DESC'
+           );
+       }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -37,6 +56,11 @@ class SucursalController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('sucursales.table')->with('sucursales', $sucursales);
+        }
 
         return view('sucursales.index')->with('sucursales', $sucursales);
     }

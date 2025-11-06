@@ -22,16 +22,18 @@ class CiudadController extends Controller
                 'SELECT c.*, d.descripcion as departamento
                 FROM ciudades c
                 JOIN departamentos d ON c.id_departamento = d.id_departamento
-                ORDER BY c.id_ciudad desc
-                WHERE c.descripcion ILIKE ? or d.descripcion ILIKE ?',
-                ['%' . $buscar . '%', '%' . $buscar . '%']
+                WHERE c.descripcion ILIKE ?
+                OR d.descripcion ILIKE ?
+                OR cast(c.id_ciudad as text) ILIKE ?
+                ORDER BY c.id_ciudad DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
             );
         }else{
             $ciudades = DB::select(
                 'SELECT c.*, d.descripcion as departamento
                     FROM ciudades c
                     JOIN departamentos d ON c.id_departamento = d.id_departamento
-                    ORDER BY c.id_ciudad desc'
+                    ORDER BY c.id_ciudad DESC'
             );
         }
 

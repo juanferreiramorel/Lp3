@@ -19,34 +19,63 @@ class AuditoriaController extends Controller
     {
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
-        // validar que contenga un valor el buscar
-        $sql = '';// definir una variable sql vacia
 
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
         if (!empty($buscar)) {
-            $sql = " WHERE u.name iLIKE '%" . $buscar . "%' 
-            or sc.descripcion iLIKE '%" . $buscar . "%' 
-            or s.table_name iLIKE '%" . $buscar . "%' 
-            or s.operation iLIKE '%" . $buscar . "%' 
-            or cast(s.id as text)iLIKE '%" . $buscar . "%'"; // si tiene valor agregar la condicion a la variable sql
-        }
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
 
-        // Consulta para obtener los productos con la marca asociada y si posee filtros
-        $auditoria = DB::select(
-            'SELECT 
-                s.id AS id,
-                sc.descripcion AS sucursal,
-                u.name AS usuario,
-                s.operation AS operacion,
-                s.table_name AS tabla,
-                s.changed_at AS fecha,
-                old_data AS anterior,
-                new_data AS nuevo
+            $auditoria = DB::select(
+                'SELECT
+                    s.id AS id,
+                    sc.descripcion AS sucursal,
+                    u.name AS usuario,
+                    s.operation AS operacion,
+                    s.table_name AS tabla,
+                    s.changed_at AS fecha,
+                    old_data AS anterior,
+                    new_data AS nuevo
                 FROM audit.log s
-            JOIN users u ON s.user_id = u.id
-             JOIN sucursales sc USING(id_sucursal)
-                ' . $sql . '
-             ORDER BY s.id desc'
-        );
+                JOIN users u ON s.user_id = u.id
+                JOIN sucursales sc USING(id_sucursal)
+                WHERE cast(s.id as text) ILIKE ?
+                OR sc.descripcion ILIKE ?
+                OR u.name ILIKE ?
+                OR s.operation ILIKE ?
+                OR s.table_name ILIKE ?
+                OR cast(s.changed_at as text) ILIKE ?
+                OR TO_CHAR(s.changed_at, \'DD/MM/YYYY HH24:MI:SS\') ILIKE ?
+                ORDER BY s.id DESC',
+                [
+                    '%' . $buscar . '%',      // id
+                    '%' . $buscar . '%',      // sucursal
+                    '%' . $buscar . '%',      // usuario
+                    '%' . $buscar . '%',      // operacion
+                    '%' . $buscar . '%',      // tabla
+                    '%' . $buscarFecha . '%', // fecha (formato BD)
+                    '%' . $buscar . '%'       // fecha (formato DD/MM/YYYY HH24:MI:SS)
+                ]
+            );
+        } else {
+            $auditoria = DB::select(
+                'SELECT
+                    s.id AS id,
+                    sc.descripcion AS sucursal,
+                    u.name AS usuario,
+                    s.operation AS operacion,
+                    s.table_name AS tabla,
+                    s.changed_at AS fecha,
+                    old_data AS anterior,
+                    new_data AS nuevo
+                FROM audit.log s
+                JOIN users u ON s.user_id = u.id
+                JOIN sucursales sc USING(id_sucursal)
+                ORDER BY s.id DESC'
+            );
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

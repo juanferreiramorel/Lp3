@@ -20,27 +20,62 @@ class CuentasACobrarController extends Controller
     {
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
-        // validar que contenga un valor el buscar
-        $sql = '';// definir una variable sql vacia
 
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
         if (!empty($buscar)) {
-            $sql = "WHERE (CONCAT(clie_nombre,' ',clie_apellido) iLIKE '%" . $buscar . "%' 
-            or factura_nro iLIKE '%" . $buscar . "%' 
-            or to_char(importe, 'FM999999990.00') iLIKE '%" . $buscar . "%' 
-            or to_char(vencimiento, 'YYYY-MM-DD') iLIKE '%" . $buscar . "%' 
-            or ca.estado iLIKE '%" . $buscar . "%')"; // si tiene valor agregar la condicion a la variable sql
+            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
+            $buscarFecha = $buscar;
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
+                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+            }
+
+            // Limpiar separadores de miles para búsqueda de montos
+            $buscarMonto = str_replace('.', '', $buscar);
+
+            $cuentasacobrar = DB::select(
+                'SELECT id_cta AS nro_cuenta, CONCAT(clie_nombre,\' \',clie_apellido) AS cliente, factura_nro, fecha_venta,
+                importe, ca.estado, vencimiento, nro_cuota AS nro_cuotas
+                FROM cuentas_a_cobrar ca
+                JOIN clientes USING(id_cliente)
+                JOIN ventas USING(id_venta)
+                WHERE cast(id_cta as text) ILIKE ?
+                OR CONCAT(clie_nombre,\' \',clie_apellido) ILIKE ?
+                OR clie_ci ILIKE ?
+                OR factura_nro ILIKE ?
+                OR cast(fecha_venta as text) ILIKE ?
+                OR TO_CHAR(fecha_venta, \'DD/MM/YYYY\') ILIKE ?
+                OR cast(importe as text) ILIKE ?
+                OR TO_CHAR(importe, \'FM999G999G999G999G999\') ILIKE ?
+                OR ca.estado ILIKE ?
+                OR cast(vencimiento as text) ILIKE ?
+                OR TO_CHAR(vencimiento, \'DD/MM/YYYY\') ILIKE ?
+                OR cast(nro_cuota as text) ILIKE ?
+                ORDER BY vencimiento DESC',
+                [
+                    '%' . $buscar . '%',      // nro_cuenta
+                    '%' . $buscar . '%',      // cliente
+                    '%' . $buscar . '%',      // clie_ci
+                    '%' . $buscar . '%',      // factura_nro
+                    '%' . $buscarFecha . '%', // fecha_venta (formato BD)
+                    '%' . $buscar . '%',      // fecha_venta (formato DD/MM/YYYY)
+                    '%' . $buscarMonto . '%', // importe (sin separadores)
+                    '%' . $buscar . '%',      // importe (con separadores)
+                    '%' . $buscar . '%',      // estado
+                    '%' . $buscarFecha . '%', // vencimiento (formato BD)
+                    '%' . $buscar . '%',      // vencimiento (formato DD/MM/YYYY)
+                    '%' . $buscar . '%'       // nro_cuotas
+                ]
+            );
+        } else {
+            $cuentasacobrar = DB::select(
+                'SELECT id_cta AS nro_cuenta, CONCAT(clie_nombre,\' \',clie_apellido) AS cliente, factura_nro, fecha_venta,
+                importe, ca.estado, vencimiento, nro_cuota AS nro_cuotas
+                FROM cuentas_a_cobrar ca
+                JOIN clientes USING(id_cliente)
+                JOIN ventas USING(id_venta)
+                ORDER BY vencimiento DESC'
+            );
         }
-        
-        // Consulta para obtener los productos con la marca asociada y si posee filtros
-        $cuentasacobrar = DB::select(
-            'SELECT id_cta AS nro_cuenta, CONCAT(clie_nombre,\' \',clie_apellido) AS cliente, factura_nro, fecha_venta, 
-            importe, ca.estado, vencimiento, nro_cuota AS nro_cuotas
-            FROM cuentas_a_cobrar ca
-            JOIN clientes USING(id_cliente)
-            JOIN ventas USING(id_venta)
-            '.$sql.'
-             ORDER BY vencimiento desc'
-        );
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

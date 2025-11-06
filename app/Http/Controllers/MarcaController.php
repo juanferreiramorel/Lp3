@@ -12,7 +12,21 @@ class MarcaController extends Controller
 {
     public function index(Request $request)
     {
-        $marcas = DB::SELECT('SELECT * FROM marcas');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda
+        if ($buscar) {
+            $marcas = DB::select(
+                'SELECT * FROM marcas
+                WHERE descripcion ILIKE ?
+                OR cast(id_marca as text) ILIKE ?
+                ORDER BY id_marca DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $marcas = DB::SELECT('SELECT * FROM marcas ORDER BY id_marca DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -33,6 +47,11 @@ class MarcaController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('marcas.table')->with('marcas', $marcas);
+        }
 
         return view('marcas.index')->with('marcas', $marcas);
     }

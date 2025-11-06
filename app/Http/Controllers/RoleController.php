@@ -24,7 +24,21 @@ class RoleController extends Controller
     }
     public function index(Request $request)
     {
-        $roles = DB::select('SELECT * FROM roles');
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            $roles = DB::select(
+                'SELECT * FROM roles
+                WHERE name ILIKE ?
+                OR guard_name ILIKE ?
+                ORDER BY id DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $roles = DB::select('SELECT * FROM roles ORDER BY id DESC');
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -45,6 +59,11 @@ class RoleController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('roles.table')->with('roles', $roles);
+        }
 
         return view('roles.index')->with('roles', $roles);
     }

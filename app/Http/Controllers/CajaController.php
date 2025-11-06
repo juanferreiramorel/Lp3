@@ -12,13 +12,31 @@ class CajaController extends Controller
 {
     public function index(Request $request)
     {
-        $cajas = DB::select(
-            'SELECT c.*, s.descripcion as sucursal
-        FROM cajas c
-        JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-        ORDER BY c.id_caja DESC
-        '
-        );
+        // Obtener el término de búsqueda
+        $buscar = $request->get('buscar');
+
+        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        if ($buscar) {
+            $cajas = DB::select(
+                'SELECT c.*, s.descripcion as sucursal
+                FROM cajas c
+                JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+                WHERE c.descripcion ILIKE ?
+                OR s.descripcion ILIKE ?
+                OR cast(c.punto_expedicion as text) ILIKE ?
+                OR cast(c.ultima_factura_impresa as text) ILIKE ?
+                OR cast(c.id_caja as text) ILIKE ?
+                ORDER BY c.id_caja DESC',
+                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
+            );
+        } else {
+            $cajas = DB::select(
+                'SELECT c.*, s.descripcion as sucursal
+                FROM cajas c
+                JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+                ORDER BY c.id_caja DESC'
+            );
+        }
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -39,6 +57,11 @@ class CajaController extends Controller
                 'query' => $request->query(),   // mantiene parámetros como "buscar"
             ]
         );
+
+        // Si es petición AJAX, devolver solo la tabla
+        if ($request->ajax()) {
+            return view('cajas.table')->with('cajas', $cajas);
+        }
 
         return view('cajas.index')->with('cajas', $cajas);
     }

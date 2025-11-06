@@ -67,7 +67,7 @@
             @includeIf('layouts.buscador', ['url' => url()->current()])
         </div>
 
-        <div class="card">
+        <div class="card tabla-container">
             @include('ventas.table')
         </div>
     </div>
