@@ -1,0 +1,72 @@
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">Detalles de Productos</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <button type="button" class="btn btn-primary mb-2" id="buscar" style="float: right">
+            <i class="fas fa-search"></i> Buscar Producto
+        </button>
+
+        <div class="table-responsive">
+            <table class="table table-bordered item-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th class="text-center">Cantidad</th>
+                        <th class="text-center">Precio Unit.</th>
+                        <th class="text-center">Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="selectedProducts">
+                    @if (isset($detalleOrdenCompra))
+                        @foreach ($detalleOrdenCompra as $value)
+                        <tr>
+                            <td>
+                                <input class="text-center form-control" type="text" name="codigo[]"
+                                       readonly value="{{ $value->id_producto }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" name="producto[]"
+                                       readonly value="{{ $value->producto }}">
+                                {!! Form::hidden('id_producto[]', $value->id_producto) !!}
+                                {!! Form::hidden('id_det_orden[]', $value->id_detalle_orden) !!}
+                            </td>
+                            <td>
+                                <input class="text-center form-control cantidad-input" type="number"
+                                       min="1" name="cantidad[]" value="{{ $value->cantidad }}"
+                                       data-precio="{{ $value->precio_unitario }}"
+                                       @if(in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA'])) readonly @endif>
+                            </td>
+                            <td>
+                                <input class="text-center form-control precio-input" type="text"
+                                       name="precio[]"
+                                       value="{{ number_format($value->precio_unitario, 0, ',', '.') }}">
+                            </td>
+                            <td>
+                                <input class="text-center form-control subtotal-input" type="text"
+                                       name="subtotal[]" readonly
+                                       value="{{ number_format($value->precio_unitario * $value->cantidad, 0, ',', '.') }}">
+                            </td>
+                            <td>
+                                @if(!in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA']))
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

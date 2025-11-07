@@ -12,7 +12,7 @@
 </div>
 
 <!-- Factura Nro Field -->
-<div class="form-group col-sm-4">
+<div class="form-group col-sm-4 d-none">
     {!! Form::label('factura_nro', 'Factura Nro:') !!}
     {!! Form::text('factura_nro', null, ['class' => 'form-control', 'readonly']) !!}
 </div>

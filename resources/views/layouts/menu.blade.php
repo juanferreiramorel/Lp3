@@ -41,6 +41,16 @@
 </li>
 @endcan
 
+{{-- Ordenes De Compra --}}
+{{-- @can('ordenesdecompra index') --}}
+<li class="nav-item">
+    <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordenesdecompra*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-shopping-basket"></i>
+        <p>Ordenes De Compra</p>
+    </a>
+</li>
+{{-- @endcan --}}
+
 {{-- Pedidos --}}
 @can('pedidos index')
 <li class="nav-item">

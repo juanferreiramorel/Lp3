@@ -44,6 +44,9 @@ Route::resource('ventas', App\Http\Controllers\VentaController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);
 Route::resource('pedidos', App\Http\Controllers\PedidosController::class);
 Route::resource('compras', App\Http\Controllers\ComprasController::class);
+// Rutas específicas de órdenes de compra (ANTES del resource)
+Route::get('ordencompra/pendientes', [App\Http\Controllers\OrdenCompraController::class, 'getPendientes'])->name('ordencompra.getPendientes');
+Route::resource('ordencompra', App\Http\Controllers\OrdenCompraController::class);
 Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);
 Route::resource('cobros', App\Http\Controllers\CobroController::class);
@@ -60,6 +63,7 @@ Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserControlle
 // Buscadores
 Route::get('buscar-productos', [App\Http\Controllers\VentaController::class, 'buscarProducto']);
 Route::get('buscar-productoscompras', [ComprasController::class, 'buscarProducto']);
+Route::get('buscar-productos-oc', [App\Http\Controllers\OrdenCompraController::class, 'buscarProducto']);
 Route::get('/search', [App\Http\Controllers\SearchController::class, 'index'])->name('search');
 
 // PDF y Reportes

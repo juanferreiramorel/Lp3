@@ -1,5 +1,5 @@
 Examen Final Proyecto
-1. Validaciones de descripciones: evitar duplicados
+<!-- 1. Validaciones de descripciones: evitar duplicados -->
 <!-- 2. Tener sección de cobros de cuentas a cobrar: debe poder pagar la deuda parcial o total y validar el estado de cuenta, utilizar la misma logica de cobros de ventas. -->
 3. Tener sección de pagos a proveedores: tener la posibilidad de registrar pagos parciales o totales y guardar el nro de recibo o factura del cual se pago. Para ello se debe crear la tabla de pagos_proveedores
 4. Tener la posibilidad de anular pagos a proveedores, y validar que el saldo se actualice segun lo anulado

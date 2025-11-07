@@ -133,7 +133,16 @@ class PedidosController extends Controller
                 'precio.*'     => 'required'
             ],
             [
-                'codigo.required' => 'Debe agregar al menos un producto.',
+                'codigo.required' => 'Debe agregar al menos un producto al pedido',
+                'codigo.min' => 'Debe agregar al menos un producto al pedido',
+                'cantidad.required' => 'Debe agregar al menos una cantidad al pedido',
+                'cantidad.min' => 'Debe agregar al menos una cantidad al pedido',
+                'precio.required' => 'Debe agregar al menos un precio al pedido',
+                'precio.min' => 'Debe agregar al menos un precio al pedido',
+                'precio.numeric' => 'El precio debe ser un número',
+                'cantidad.numeric' => 'La cantidad debe ser un número',
+                'cantidad.min' => 'La cantidad debe ser mayor o igual a 0',
+                'precio.min' => 'El precio debe ser mayor o igual a 0'
             ]
         );
 
@@ -272,7 +281,7 @@ class PedidosController extends Controller
             [
                 'fecha_pedido' => 'required|date',
                 'id_sucursal'  => 'nullable|exists:sucursales,id_sucursal',
-                'estado'       => 'nullable|in:PENDIENTE,PROCESADO,CANCELADO',
+                'estado'       => 'nullable|in:PENDIENTE',
 
                 'codigo'       => 'required|array|min:1',
                 'codigo.*'     => 'required|integer',
@@ -284,6 +293,14 @@ class PedidosController extends Controller
             [
                 'codigo.required' => 'Debe agregar al menos un producto al pedido',
                 'codigo.min' => 'Debe agregar al menos un producto al pedido',
+                'cantidad.required' => 'Debe agregar al menos una cantidad al pedido',
+                'cantidad.min' => 'Debe agregar al menos una cantidad al pedido',
+                'precio.required' => 'Debe agregar al menos un precio al pedido',
+                'precio.min' => 'Debe agregar al menos un precio al pedido',
+                'precio.numeric' => 'El precio debe ser un número',
+                'cantidad.numeric' => 'La cantidad debe ser un número',
+                'cantidad.min' => 'La cantidad debe ser mayor o igual a 0',
+                'precio.min' => 'El precio debe ser mayor o igual a 0'
             ]
         );
 
