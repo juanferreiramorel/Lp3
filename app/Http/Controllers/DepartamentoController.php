@@ -90,10 +90,18 @@ class DepartamentoController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM departamentos WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un departamento con esta descripción.'])->withInput();
+        }
 
         // Si la validación pasa, guardar el nuevo departamento utilizando la función insert de la base de datos
-        DB::insert('insert into departamentos (descripcion) values (?)', 
-            [ 
+        DB::insert('insert into departamentos (descripcion) values (?)',
+            [
                 $input['descripcion']
             ]
         );
@@ -139,10 +147,19 @@ class DepartamentoController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM departamentos WHERE LOWER(descripcion) = LOWER(?) AND id_departamento != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un departamento con esta descripción.'])->withInput();
+        }
+
         // Actualizar el departamento utilizando la función update de la base de datos
-        DB::update('update departamentos set descripcion = ? where id_departamento = ?', 
-            [ 
-                $input['descripcion'], 
+        DB::update('update departamentos set descripcion = ? where id_departamento = ?',
+            [
+                $input['descripcion'],
                 $id
             ]
         );

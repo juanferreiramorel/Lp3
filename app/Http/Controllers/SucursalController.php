@@ -93,6 +93,16 @@ class SucursalController extends Controller
                 ->withErrors($validacion)
                 ->withInput();
         }
+
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM sucursales WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una sucursal con esta descripción.'])->withInput();
+        }
+
         //Insertar el nuevo producto en la Base de datos
         DB::insert(
             'INSERT INTO sucursales (descripcion, direccion, telefono, id_ciudad) VALUES (?, ?, ?, ?)',
@@ -145,6 +155,16 @@ class SucursalController extends Controller
                 ->withErrors($validacion)
                 ->withInput();
         }
+
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM sucursales WHERE LOWER(descripcion) = LOWER(?) AND id_sucursal != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una sucursal con esta descripción.'])->withInput();
+        }
+
         //Actualizar el producto en la Base de datos
         DB::update(
             'UPDATE sucursales SET descripcion = ?, direccion = ?, telefono = ?, id_ciudad = ? WHERE id_sucursal = ?',

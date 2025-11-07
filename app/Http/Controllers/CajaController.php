@@ -94,6 +94,16 @@ class CajaController extends Controller
                 ->withErrors($validacion)
                 ->withInput();
         }
+
+        // Validar que la descripción no esté duplicada en la misma sucursal
+        $existe = DB::selectOne(
+            'SELECT * FROM cajas WHERE LOWER(descripcion) = LOWER(?) AND id_sucursal = ?',
+            [$input['descripcion'], $input['id_sucursal']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una caja con esta descripción en la sucursal seleccionada.'])->withInput();
+        }
+
         //Insertar el nuevo producto en la Base de datos
         DB::insert(
             'INSERT INTO cajas (descripcion, id_sucursal, punto_expedicion, ultima_factura_impresa) VALUES (?, ?, ?, ?)',
@@ -152,6 +162,16 @@ class CajaController extends Controller
                 ->withErrors($validacion)
                 ->withInput();
         }
+
+        // Validar que la descripción no esté duplicada en la misma sucursal (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM cajas WHERE LOWER(descripcion) = LOWER(?) AND id_sucursal = ? AND id_caja != ?',
+            [$input['descripcion'], $input['id_sucursal'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una caja con esta descripción en la sucursal seleccionada.'])->withInput();
+        }
+
         //Actualizar el producto en la Base de datos
         DB::update(
             'UPDATE cajas SET descripcion = ?, id_sucursal = ?, punto_expedicion = ?, ultima_factura_impresa = ? WHERE id_caja = ?',

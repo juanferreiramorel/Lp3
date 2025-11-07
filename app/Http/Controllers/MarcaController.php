@@ -76,6 +76,16 @@ class MarcaController extends Controller
         if ($validacion->fails()) {
             return back()->withErrors($validacion)->withInput();
         }
+
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM marcas WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una marca con esta descripción.'])->withInput();
+        }
+
         //insertar proveedores en la base de datos
         DB::insert(
             'INSERT INTO marcas (descripcion) values (?)',
@@ -115,9 +125,19 @@ class MarcaController extends Controller
         if ($validacion->fails()) {
             return back()->withErrors($validacion)->withInput();
         }
+
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM marcas WHERE LOWER(descripcion) = LOWER(?) AND id_marca != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una marca con esta descripción.'])->withInput();
+        }
+
         DB::update(
-            'UPDATE marcas 
-       SET descripcion = ? 
+            'UPDATE marcas
+       SET descripcion = ?
        WHERE id_marca = ?',
             [
                 $input['descripcion'],

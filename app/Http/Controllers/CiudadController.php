@@ -98,11 +98,20 @@ class CiudadController extends Controller
             return redirect()->back()->withErrors($validacion->errors());
         }
 
+        // Validar que la descripción no esté duplicada en el mismo departamento
+        $existe = DB::selectOne(
+            'SELECT * FROM ciudades WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una ciudad con esta descripción.'])->withInput();
+        }
+
         // Guardar la nueva ciudad
         DB::insert(
             'INSERT INTO ciudades (descripcion, id_departamento) VALUES (?, ?)',
             [
-                $input['descripcion'], 
+                $input['descripcion'],
                 $input['id_departamento']
             ]
         );
@@ -163,6 +172,15 @@ class CiudadController extends Controller
         // Si la validación falla, redirigir con errores
         if ($validacion->fails()) {
             return redirect()->back()->withErrors($validacion->errors());
+        }
+
+        // Validar que la descripción no esté duplicada 
+        $existe = DB::selectOne(
+            'SELECT * FROM ciudades WHERE LOWER(descripcion) = LOWER(?) AND id_ciudad != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe una ciudad con esta descripción.'])->withInput();
         }
 
         // Actualizar la ciudad

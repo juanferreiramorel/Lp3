@@ -131,6 +131,15 @@ class ProductoController extends Controller
                 ->withInput();
         }
 
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM productos WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un producto con esta descripción.'])->withInput();
+        }
+
         // Validar con hasFile que exista ese dato
         if ($request->hasFile('imagen_producto')) {
             // obtener nombre del archivo de imagen con getClientOriginalName
@@ -224,6 +233,15 @@ class ProductoController extends Controller
             return redirect()->back()
                 ->withErrors($validacion)
                 ->withInput();
+        }
+
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM productos WHERE LOWER(descripcion) = LOWER(?) AND id_producto != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un producto con esta descripción.'])->withInput();
         }
 
         // validar con hasFile que exista eese dato

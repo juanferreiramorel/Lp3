@@ -159,6 +159,16 @@ class ClienteController extends Controller
             return redirect(route('clientes.create'))->withInput();
         }
 
+        // Validar que el CI no esté duplicado
+        $existe = DB::selectOne(
+            'SELECT * FROM clientes WHERE clie_ci = ?',
+            [$input['clie_ci']]
+        );
+        if ($existe) {
+            Alert::error('Error', 'Ya existe un cliente con este número de cédula.');
+            return redirect(route('clientes.create'))->withInput();
+        }
+
         # insertar datos en clientes
         DB::insert('INSERT INTO clientes (clie_nombre, clie_apellido, clie_ci, clie_telefono, clie_direccion, clie_fecha_nac, id_departamento, id_ciudad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
             strtoupper($input['clie_nombre']),
@@ -265,6 +275,16 @@ class ClienteController extends Controller
         if ($ci > 8) { # mayor a 8 caracteres
             // Flash::error('El nro de cedula solo podra contener 8 digítos.');
             Alert::error('Error', 'El nro de cedula solo podra contener 8 digítos.');
+            return redirect(route('clientes.edit', $id))->withInput();
+        }
+
+        // Validar que el CI no esté duplicado (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM clientes WHERE clie_ci = ? AND id_cliente != ?',
+            [$input['clie_ci'], $id]
+        );
+        if ($existe) {
+            Alert::error('Error', 'Ya existe un cliente con este número de cédula.');
             return redirect(route('clientes.edit', $id))->withInput();
         }
 

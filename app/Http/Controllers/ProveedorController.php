@@ -79,6 +79,16 @@ class ProveedorController extends Controller
         if ($validacion->fails()) {
             return back()->withErrors($validacion)->withInput();
         }
+
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM proveedores WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un proveedor con esta descripción.'])->withInput();
+        }
+
         //insertar proveedores en la base de datos
         DB::insert(
             'INSERT INTO proveedores (descripcion, direccion, telefono) values (?, ?, ?)',
@@ -121,15 +131,25 @@ class ProveedorController extends Controller
         if ($validacion->fails()) {
             return back()->withErrors($validacion)->withInput();
         }
-        DB::update('UPDATE proveedores 
-        SET descripcion = ?, 
-        direccion = ?, 
-        telefono = ? 
-        WHERE id_proveedor = ?', 
+
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM proveedores WHERE LOWER(descripcion) = LOWER(?) AND id_proveedor != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un proveedor con esta descripción.'])->withInput();
+        }
+
+        DB::update('UPDATE proveedores
+        SET descripcion = ?,
+        direccion = ?,
+        telefono = ?
+        WHERE id_proveedor = ?',
         [
-        $input['descripcion'], 
-        $input['direccion'], 
-        $input['telefono'], 
+        $input['descripcion'],
+        $input['direccion'],
+        $input['telefono'],
         $id
     ]
 );

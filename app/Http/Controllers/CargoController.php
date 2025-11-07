@@ -87,10 +87,18 @@ class CargoController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        // Validar que la descripción no esté duplicada
+        $existe = DB::selectOne(
+            'SELECT * FROM cargos WHERE LOWER(descripcion) = LOWER(?)',
+            [$input['descripcion']]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un cargo con esta descripción.'])->withInput();
+        }
 
         // Si la validación pasa, guardar el nuevo cargo utilizando la función insert de la base de datos
-        DB::insert('insert into cargos (descripcion) values (?)', 
-            [ 
+        DB::insert('insert into cargos (descripcion) values (?)',
+            [
                 $input['descripcion']
             ]
         );
@@ -145,7 +153,16 @@ class CargoController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        DB::update('update cargos set descripcion = ? where id_cargo = ?', 
+        // Validar que la descripción no esté duplicada (excepto el registro actual)
+        $existe = DB::selectOne(
+            'SELECT * FROM cargos WHERE LOWER(descripcion) = LOWER(?) AND id_cargo != ?',
+            [$input['descripcion'], $id]
+        );
+        if ($existe) {
+            return back()->withErrors(['descripcion' => 'Ya existe un cargo con esta descripción.'])->withInput();
+        }
+
+        DB::update('update cargos set descripcion = ? where id_cargo = ?',
             [
                 $input['descripcion'],
                 $id
