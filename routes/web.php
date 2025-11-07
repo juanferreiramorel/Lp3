@@ -48,6 +48,11 @@ Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);
 Route::resource('cobros', App\Http\Controllers\CobroController::class);
 Route::resource('pagos', App\Http\Controllers\PagoController::class);
+// Rutas específicas para cuentas a cobrar (ANTES del resource)
+Route::get('cuentasacobrar/{id}/detalle', [App\Http\Controllers\CuentasACobrarController::class, 'detalle'])->name('cuentasacobrar.detalle');
+Route::post('cuentasacobrar/{id}/cobrar', [App\Http\Controllers\CuentasACobrarController::class, 'cobrar'])->name('cuentasacobrar.cobrar');
+Route::get('cuentasacobrar/cobros/{id}', [App\Http\Controllers\CuentasACobrarController::class, 'obtenerHistorialCobros'])->name('cuentasacobrar.historial');
+Route::post('cuentasacobrar/cobros/{id}/anular', [App\Http\Controllers\CuentasACobrarController::class, 'anularCobro'])->name('cuentasacobrar.anular');
 Route::resource('cuentasacobrar', App\Http\Controllers\CuentasACobrarController::class);
 Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil']);
 Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserController::class, 'cambiarPassword']);

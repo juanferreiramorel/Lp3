@@ -63,58 +63,92 @@ FOR EACH ROW
 EXECUTE PROCEDURE public.generar_ctas_cobrar();
 
 
--- Funcion Para Actualizar
-CREATE OR REPLACE FUNCTION public.actualizar_ctas_cobrar()
-RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_ventas_ctascobrar_guardas()
+RETURNS trigger AS
+$$
 DECLARE
-    hay_pagos BOOLEAN;
-    cambia BOOLEAN;
+  hay_no_pendiente  boolean;
+  cambio_credito    boolean;
+  cambio_parametros boolean;
 BEGIN
-    -- ¿Cambió algo relevante?
-    cambia := (NEW.condicion_venta IS DISTINCT FROM OLD.condicion_venta)
-           OR (NEW.fecha_venta     IS DISTINCT FROM OLD.fecha_venta)
-           OR (NEW.total           IS DISTINCT FROM OLD.total)
-           OR (NEW.cantidad_cuota  IS DISTINCT FROM OLD.cantidad_cuota)
-           OR (NEW.intervalo       IS DISTINCT FROM OLD.intervalo)
-           OR (NEW.id_cliente      IS DISTINCT FROM OLD.id_cliente);
+  -- Salida temprana si no hay cambios reales
+  IF to_jsonb(NEW) IS NOT DISTINCT FROM to_jsonb(OLD) THEN
+    RETURN NEW;
+  END IF;
 
-    IF NOT cambia THEN
-        RETURN NEW;
+  -- ¿Alguna cuota distinta de PENDIENTE?
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.cuentas_a_cobrar c
+    WHERE c.id_venta = OLD.id_venta
+      AND c.estado <> 'PENDIENTE'
+  ) INTO hay_no_pendiente;
+
+  -- 1) Anulación: si cambia a ANULADO
+  IF NEW.estado = 'ANULADO' AND OLD.estado IS DISTINCT FROM 'ANULADO' THEN
+    IF hay_no_pendiente THEN
+      RAISE EXCEPTION
+        'No se puede ANULAR la venta %: existen cuotas con estado diferente a PENDIENTE.',
+        OLD.factura_nro;
     END IF;
 
-    -- Si antes o ahora es CREDITO, hay/puede haber cuentas
-    IF OLD.condicion_venta = 'CREDITO' OR NEW.condicion_venta = 'CREDITO' THEN
-        -- Bloqueo si existe cualquier cuota con estado <> PENDIENTE
-        SELECT EXISTS(
-            SELECT 1 FROM public.cuentas_a_cobrar
-            WHERE id_venta = OLD.id_venta
-              AND estado <> 'PENDIENTE'
-        ) INTO hay_pagos;
+    DELETE FROM public.cuentas_a_cobrar WHERE id_venta = OLD.id_venta;
+    RETURN NEW;
+  END IF;
 
-        IF hay_pagos THEN
-            RAISE EXCEPTION 'No se puede modificar la venta %: existen cuotas con pagos registrados.', OLD.id_venta;
-        END IF;
+  -- 2) Cualquier otra modificación: bloquear si hay cuotas no pendientes
+  IF hay_no_pendiente THEN
+    RAISE EXCEPTION
+      'No se puede modificar la venta %: existen cuotas con estado diferente a PENDIENTE.',
+      OLD.factura_nro;
+  END IF;
 
-        -- Eliminar todas las cuotas actuales de la venta
-        DELETE FROM public.cuentas_a_cobrar WHERE id_venta = OLD.id_venta;
+  -- 3) Manejo de transiciones y regeneración
+  cambio_parametros := (NEW.fecha_venta     IS DISTINCT FROM OLD.fecha_venta)
+                    OR (NEW.total           IS DISTINCT FROM OLD.total)
+                    OR (NEW.cantidad_cuota  IS DISTINCT FROM OLD.cantidad_cuota)
+                    OR (NEW.intervalo       IS DISTINCT FROM OLD.intervalo)
+                    OR (NEW.id_cliente      IS DISTINCT FROM OLD.id_cliente);
 
-        -- Regenerar si NUEVA condición es CREDITO
-        IF NEW.condicion_venta = 'CREDITO' THEN
-            PERFORM public._generar_ctas_cobrar_core(
-                NEW.id_cliente, NEW.id_venta, NEW.fecha_venta,
-                NEW.total, NEW.cantidad_cuota, NEW.intervalo
-            );
-        END IF;
-    END IF;
+  -- 3.a) CONTADO -> CREDITO : insertar CxC
+  IF (OLD.condicion_venta <> 'CREDITO') AND (NEW.condicion_venta = 'CREDITO') THEN
+    -- por si existiera algo residual, limpiamos
+    DELETE FROM public.cuentas_a_cobrar WHERE id_venta = OLD.id_venta;
+
+    PERFORM public._generar_ctas_cobrar_core(
+      NEW.id_cliente, NEW.id_venta, NEW.fecha_venta,
+      NEW.total, NEW.cantidad_cuota, NEW.intervalo
+    );
 
     RETURN NEW;
+  END IF;
+
+  -- 3.b) CREDITO -> CONTADO : eliminar CxC
+  IF (OLD.condicion_venta = 'CREDITO') AND (NEW.condicion_venta <> 'CREDITO') THEN
+    DELETE FROM public.cuentas_a_cobrar WHERE id_venta = OLD.id_venta;
+    RETURN NEW;
+  END IF;
+
+  -- 3.c) Sigue en CREDITO y cambian parámetros: regenerar CxC
+  IF (NEW.condicion_venta = 'CREDITO') AND cambio_parametros THEN
+    DELETE FROM public.cuentas_a_cobrar WHERE id_venta = OLD.id_venta;
+
+    PERFORM public._generar_ctas_cobrar_core(
+      NEW.id_cliente, NEW.id_venta, NEW.fecha_venta,
+      NEW.total, NEW.cantidad_cuota, NEW.intervalo
+    );
+  END IF;
+
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_ctas_cobrar
+DROP TRIGGER IF EXISTS trg_ventas_ctascobrar_guardas ON public.ventas;
+
+CREATE TRIGGER trg_ventas_ctascobrar_guardas
 BEFORE UPDATE ON public.ventas
 FOR EACH ROW
-EXECUTE PROCEDURE public.actualizar_ctas_cobrar();
+EXECUTE PROCEDURE public.trg_ventas_ctascobrar_guardas();
 
 -- Funcion Para Borrar 
 CREATE OR REPLACE FUNCTION public.borrar_ctas_cobrar()

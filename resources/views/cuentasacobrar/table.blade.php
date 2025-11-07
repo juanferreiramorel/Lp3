@@ -1,37 +1,53 @@
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table" id="productos-table">
+            <table class="table table-hover" id="cuentas-table">
                 <thead>
                     <tr>
-                        <th>N°</th>
-                        <th>Cliente</th>
+                        <th>#</th>
                         <th>N° de Factura</th>
+                        <th>Cliente</th>
                         <th>Fecha de Venta</th>
                         <th>Monto Total</th>
-                        <th>Estado</th>
-                        <th>Fecha de Vencimiento</th>
-                        <th>N° Cuotas</th>
+                        <th>Total Cuotas</th>
+                        <th>Cuotas Pendientes</th>
+                        <th>Cuotas Pagadas</th>
+                        <th>Rango Vencimientos</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($cuentasacobrar as $fila)
-                        <tr>
-                            <td>{{ $fila->nro_cuenta }}</td>
-                            <td>{{ $fila->cliente }}</td>
+                        <tr class="factura-row" style="cursor: pointer;">
+                            <td>{{ $fila->id_venta }}</td>
                             <td>{{ $fila->factura_nro }}</td>
+                            <td>{{ $fila->cliente }}</td>
                             <td>{{ \Carbon\Carbon::parse($fila->fecha_venta)->format('d/m/Y') }}</td>
-                            <td>{{ number_format($fila->importe?? 0, 0, ',', '.') }}</td>
+                            <td>{{ number_format($fila->monto_total ?? 0, 0, ',', '.') }}</td>
+                            <td>{{ $fila->total_cuotas }}</td>
                             <td>
-                            @if ($fila->estado == 'PENDIENTE')
-                                <span class="badge badge-warning">{{ $fila->estado  }}</span>
-                            @else
-                                <span class="badge ">{{ $fila->estado  }}</span>
-                            @endif
-                            
+                                @if ($fila->cuotas_pendientes > 0)
+                                    <span class="badge badge-warning">{{ $fila->cuotas_pendientes }}</span>
+                                @else
+                                    <span class="badge badge-secondary">0</span>
+                                @endif
                             </td>
-
-                            <td>{{ \Carbon\Carbon::parse($fila->vencimiento)->format('d/m/Y') }}</td>
-                            <td>{{ $fila->nro_cuotas }}</td>
+                            <td>
+                                @if ($fila->cuotas_pagadas > 0)
+                                    <span class="badge badge-success">{{ $fila->cuotas_pagadas }}</span>
+                                @else
+                                    <span class="badge badge-secondary">0</span>
+                                @endif
+                            </td>
+                            <td>
+                                {{ \Carbon\Carbon::parse($fila->primer_vencimiento)->format('d/m/Y') }}
+                                -
+                                {{ \Carbon\Carbon::parse($fila->ultimo_vencimiento)->format('d/m/Y') }}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info btn-ver-detalle" data-id-venta="{{ $fila->id_venta }}" data-factura="{{ $fila->factura_nro }}">
+                                    <i class="fas fa-eye"></i> Ver Detalle
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
