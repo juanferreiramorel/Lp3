@@ -10,6 +10,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class MarcaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:marcas index')->only(['index']);
+        $this->middleware('permission:marcas create')->only(['create', 'store']);
+        $this->middleware('permission:marcas edit')->only(['edit', 'update']);
+        $this->middleware('permission:marcas destroy')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         // Obtener el término de búsqueda

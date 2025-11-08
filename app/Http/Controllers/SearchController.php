@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\View;
 
 class SearchController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:search index')->only(['index']);
+    }
+
     public function index(Request $request)
     {
         $q = trim($request->input('q', ''));

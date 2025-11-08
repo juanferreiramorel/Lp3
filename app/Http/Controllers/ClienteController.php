@@ -12,6 +12,15 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class ClienteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:clientes index')->only(['index']);
+        $this->middleware('permission:clientes create')->only(['create', 'store']);
+        $this->middleware('permission:clientes edit')->only(['edit', 'update']);
+        $this->middleware('permission:clientes destroy')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         // Buscar

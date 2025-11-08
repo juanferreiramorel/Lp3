@@ -10,6 +10,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProveedorController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:proveedores index')->only(['index']);
+        $this->middleware('permission:proveedores create')->only(['create', 'store']);
+        $this->middleware('permission:proveedores edit')->only(['edit', 'update']);
+        $this->middleware('permission:proveedores destroy')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         // Obtener el término de búsqueda

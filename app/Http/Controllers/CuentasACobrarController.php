@@ -17,7 +17,9 @@ class CuentasACobrarController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:cuentasacobrar index')->only(['index']);
+        $this->middleware('permission:cuentasacobrar index')->only(['index', 'detalle', 'obtenerHistorialCobros']);
+        $this->middleware('permission:cuentasacobrar create')->only(['cobrar']);
+        $this->middleware('permission:cuentasacobrar destroy')->only(['anularCobro']);
     }
     public function index(Request $request)
     {

@@ -15,6 +15,12 @@ class ReporteController extends Controller
     {
         // validar que el usuario este autenticado
         $this->middleware('auth');
+        $this->middleware('permission:cargos index')->only(['rpt_cargos']);
+        $this->middleware('permission:clientes index')->only(['rpt_clientes']);
+        $this->middleware('permission:proveedores index')->only(['rpt_proveedores']);
+        $this->middleware('permission:productos index')->only(['rpt_productos']);
+        $this->middleware('permission:sucursales index')->only(['rpt_sucursales']);
+        $this->middleware('permission:ventas index')->only(['rpt_ventas']);
     } 
     public function rpt_cargos(Request $request)
     {

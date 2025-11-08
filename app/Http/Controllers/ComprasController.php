@@ -11,6 +11,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ComprasController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:compras index')->only(['index', 'show']);
+        $this->middleware('permission:compras create')->only(['create', 'store', 'buscarProducto', 'crearDesdeOrden']);
+        $this->middleware('permission:compras edit')->only(['edit', 'update']);
+        $this->middleware('permission:compras destroy')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         $input = $request->all();

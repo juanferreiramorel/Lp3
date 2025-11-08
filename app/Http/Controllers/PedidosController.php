@@ -12,6 +12,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class PedidosController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:pedidos index')->only(['index', 'show', 'pdf', 'getPendientes']);
+        $this->middleware('permission:pedidos create')->only(['create', 'store', 'buscarProducto']);
+        $this->middleware('permission:pedidos edit')->only(['edit', 'update']);
+        $this->middleware('permission:pedidos destroy')->only(['destroy']);
+    }
+
     /** LISTADO */
     public function index(Request $request)
     {

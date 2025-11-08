@@ -10,6 +10,15 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class OrdenCompraController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:ordencompra index')->only(['index', 'show', 'getPendientes']);
+        $this->middleware('permission:ordencompra create')->only(['create', 'store', 'buscarProducto']);
+        $this->middleware('permission:ordencompra edit')->only(['edit', 'update']);
+        $this->middleware('permission:ordencompra destroy')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

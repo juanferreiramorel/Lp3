@@ -10,6 +10,13 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class PagoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:pagos index')->only(['index']);
+        $this->middleware('permission:pagos create')->only(['store']);
+    }
+
     public function index(Request $request)
     {
         // recibir parametros id compra y buscar las compras asociadas

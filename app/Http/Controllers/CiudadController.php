@@ -13,6 +13,15 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class CiudadController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:ciudades index')->only(['index']);
+        $this->middleware('permission:ciudades create')->only(['create', 'store']);
+        $this->middleware('permission:ciudades edit')->only(['edit', 'update']);
+        $this->middleware('permission:ciudades destroy')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         // buscar

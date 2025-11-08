@@ -10,6 +10,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class SucursalController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:sucursales index')->only(['index']);
+        $this->middleware('permission:sucursales create')->only(['create', 'store']);
+        $this->middleware('permission:sucursales edit')->only(['edit', 'update']);
+        $this->middleware('permission:sucursales destroy')->only(['destroy']);
+    }
+
     public function index(Request $request){
        // Obtener el término de búsqueda
        $buscar = $request->get('buscar');

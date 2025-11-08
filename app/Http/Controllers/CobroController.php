@@ -10,6 +10,13 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class CobroController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:cobros index')->only(['index']);
+        $this->middleware('permission:cobros create')->only(['store']);
+    }
+
     public function index(Request $request)
     {
         // recibir parametros id venta y buscar las ventas asociadas

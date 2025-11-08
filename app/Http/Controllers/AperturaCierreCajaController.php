@@ -14,7 +14,10 @@ class AperturaCierreCajaController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // colocar los permisos
+        $this->middleware('permission:aperturacierrecaja index')->only(['index']);
+        $this->middleware('permission:aperturacierrecaja create')->only(['create', 'store']);
+        $this->middleware('permission:aperturacierrecaja edit')->only(['edit', 'update', 'cerrar_caja', 'editCierre']);
+        $this->middleware('permission:aperturacierrecaja destroy')->only(['destroy']);
     }
 
     public function store(Request $request)

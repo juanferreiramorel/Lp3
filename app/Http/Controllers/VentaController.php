@@ -22,8 +22,8 @@ class VentaController extends Controller
         // validar que el usuario este autenticado
         $this->middleware('auth');
         // validar permisos para cada accion
-        $this->middleware('permission:ventas index')->only(['index']);
-        $this->middleware('permission:ventas create')->only(['create', 'store']);
+        $this->middleware('permission:ventas index')->only(['index', 'show', 'imprimir-factura', 'factura']);
+        $this->middleware('permission:ventas create')->only(['create', 'store', 'buscarProducto', 'crearDesdePedido']);
         $this->middleware('permission:ventas edit')->only(['edit', 'update']);
         $this->middleware('permission:ventas destroy')->only(['destroy']);
     } 
