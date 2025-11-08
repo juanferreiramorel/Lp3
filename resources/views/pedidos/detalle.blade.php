@@ -58,8 +58,7 @@
 
                                 <td class="text-center" style="width: 20%">
                                     <input class="text-center form-control precio-input" type="text" name="precio[]"
-                                        style="text-align: center" value="{!! number_format($value->precio_unitario, 0, ',', '.') !!}"
-                                        @if(isset($pedido) && ($pedido->estado == 'PROCESADO' || $pedido->estado == 'CANCELADO')) readonly @endif>
+                                        style="text-align: center" value="{!! number_format($value->precio_unitario, 0, ',', '.') !!}">
                                 </td>
 
                                 <td class="text-center">

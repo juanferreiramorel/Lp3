@@ -15,6 +15,37 @@ class OrdenCompraController extends Controller
      */
     public function index(Request $request)
     {
+        $input = $request->all();
+        $sql_filtros = '';
+
+        // FILTRO POR RANGO DE FECHAS
+        if (!empty($input['fecha_desde']) && !empty($input['fecha_hasta'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND oc.fecha_orden BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
+        } elseif (!empty($input['fecha_desde'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $sql_filtros .= " AND oc.fecha_orden >= '{$fecha_desde}'";
+        } elseif (!empty($input['fecha_hasta'])) {
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND oc.fecha_orden <= '{$fecha_hasta}'";
+        }
+
+        // FILTRO POR PROVEEDOR
+        if (!empty($input['id_proveedor'])) {
+            $sql_filtros .= " AND oc.id_proveedor = " . (int)$input['id_proveedor'];
+        }
+
+        // FILTRO POR ESTADO
+        if (!empty($input['estado'])) {
+            $sql_filtros .= " AND oc.estado = '" . $input['estado'] . "'";
+        }
+
+        // FILTRO POR SUCURSAL
+        if (!empty($input['id_sucursal'])) {
+            $sql_filtros .= " AND oc.id_sucursal = " . (int)$input['id_sucursal'];
+        }
+
         $buscar = $request->buscar;
         $porPagina = 10;
         $page = $request->input('page', 1);
@@ -27,7 +58,7 @@ class OrdenCompraController extends Controller
                       LEFT JOIN sucursales s ON oc.id_sucursal = s.id_sucursal";
 
         // Condiciones de búsqueda
-        $where = "WHERE 1=1";
+        $where = "WHERE 1=1" . $sql_filtros;
         $params = [];
 
         if ($buscar) {
@@ -73,7 +104,19 @@ class OrdenCompraController extends Controller
             return view('ordencompra.table', compact('ordenesCompra', 'page', 'totalPages', 'total'));
         }
 
-        return view('ordencompra.index', compact('ordenesCompra', 'page', 'totalPages', 'total'));
+        // Obtener datos para los filtros
+        $proveedores = DB::table('proveedores')
+            ->pluck('descripcion', 'id_proveedor');
+        $sucursales = DB::table('sucursales')
+            ->pluck('descripcion', 'id_sucursal');
+        $estados = [
+            'PENDIENTE' => 'Pendiente',
+            'APROBADA' => 'Aprobada',
+            'RECHAZADA' => 'Rechazada',
+            'PROCESADO' => 'Procesado'
+        ];
+
+        return view('ordencompra.index', compact('ordenesCompra', 'page', 'totalPages', 'total', 'proveedores', 'sucursales', 'estados'));
     }
 
     /**

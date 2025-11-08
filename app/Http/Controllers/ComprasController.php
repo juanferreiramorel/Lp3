@@ -13,8 +13,43 @@ class ComprasController extends Controller
 {
     public function index(Request $request)
     {
+        $input = $request->all();
+        $sql_filtros = '';
+
+        // FILTRO POR RANGO DE FECHAS
+        if (!empty($input['fecha_desde']) && !empty($input['fecha_hasta'])) {
+            // Ambas fechas proporcionadas
+            $fecha_desde = $input['fecha_desde'];
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND c.fecha_compra BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
+        } elseif (!empty($input['fecha_desde'])) {
+            // Solo fecha desde (mayor o igual)
+            $fecha_desde = $input['fecha_desde'];
+            $sql_filtros .= " AND c.fecha_compra >= '{$fecha_desde}'";
+        } elseif (!empty($input['fecha_hasta'])) {
+            // Solo fecha hasta (menor o igual)
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND c.fecha_compra <= '{$fecha_hasta}'";
+        }
+
+        // FILTRO POR PROVEEDOR
+        if (!empty($input['id_proveedor'])) {
+            $sql_filtros .= " AND c.id_proveedor = " . (int)$input['id_proveedor'];
+        }
+
+        // FILTRO POR CONDICIÓN DE COMPRA
+        if (!empty($input['condicion_compra'])) {
+            $sql_filtros .= " AND c.condicion_compra = '" . $input['condicion_compra'] . "'";
+        }
+
+        // FILTRO POR SUCURSAL
+        if (!empty($input['id_sucursal'])) {
+            $sql_filtros .= " AND c.id_sucursal = " . (int)$input['id_sucursal'];
+        }
+
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $sql_busqueda = 'WHERE 1=1';
 
         // Construir consulta con filtros de búsqueda por todos los campos visibles
         if ($buscar) {
@@ -27,42 +62,31 @@ class ComprasController extends Controller
             // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
             $buscarMonto = str_replace('.', '', $buscar);
 
-            $compras = DB::select(
-                "SELECT c.*,
-                        p.descripcion AS proveedor,
-                        u.name        AS usuario,
-                        s.descripcion AS sucursal
-                   FROM compras c
-              LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
-              LEFT JOIN users u       ON c.user_id = u.id
-              LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
-                   WHERE cast(c.id_compra as text) ILIKE ?
-                   OR cast(c.fecha_compra as text) ILIKE ?
-                   OR TO_CHAR(c.fecha_compra, 'DD/MM/YYYY') ILIKE ?
-                   OR c.condicion_compra ILIKE ?
-                   OR c.factura ILIKE ?
-                   OR p.descripcion ILIKE ?
-                   OR cast(c.id_proveedor as text) ILIKE ?
-                   OR u.name ILIKE ?
-                   OR c.estado ILIKE ?
-                   OR cast(c.total as text) ILIKE ?
-                   OR TO_CHAR(c.total, 'FM999G999G999G999G999') ILIKE ?
-                   ORDER BY c.fecha_compra DESC, c.id_compra DESC",
-                ['%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarMonto . '%', '%' . $buscar . '%']
-            );
-        } else {
-            $compras = DB::select(
-                "SELECT c.*,
-                        p.descripcion AS proveedor,
-                        u.name        AS usuario,
-                        s.descripcion AS sucursal
-                   FROM compras c
-              LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
-              LEFT JOIN users u       ON c.user_id = u.id
-              LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
-                   ORDER BY c.fecha_compra DESC, c.id_compra DESC"
-            );
+            $sql_busqueda = "WHERE (cast(c.id_compra as text) ILIKE '%{$buscar}%'
+                   OR cast(c.fecha_compra as text) ILIKE '%{$buscarFecha}%'
+                   OR TO_CHAR(c.fecha_compra, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
+                   OR c.condicion_compra ILIKE '%{$buscar}%'
+                   OR c.factura ILIKE '%{$buscar}%'
+                   OR p.descripcion ILIKE '%{$buscar}%'
+                   OR cast(c.id_proveedor as text) ILIKE '%{$buscar}%'
+                   OR u.name ILIKE '%{$buscar}%'
+                   OR c.estado ILIKE '%{$buscar}%'
+                   OR cast(c.total as text) ILIKE '%{$buscarMonto}%'
+                   OR TO_CHAR(c.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%')";
         }
+
+        $compras = DB::select(
+            "SELECT c.*,
+                    p.descripcion AS proveedor,
+                    u.name        AS usuario,
+                    s.descripcion AS sucursal
+               FROM compras c
+          LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
+          LEFT JOIN users u       ON c.user_id = u.id
+          LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
+               {$sql_busqueda} {$sql_filtros}
+               ORDER BY c.fecha_compra DESC, c.id_compra DESC"
+        );
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -89,7 +113,12 @@ class ComprasController extends Controller
             return view('compras.table')->with('compras', $compras);
         }
 
-        return view('compras.index', compact('compras'));
+        // Obtener datos para los filtros
+        $proveedores = DB::table('proveedores')->selectRaw("id_proveedor, descripcion")->pluck('descripcion', 'id_proveedor');
+        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $condiciones_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
+
+        return view('compras.index', compact('compras', 'proveedores', 'sucursales', 'condiciones_compra'));
     }
     
     public function create()
@@ -230,6 +259,15 @@ class ComprasController extends Controller
 
                 // stock += cantidad
                 $this->increaseStock((int)$codigo, $cant, $idSucursal);
+            }
+
+            // Si la compra se creó desde una orden, actualizar el estado y vincular
+            if (!empty($input['id_orden_compra'])) {
+                DB::update('UPDATE ordenes_compra SET estado = ?, id_compra = ? WHERE id_orden_compra = ?', [
+                    'PROCESADO',
+                    $idCompra,
+                    $input['id_orden_compra']
+                ]);
             }
 
             DB::commit();
@@ -565,6 +603,84 @@ class ComprasController extends Controller
                 $newQty = max(0, ((int)$row->cantidad) - $cantidad);
                 DB::table('stocks')->where('id_producto', $idProducto)->update(['cantidad' => $newQty]);
             }
+        }
+    }
+
+    /**
+     * Crear compra desde orden de compra
+     */
+    public function crearDesdeOrden($id)
+    {
+        try {
+            // Obtener la orden de compra
+            $orden = DB::selectOne('SELECT * FROM ordenes_compra WHERE id_orden_compra = ?', [$id]);
+
+            if (empty($orden)) {
+                Alert::error('Error', 'Orden de compra no encontrada');
+                return redirect()->route('compras.index');
+            }
+
+            // Validar que la orden esté PENDIENTE o APROBADA
+            if (!in_array($orden->estado, ['PENDIENTE', 'APROBADA'])) {
+                Alert::warning('Advertencia', 'Solo se pueden procesar órdenes en estado PENDIENTE o APROBADA');
+                return redirect()->route('compras.index');
+            }
+
+            // Obtener los detalles de la orden
+            $detalles = DB::select(
+                "SELECT d.id_producto, d.cantidad, d.precio_unitario, p.descripcion
+                 FROM detalle_orden_compra d
+                 JOIN productos p ON d.id_producto = p.id_producto
+                 WHERE d.id_orden_compra = ?",
+                [$id]
+            );
+
+            // Datos para la vista
+            $proveedores = $this->kvProveedores();
+            $usuario = auth()->user()->name ?? '';
+            $user_id = auth()->id();
+            $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+
+            $condicion_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
+            $intervalo = [
+                '7'  => '7 Días',
+                '15' => '15 Días',
+                '30' => '30 Días'
+            ];
+
+            $cantidad_cuotas = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $cantidad_cuotas[(string)$i] = (string)$i;
+            }
+
+            // Crear objeto compra simulado con datos de la orden
+            $compra = new \stdClass();
+            $compra->id_proveedor = $orden->id_proveedor;
+            $compra->id_sucursal = $orden->id_sucursal;
+            $compra->total = $orden->total_orden;
+            $compra->fecha_compra = \Carbon\Carbon::now()->format('Y-m-d');
+            $compra->factura = null;
+            $compra->condicion_compra = 'CONTADO';
+            $compra->intervalo = null;
+            $compra->cantidad_cuotas = null;
+
+            return view('compras.create', compact(
+                'orden',
+                'detalles',
+                'compra',
+                'proveedores',
+                'usuario',
+                'user_id',
+                'sucursales',
+                'condicion_compra',
+                'intervalo',
+                'cantidad_cuotas'
+            ))->with('desde_orden', true);
+
+        } catch (\Throwable $e) {
+            Log::error('Error al crear compra desde orden: ' . $e->getMessage());
+            Alert::error('Error', 'Error al procesar la orden: ' . $e->getMessage());
+            return redirect()->route('compras.index');
         }
     }
 }

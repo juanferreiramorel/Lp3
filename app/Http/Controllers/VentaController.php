@@ -29,7 +29,42 @@ class VentaController extends Controller
     } 
     public function index(Request $request)
     {
+        $input = $request->all();
+        $sql_filtros = '';
+
+        // FILTRO POR RANGO DE FECHAS
+        if (!empty($input['fecha_desde']) && !empty($input['fecha_hasta'])) {
+            // Ambas fechas proporcionadas
+            $fecha_desde = $input['fecha_desde'];
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND v.fecha_venta BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
+        } elseif (!empty($input['fecha_desde'])) {
+            // Solo fecha desde (mayor o igual)
+            $fecha_desde = $input['fecha_desde'];
+            $sql_filtros .= " AND v.fecha_venta >= '{$fecha_desde}'";
+        } elseif (!empty($input['fecha_hasta'])) {
+            // Solo fecha hasta (menor o igual)
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND v.fecha_venta <= '{$fecha_hasta}'";
+        }
+
+        // FILTRO POR CLIENTE
+        if (!empty($input['id_cliente'])) {
+            $sql_filtros .= " AND v.id_cliente = " . (int)$input['id_cliente'];
+        }
+
+        // FILTRO POR CONDICIÓN DE VENTA
+        if (!empty($input['condicion_venta'])) {
+            $sql_filtros .= " AND v.condicion_venta = '" . $input['condicion_venta'] . "'";
+        }
+
+        // FILTRO POR SUCURSAL
+        if (!empty($input['id_sucursal'])) {
+            $sql_filtros .= " AND v.id_sucursal = " . (int)$input['id_sucursal'];
+        }
+
         $buscar = $request->get('buscar');
+        $sql_busqueda = 'WHERE 1=1';
 
         if ($buscar) {
             // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
@@ -41,50 +76,29 @@ class VentaController extends Controller
             // Limpiar separadores de miles para búsqueda de montos
             $buscarMonto = str_replace('.', '', $buscar);
 
-            $ventas = DB::select(
-                "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
-                users.name as usuario
-                FROM ventas v
-                    JOIN clientes c ON v.id_cliente = c.id_cliente
-                    JOIN users ON v.user_id = users.id
-                WHERE CAST(v.id_venta AS TEXT) iLIKE ?
-                OR CAST(c.clie_nombre AS TEXT) iLIKE ?
-                OR CAST(c.clie_apellido AS TEXT) iLIKE ?
-                OR CAST(v.factura_nro AS TEXT) iLIKE ?
-                OR CAST(c.clie_ci AS TEXT) iLIKE ?
-                OR CAST(v.fecha_venta AS TEXT) ILIKE ?
-                OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE ?
-                OR v.condicion_venta ILIKE ?
-                OR CAST(v.total AS TEXT) ILIKE ?
-                OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE ?
-                OR users.name ILIKE ?
-                OR v.estado ILIKE ?
-                ORDER BY v.fecha_venta DESC",
-                [
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscarFecha . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscarMonto . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%'
-                ]
-            );
-        } else{
-            $ventas = DB::select(
-                "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
+            $sql_busqueda = "WHERE (CAST(v.id_venta AS TEXT) iLIKE '%{$buscar}%'
+                OR CAST(c.clie_nombre AS TEXT) iLIKE '%{$buscar}%'
+                OR CAST(c.clie_apellido AS TEXT) iLIKE '%{$buscar}%'
+                OR CAST(v.factura_nro AS TEXT) iLIKE '%{$buscar}%'
+                OR CAST(c.clie_ci AS TEXT) iLIKE '%{$buscar}%'
+                OR CAST(v.fecha_venta AS TEXT) ILIKE '%{$buscarFecha}%'
+                OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
+                OR v.condicion_venta ILIKE '%{$buscar}%'
+                OR CAST(v.total AS TEXT) ILIKE '%{$buscarMonto}%'
+                OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
+                OR users.name ILIKE '%{$buscar}%'
+                OR v.estado ILIKE '%{$buscar}%')";
+        }
+
+        $ventas = DB::select(
+            "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
-            order by v.fecha_venta desc"
-            );
-        }
+            {$sql_busqueda} {$sql_filtros}
+            ORDER BY v.fecha_venta DESC"
+        );
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -119,14 +133,29 @@ class VentaController extends Controller
 
         // Validar que el usuario no tenga una caja abierta en la fecha actual
         $caja_abierta = DB::selectOne(
-            "SELECT * FROM apertura_cierre_cajas 
+            "SELECT * FROM apertura_cierre_cajas
             WHERE user_id = ? AND estado = 'ABIERTA'",
             [auth()->user()->id]
         );
 
+        // OBTENER DATOS PARA COMBOS DE FILTROS
+        $clientes = DB::table('clientes')
+            ->selectRaw("id_cliente, concat(clie_nombre,' ', clie_apellido) as cliente")
+            ->pluck('cliente', 'id_cliente');
+
+        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+
+        $condiciones_venta = [
+            'CONTADO' => 'CONTADO',
+            'CREDITO' => 'CREDITO'
+        ];
+
         return view('ventas.index')->with('ventas', $ventas)
             ->with('cajas', $caja)
-            ->with('caja_abierta', $caja_abierta);
+            ->with('caja_abierta', $caja_abierta)
+            ->with('clientes', $clientes)
+            ->with('sucursales', $sucursales)
+            ->with('condiciones_venta', $condiciones_venta);
     }
 
     public function create()

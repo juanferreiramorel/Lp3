@@ -9,6 +9,9 @@
         <a class="btn btn-primary float-right" href="{{ route('compras.create') }}">
           <i class="fas fa-plus"></i> Nueva Compra
         </a>
+        <a class="btn btn-info float-right mr-2" data-toggle="modal" data-target="#modalOrdenes" href="#">
+          <i class="fas fa-file-invoice"></i> Incluir Orden de Compra
+        </a>
       </div>
     </div>
   </div>
@@ -17,12 +20,16 @@
 <div class="content px-3">
   @include('sweetalert::alert')
 
-  <div class="clearfix">
-    @includeIf('layouts.buscador', ['url' => url()->current()])
-  </div>
+  @includeIf('compras.filtros', [
+      'proveedores' => $proveedores,
+      'sucursales' => $sucursales,
+      'condiciones_compra' => $condiciones_compra
+  ])
 
   <div class="card tabla-container">
     @include('compras.table')
   </div>
 </div>
+
+@includeIf('compras.modal_ordenes')
 @endsection

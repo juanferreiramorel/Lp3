@@ -43,6 +43,8 @@ Route::resource('clientes', App\Http\Controllers\ClienteController::class);
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);
 Route::resource('pedidos', App\Http\Controllers\PedidosController::class);
+// Rutas específicas de compras (ANTES del resource)
+Route::get('compras/crear-desde-orden/{id}', [App\Http\Controllers\ComprasController::class, 'crearDesdeOrden'])->name('compras.crearDesdeOrden');
 Route::resource('compras', App\Http\Controllers\ComprasController::class);
 // Rutas específicas de órdenes de compra (ANTES del resource)
 Route::get('ordencompra/pendientes', [App\Http\Controllers\OrdenCompraController::class, 'getPendientes'])->name('ordencompra.getPendientes');

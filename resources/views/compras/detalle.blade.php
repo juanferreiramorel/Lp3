@@ -32,9 +32,9 @@
                         </tr>
                     </thead>
                     <tbody id="selectedProducts">
-                        <!-- Los productos seleccionados se agregarán aquí --> 
+                        <!-- Los productos seleccionados se agregarán aquí -->
 
-                        <!-- si la funcion es editar preguntamos si existe la variable $detalle_pedido -->
+                        <!-- si la funcion es editar o viene desde orden, mostramos los productos -->
                         @if (isset($detalles))
                             @foreach ($detalles as $value)
                             <tr>
@@ -46,24 +46,31 @@
                                     <input type="text" class="form-control" name="producto[]" readonly
                                         placeholder="Buscar productos" value="{!! $value->descripcion !!}">
                                     {!! Form::hidden('id_producto[]', $value->id_producto) !!}
-                                    {!! Form::hidden('id_det_compra[]', $value->id_detalle_compra) !!}
+                                    @if(isset($value->id_detalle_compra))
+                                        {!! Form::hidden('id_det_compra[]', $value->id_detalle_compra) !!}
+                                    @endif
                                 </td>
-                            
+
                                 <td class="text-center">
-                                    <input class="text-center form-control" type="number" min="1" name="cantidad[]" readonly
+                                    <input class="text-center form-control cantidad-input" type="number" min="1" name="cantidad[]"
                                         style="text-align: center" value="{!! $value->cantidad !!}">
                                 </td>
-                            
+
                                 <td class="text-center" style="width: 20%">
-                                    <input class="text-center form-control" type="text" name="precio_unitario[]" readonly
+                                    <input class="text-center form-control precio-input" type="text" name="precio_unitario[]"
                                         style="text-align: center" value="{!! number_format($value->precio_unitario, 0, ',', '.') !!}">
                                 </td>
-                            
+
                                 <td class="text-center">
-                                    <input class="text-center form-control" type="text" name="subtotal[]" readonly
+                                    <input class="text-center form-control subtotal-input" type="text" name="subtotal[]" readonly
                                         value="{!! number_format($value->precio_unitario * $value->cantidad, 0, ',', '.') !!}" style="text-align: center">
                                 </td>
-                            
+
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         @endif

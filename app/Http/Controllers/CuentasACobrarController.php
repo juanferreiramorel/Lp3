@@ -21,8 +21,44 @@ class CuentasACobrarController extends Controller
     }
     public function index(Request $request)
     {
+        $input = $request->all();
+        $sql_filtros = '';
+
+        // FILTRO POR RANGO DE FECHAS
+        if (!empty($input['fecha_desde']) && !empty($input['fecha_hasta'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND v.fecha_venta BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
+        } elseif (!empty($input['fecha_desde'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $sql_filtros .= " AND v.fecha_venta >= '{$fecha_desde}'";
+        } elseif (!empty($input['fecha_hasta'])) {
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND v.fecha_venta <= '{$fecha_hasta}'";
+        }
+
+        // FILTRO POR CLIENTE
+        if (!empty($input['id_cliente'])) {
+            $sql_filtros .= " AND v.id_cliente = " . (int)$input['id_cliente'];
+        }
+
+        // FILTRO POR SUCURSAL
+        if (!empty($input['id_sucursal'])) {
+            $sql_filtros .= " AND v.id_sucursal = " . (int)$input['id_sucursal'];
+        }
+
+        // FILTRO POR ESTADO DE CUOTAS
+        if (!empty($input['estado_cuota'])) {
+            if ($input['estado_cuota'] == 'PENDIENTE') {
+                $sql_filtros .= " AND EXISTS (SELECT 1 FROM cuentas_a_cobrar WHERE id_venta = v.id_venta AND estado = 'PENDIENTE')";
+            } elseif ($input['estado_cuota'] == 'VENCIDO') {
+                $sql_filtros .= " AND EXISTS (SELECT 1 FROM cuentas_a_cobrar WHERE id_venta = v.id_venta AND estado = 'PENDIENTE' AND vencimiento < CURRENT_DATE)";
+            }
+        }
+
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
+        $sql_busqueda = 'WHERE v.condicion_venta = \'CREDITO\' AND v.estado != \'ANULADO\' AND v.estado != \'PAGADO\'';
 
         // Agrupar por factura para mostrar el resumen
         if (!empty($buscar)) {
@@ -35,66 +71,38 @@ class CuentasACobrarController extends Controller
             // Limpiar separadores de miles para búsqueda de montos
             $buscarMonto = str_replace('.', '', $buscar);
 
-            $cuentasacobrar = DB::select(
-                'SELECT
-                    v.id_venta,
-                    v.factura_nro,
-                    CONCAT(clie_nombre,\' \',clie_apellido) AS cliente,
-                    v.fecha_venta,
-                    v.total AS monto_total,
-                    COUNT(ca.id_cta) AS total_cuotas,
-                    SUM(CASE WHEN ca.estado = \'PENDIENTE\' THEN 1 ELSE 0 END) AS cuotas_pendientes,
-                    SUM(CASE WHEN ca.estado = \'PAGADO\' THEN 1 ELSE 0 END) AS cuotas_pagadas,
-                    MIN(ca.vencimiento) AS primer_vencimiento,
-                    MAX(ca.vencimiento) AS ultimo_vencimiento
-                FROM ventas v
-                JOIN clientes USING(id_cliente)
-                JOIN cuentas_a_cobrar ca USING(id_venta)
-                WHERE v.condicion_venta = \'CREDITO\'
+            $sql_busqueda = "WHERE v.condicion_venta = 'CREDITO'
+                AND v.estado != 'ANULADO' AND v.estado != 'PAGADO'
                 AND (
-                    v.factura_nro ILIKE ?
-                    OR CONCAT(clie_nombre,\' \',clie_apellido) ILIKE ?
-                    OR clie_ci ILIKE ?
-                    OR cast(v.fecha_venta as text) ILIKE ?
-                    OR TO_CHAR(v.fecha_venta, \'DD/MM/YYYY\') ILIKE ?
-                    OR cast(v.total as text) ILIKE ?
-                    OR TO_CHAR(v.total, \'FM999G999G999G999G999\') ILIKE ?
-                )
-                AND v.estado != \'ANULADO\' AND v.estado != \'PAGADO\'
-                GROUP BY v.id_venta, v.factura_nro, cliente, v.fecha_venta, v.total
-                ORDER BY v.fecha_venta DESC',
-                [
-                    '%' . $buscar . '%',      // factura_nro
-                    '%' . $buscar . '%',      // cliente
-                    '%' . $buscar . '%',      // clie_ci
-                    '%' . $buscarFecha . '%', // fecha_venta (formato BD)
-                    '%' . $buscar . '%',      // fecha_venta (formato DD/MM/YYYY)
-                    '%' . $buscarMonto . '%', // total (sin separadores)
-                    '%' . $buscar . '%'       // total (con separadores)
-                ]
-            );
-        } else {
-            $cuentasacobrar = DB::select(
-                'SELECT
-                    v.id_venta,
-                    v.factura_nro,
-                    CONCAT(clie_nombre,\' \',clie_apellido) AS cliente,
-                    v.fecha_venta,
-                    v.total AS monto_total,
-                    COUNT(ca.id_cta) AS total_cuotas,
-                    SUM(CASE WHEN ca.estado = \'PENDIENTE\' THEN 1 ELSE 0 END) AS cuotas_pendientes,
-                    SUM(CASE WHEN ca.estado = \'PAGADO\' THEN 1 ELSE 0 END) AS cuotas_pagadas,
-                    MIN(ca.vencimiento) AS primer_vencimiento,
-                    MAX(ca.vencimiento) AS ultimo_vencimiento
-                FROM ventas v
-                JOIN clientes USING(id_cliente)
-                JOIN cuentas_a_cobrar ca USING(id_venta)
-                WHERE v.condicion_venta = \'CREDITO\'
-                AND v.estado != \'ANULADO\' AND v.estado != \'PAGADO\'
-                GROUP BY v.id_venta, v.factura_nro, cliente, v.fecha_venta, v.total
-                ORDER BY v.fecha_venta DESC'
-            );
+                    v.factura_nro ILIKE '%{$buscar}%'
+                    OR CONCAT(clie_nombre,' ',clie_apellido) ILIKE '%{$buscar}%'
+                    OR clie_ci ILIKE '%{$buscar}%'
+                    OR cast(v.fecha_venta as text) ILIKE '%{$buscarFecha}%'
+                    OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
+                    OR cast(v.total as text) ILIKE '%{$buscarMonto}%'
+                    OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
+                )";
         }
+
+        $cuentasacobrar = DB::select(
+            "SELECT
+                v.id_venta,
+                v.factura_nro,
+                CONCAT(clie_nombre,' ',clie_apellido) AS cliente,
+                v.fecha_venta,
+                v.total AS monto_total,
+                COUNT(ca.id_cta) AS total_cuotas,
+                SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS cuotas_pendientes,
+                SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END) AS cuotas_pagadas,
+                MIN(ca.vencimiento) AS primer_vencimiento,
+                MAX(ca.vencimiento) AS ultimo_vencimiento
+            FROM ventas v
+            JOIN clientes USING(id_cliente)
+            JOIN cuentas_a_cobrar ca USING(id_venta)
+            {$sql_busqueda} {$sql_filtros}
+            GROUP BY v.id_venta, v.factura_nro, cliente, v.fecha_venta, v.total
+            ORDER BY v.fecha_venta DESC"
+        );
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -125,9 +133,20 @@ class CuentasACobrarController extends Controller
         // Obtener métodos de pago para el modal de cobro
         $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
 
+        // Obtener datos para los filtros
+        $clientes = DB::table('clientes')->selectRaw("id_cliente, CONCAT(clie_nombre, ' ', clie_apellido) as cliente")->pluck('cliente', 'id_cliente');
+        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $estados_cuota = [
+            'PENDIENTE' => 'Pendiente',
+            'VENCIDO' => 'Vencido'
+        ];
+
         return view('cuentasacobrar.index')
             ->with('cuentasacobrar', $cuentasacobrar)
-            ->with('metodos_pago', $metodos_pago);
+            ->with('metodos_pago', $metodos_pago)
+            ->with('clientes', $clientes)
+            ->with('sucursales', $sucursales)
+            ->with('estados_cuota', $estados_cuota);
     }
 
     public function detalle($id_venta)

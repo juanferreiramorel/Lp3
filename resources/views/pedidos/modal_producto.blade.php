@@ -71,7 +71,7 @@
                 <td><input type="text" name="codigo[]" class="form-control" value="${codigo}" readonly></td>
                 <td><input type="text" name="producto[]" class="form-control" value="${producto}" readonly></td>
                 <td><input type="number" name="cantidad[]" class="text-center form-control" value="1" min="1" oninput="calcularSubtotal(this)"></td>
-                <td><input type="text" name="precio[]" class="text-center form-control" value="${formatMoney(precio, 0)}" readonly></td>
+                <td><input type="text" name="precio[]" class="text-center form-control precio-input" value="${formatMoney(precio, 0)}" oninput="calcularSubtotal(this)"></td>
                 <td><input type="text" name="subtotal[]" class="text-center form-control" value="${formatMoney(precio, 0)}" readonly></td>
                 <td><button type="button" class="btn btn-danger" onclick="borrar(this)"><i class="far fa-trash-alt"></i></button></td>
             `;

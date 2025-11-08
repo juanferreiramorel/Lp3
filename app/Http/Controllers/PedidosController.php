@@ -15,10 +15,40 @@ class PedidosController extends Controller
     /** LISTADO */
     public function index(Request $request)
     {
-        // Obtener el término de búsqueda
-        $buscar = $request->get('buscar');
+        $input = $request->all();
+        $sql_filtros = '';
+        $params = [];
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
+        // FILTRO POR RANGO DE FECHAS
+        if (!empty($input['fecha_desde']) && !empty($input['fecha_hasta'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND p.fecha_pedido BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
+        } elseif (!empty($input['fecha_desde'])) {
+            $fecha_desde = $input['fecha_desde'];
+            $sql_filtros .= " AND p.fecha_pedido >= '{$fecha_desde}'";
+        } elseif (!empty($input['fecha_hasta'])) {
+            $fecha_hasta = $input['fecha_hasta'];
+            $sql_filtros .= " AND p.fecha_pedido <= '{$fecha_hasta}'";
+        }
+
+        // FILTRO POR CLIENTE
+        if (!empty($input['id_cliente'])) {
+            $sql_filtros .= " AND p.id_cliente = " . (int)$input['id_cliente'];
+        }
+
+        // FILTRO POR ESTADO
+        if (!empty($input['estado'])) {
+            $sql_filtros .= " AND p.estado = '" . $input['estado'] . "'";
+        }
+
+        // FILTRO POR SUCURSAL
+        if (!empty($input['id_sucursal'])) {
+            $sql_filtros .= " AND p.id_sucursal = " . (int)$input['id_sucursal'];
+        }
+
+        // BÚSQUEDA POR TEXTO GENERAL
+        $buscar = $request->get('buscar');
         if ($buscar) {
             // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
             $buscarFecha = $buscar;
@@ -26,55 +56,58 @@ class PedidosController extends Controller
                 $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
             }
 
-            // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
+            // Limpiar separadores de miles para búsqueda de montos
             $buscarMonto = str_replace('.', '', $buscar);
 
-            $pedidos = DB::select(
-                "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
-                        u.name AS usuario
-                   FROM pedidos p
-                   JOIN clientes c ON p.id_cliente = c.id_cliente
-                   JOIN users u ON p.id_usuario = u.id
-                   WHERE cast(p.id_pedido as text) ILIKE ?
-                   OR c.clie_ci ILIKE ?
-                   OR CONCAT(c.clie_nombre,' ', c.clie_apellido) ILIKE ?
-                   OR cast(p.fecha_pedido as text) ILIKE ?
-                   OR TO_CHAR(p.fecha_pedido, 'DD/MM/YYYY') ILIKE ?
-                   OR cast(p.total_pedido as text) ILIKE ?
-                   OR TO_CHAR(p.total_pedido, 'FM999G999G999G999G999') ILIKE ?
-                   OR u.name ILIKE ?
-                   OR p.estado ILIKE ?
-                   ORDER BY p.fecha_pedido DESC",
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscarMonto . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
-        } else {
-            $pedidos = DB::select(
-                "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
-                        u.name AS usuario
-                   FROM pedidos p
-                   JOIN clientes c ON p.id_cliente = c.id_cliente
-                   JOIN users u ON p.id_usuario = u.id
-                   ORDER BY p.fecha_pedido DESC"
-            );
+            $sql_filtros .= " AND (
+                cast(p.id_pedido as text) ILIKE '%{$buscar}%'
+                OR c.clie_ci ILIKE '%{$buscar}%'
+                OR CONCAT(c.clie_nombre,' ', c.clie_apellido) ILIKE '%{$buscar}%'
+                OR cast(p.fecha_pedido as text) ILIKE '%{$buscarFecha}%'
+                OR TO_CHAR(p.fecha_pedido, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
+                OR cast(p.total_pedido as text) ILIKE '%{$buscarMonto}%'
+                OR TO_CHAR(p.total_pedido, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
+                OR u.name ILIKE '%{$buscar}%'
+                OR p.estado ILIKE '%{$buscar}%'
+            )";
         }
 
-        // Definimos los valores de paginación
-        $page = $request->input('page', 1);   // página actual (por defecto 1)
-        $perPage = 10;                        // cantidad de registros por página
-        $total = count($pedidos);            // total de registros
+        // Construir WHERE
+        $where = "WHERE 1=1" . $sql_filtros;
 
-        // Cortamos el array para solo devolver los registros de la página actual
-        $items = array_slice($pedidos, ($page - 1) * $perPage, $perPage);
+        // Query base
+        $queryBase = "FROM pedidos p
+                      JOIN clientes c ON p.id_cliente = c.id_cliente
+                      JOIN users u ON p.id_usuario = u.id";
 
-        // Creamos el paginador manualmente
+        // Contar total de registros
+        $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
+        $totalResult = DB::select($totalQuery);
+        $total = $totalResult[0]->total;
+
+        // Paginación
+        $page = $request->input('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        // Obtener registros paginados
+        $query = "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
+                         u.name AS usuario
+                  {$queryBase} {$where}
+                  ORDER BY p.fecha_pedido DESC
+                  LIMIT {$perPage} OFFSET {$offset}";
+
+        $pedidos = DB::select($query);
+
+        // Crear paginador manual
         $pedidos = new LengthAwarePaginator(
-            $items,        // registros de esta página
-            $total,        // total de registros
-            $perPage,      // registros por página
-            $page,         // página actual
+            $pedidos,
+            $total,
+            $perPage,
+            $page,
             [
-                'path'  => $request->url(),     // mantiene la ruta base
-                'query' => $request->query(),   // mantiene parámetros como "buscar"
+                'path'  => $request->url(),
+                'query' => $request->query(),
             ]
         );
 
@@ -83,7 +116,19 @@ class PedidosController extends Controller
             return view('pedidos.table')->with('pedidos', $pedidos);
         }
 
-        return view('pedidos.index')->with('pedidos', $pedidos);
+        // Obtener datos para los filtros
+        $clientes = DB::table('clientes')
+            ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
+            ->pluck('cliente', 'id_cliente');
+        $sucursales = DB::table('sucursales')
+            ->pluck('descripcion', 'id_sucursal');
+        $estados = [
+            'PENDIENTE' => 'Pendiente',
+            'PROCESADO' => 'Procesado',
+            'CANCELADO' => 'Cancelado'
+        ];
+
+        return view('pedidos.index', compact('pedidos', 'clientes', 'sucursales', 'estados'));
     }
 
     /** CREAR */

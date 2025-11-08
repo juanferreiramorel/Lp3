@@ -22,9 +22,11 @@
 
         @include('sweetalert::alert')
 
-        <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
-        </div>
+        @includeIf('pedidos.filtros', [
+            'clientes' => $clientes,
+            'sucursales' => $sucursales,
+            'estados' => $estados
+        ])
 
         <div class="card tabla-container">
             @include('pedidos.table')

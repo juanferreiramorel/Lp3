@@ -15,9 +15,11 @@
 
         @include('sweetalert::alert')
 
-        <div class="clearfix">
-           @includeIf('layouts.buscador', ['url' => url()->current()])
-        </div>
+        @includeIf('cuentasacobrar.filtros', [
+            'clientes' => $clientes,
+            'sucursales' => $sucursales,
+            'estados_cuota' => $estados_cuota
+        ])
 
         <!-- agregar la clase tabla-container para mostrar los valores filtrados de table-->
         <div class="card tabla-container">

@@ -63,9 +63,11 @@
         @include('adminlte-templates::common.errors')
         @include('sweetalert::alert')
 
-        <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
-        </div>
+        @includeIf('ventas.filtros', [
+            'clientes' => $clientes,
+            'sucursales' => $sucursales,
+            'condiciones_venta' => $condiciones_venta
+        ])
 
         <div class="card tabla-container">
             @include('ventas.table')
