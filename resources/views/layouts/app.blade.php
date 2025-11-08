@@ -46,6 +46,12 @@
     </head>
     
     <body class="hold-transition sidebar-mini layout-fixed text-sm">
+        @php
+            $helpTopicsForRoute = ($helpTopicsForRoute ?? collect());
+            $hasHelpTopics = $helpTopicsForRoute->isNotEmpty();
+            $firstHelpTopic = $hasHelpTopics ? $helpTopicsForRoute->first() : null;
+            $helpTopicsCount = $helpTopicsForRoute->count();
+        @endphp
         <div class="wrapper">
 
             <!-- NAVBAR -->
@@ -79,6 +85,16 @@
 
                 <!-- Right -->
                 <ul class="navbar-nav ml-auto align-items-center">
+
+                    @if ($hasHelpTopics)
+                        <li class="nav-item d-none d-sm-inline-block">
+                            <button class="nav-link btn btn-link p-0" type="button"
+                                    data-toggle="modal" data-target="#helpTopicModal"
+                                    aria-label="Abrir ayuda">
+                                <i class="fas fa-question-circle"></i>
+                            </button>
+                        </li>
+                    @endif
 
                     <!-- Fullscreen -->
                     <li class="nav-item d-none d-sm-inline-block">
@@ -146,10 +162,17 @@
                     <b>Versión</b> {{ config('app.version', '3.1.0') }}
                 </div>
                 <strong>&copy; {{ now()->year }} {{ config('app.name', 'Aplicación') }}.</strong> Todos los derechos reservados.
-            </footer>
-        </div>
+        </footer>
+    </div>
 
-        <!-- REQUIRED SCRIPTS (Cargar primero jQuery y Bootstrap) -->
+    @include('components.help-modal', [
+        'hasHelpTopics' => $hasHelpTopics,
+        'helpTopicsCount' => $helpTopicsCount,
+        'helpTopicsForRoute' => $helpTopicsForRoute,
+        'firstHelpTopic' => $firstHelpTopic,
+    ])
+
+    <!-- REQUIRED SCRIPTS (Cargar primero jQuery y Bootstrap) -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
         <!-- AdminLTE App -->

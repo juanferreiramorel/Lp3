@@ -1,5 +1,5 @@
 @php
-    $isReportOpen = Request::is('reporte-*');
+    $isReportOpen = Request::is('reporte-*') || Request::is('auditoria*'); ;
     $isConfigOpen = Request::is('users*')
         || Request::is('cargos*')
         || Request::is('departamentos*')
@@ -9,14 +9,15 @@
         || Request::is('marcas*')
         || Request::is('permissions*')
         || Request::is('cajas*')
-        || Request::is('roles*');
+        || Request::is('roles*')
+        || Request::is('ayuda*');
 @endphp
 
 {{-- Productos --}}
 @can('productos index')
 <li class="nav-item">
     <a href="{{ route('productos.index') }}" class="nav-link {{ Request::is('productos*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-box"></i>
+        <i class="nav-icon fas fa-box-open"></i>
         <p>Productos</p>
     </a>
 </li>
@@ -26,7 +27,7 @@
 @can('ventas index')
 <li class="nav-item">
     <a href="{{ route('ventas.index') }}" class="nav-link {{ Request::is('ventas*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-shopping-basket"></i>
+        <i class="nav-icon fas fa-receipt"></i>
         <p>Ventas</p>
     </a>
 </li>
@@ -35,27 +36,27 @@
 @can('cuentasacobrar index')
 <li class="nav-item">
     <a href="{{ route('cuentasacobrar.index') }}" class="nav-link {{ Request::is('cuentasacobrar*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-money-bill-wave"></i>
+        <i class="nav-icon fas fa-file-invoice-dollar"></i>
         <p>Cuentas A Cobrar</p>
     </a>
 </li>
 @endcan
 
 {{-- Ordenes De Compra --}}
-{{-- @can('ordenesdecompra index') --}}
+@can('ordencompra index')
 <li class="nav-item">
     <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordenesdecompra*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-shopping-basket"></i>
+        <i class="nav-icon fas fa-file-signature"></i>
         <p>Ordenes De Compra</p>
     </a>
 </li>
-{{-- @endcan --}}
+@endcan
 
 {{-- Pedidos --}}
 @can('pedidos index')
 <li class="nav-item">
     <a href="{{ route('pedidos.index') }}" class="nav-link {{ Request::is('pedidos*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-shopping-cart"></i>
+        <i class="nav-icon fas fa-clipboard-check"></i>
         <p>Pedidos</p>
     </a>
 </li>
@@ -65,7 +66,7 @@
 @can('compras index')
 <li class="nav-item">
     <a href="{{ route('compras.index') }}" class="nav-link {{ Request::is('compras*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-shopping-bag"></i>
+        <i class="nav-icon fas fa-cart-arrow-down"></i>
         <p>Compras</p>
     </a>
 </li>
@@ -75,7 +76,7 @@
 @can('clientes index')
 <li class="nav-item">
     <a href="{{ route('clientes.index') }}" class="nav-link {{ Request::is('clientes*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-users"></i>
+        <i class="nav-icon fas fa-user-friends"></i>
         <p>Clientes</p>
     </a>
 </li>
@@ -84,7 +85,7 @@
 {{-- Reportes --}}
 <li class="nav-item {{ $isReportOpen ? 'menu-is-opening menu-open' : '' }}">
     <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-chart-bar"></i>
+        <i class="nav-icon fas fa-chart-pie"></i>
         <p>
             Reportes
             <i class="right fas fa-angle-left"></i>
@@ -94,7 +95,7 @@
         @can('cargos index')
         <li class="nav-item">
             <a href="{{ url('reporte-cargos') }}" class="nav-link {{ Request::is('reporte-cargos*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-address-card"></i>
+                <i class="nav-icon fas fa-id-badge"></i>
                 <p>Reporte cargos</p>
             </a>
         </li>
@@ -102,7 +103,7 @@
         @can('auditoria index')
         <li class="nav-item">
             <a href="{{ url('auditoria') }}" class="nav-link {{ Request::is('auditoria*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-lock"></i>
+                <i class="nav-icon fas fa-user-secret"></i>
                 <p>Auditoria</p>
             </a>
         </li>
@@ -110,7 +111,7 @@
         @can('clientes index')
         <li class="nav-item">
             <a href="{{ url('reporte-clientes') }}" class="nav-link {{ Request::is('reporte-clientes*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-users"></i>
+                <i class="nav-icon fas fa-user-check"></i>
                 <p>Reporte clientes</p>
             </a>
         </li>
@@ -118,7 +119,7 @@
         @can('proveedores index')
         <li class="nav-item">
             <a href="{{ url('reporte-proveedores') }}" class="nav-link {{ Request::is('reporte-proveedores*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-archive"></i>
+                <i class="nav-icon fas fa-truck-loading"></i>
                 <p>Reporte proveedores</p>
             </a>
         </li>
@@ -126,7 +127,7 @@
         @can('productos index')
         <li class="nav-item">
             <a href="{{ url('reporte-productos') }}" class="nav-link {{ Request::is('reporte-productos*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-box"></i>
+                <i class="nav-icon fas fa-boxes"></i>
                 <p>Reporte productos</p>
             </a>
         </li>
@@ -134,7 +135,7 @@
         @can('sucursales index')
         <li class="nav-item">
             <a href="{{ url('reporte-sucursales') }}" class="nav-link {{ Request::is('reporte-sucursales*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-building"></i>
+                <i class="nav-icon fas fa-store-alt"></i>
                 <p>Reporte sucursales</p>
             </a>
         </li>
@@ -142,7 +143,7 @@
         @can('ventas index')
         <li class="nav-item">
             <a href="{{ url('reporte-ventas') }}" class="nav-link {{ Request::is('reporte-ventas*') ? 'active' : '' }}">
-                <i class="fas fa-shopping-cart"></i>
+                <i class="nav-icon fas fa-chart-line"></i>
                 <p>Reporte ventas</p>
             </a>
         </li>
@@ -153,7 +154,7 @@
 {{-- Configuraciones --}}
 <li class="nav-item {{ $isConfigOpen ? 'menu-is-opening menu-open' : '' }}">
     <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-cogs"></i>
+        <i class="nav-icon fas fa-tools"></i>
         <p>
             Configuraciones
             <i class="right fas fa-angle-left"></i>
@@ -163,7 +164,7 @@
         @can('departamentos index')
         <li class="nav-item">
             <a href="{{ route('departamentos.index') }}" class="nav-link {{ Request::is('departamentos*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-align-justify"></i>
+                <i class="nav-icon fas fa-layer-group"></i>
                 <p>Departamentos</p>
             </a>
         </li>
@@ -171,7 +172,7 @@
         @can('ciudades index')
         <li class="nav-item">
             <a href="{{ route('ciudades.index') }}" class="nav-link {{ Request::is('ciudades*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-address-book"></i>
+                <i class="nav-icon fas fa-city"></i>
                 <p>Ciudades</p>
             </a>
         </li>
@@ -179,7 +180,7 @@
         @can('sucursales index')
         <li class="nav-item">
             <a href="{{ route('sucursales.index') }}" class="nav-link {{ Request::is('sucursales*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-building"></i>
+                <i class="nav-icon fas fa-store"></i>
                 <p>Sucursales</p>
             </a>
         </li>
@@ -205,7 +206,7 @@
         @can('cargos index')
         <li class="nav-item">
             <a href="{{ route('cargos.index') }}" class="nav-link {{ Request::is('cargos*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-address-card"></i>
+                <i class="nav-icon fas fa-id-card-alt"></i>
                 <p>Cargos</p>
             </a>
         </li>
@@ -214,7 +215,7 @@
         @can('marcas index')
         <li class="nav-item">
             <a href="{{ route('marcas.index') }}" class="nav-link {{ Request::is('marcas*') ? 'active' : '' }}">
-                <i class="nav-icon fa fa-tag"></i>
+                <i class="nav-icon fas fa-tags"></i>
                 <p>Marcas</p>
             </a>
         </li>
@@ -222,7 +223,7 @@
         @can('proveedores index')
         <li class="nav-item">
             <a href="{{ route('proveedores.index') }}" class="nav-link {{ Request::is('proveedores*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-archive"></i>
+                <i class="nav-icon fas fa-truck"></i>
                 <p>Proveedores</p>
             </a>
         </li>
@@ -231,7 +232,7 @@
         @can('users index')
         <li class="nav-item">
             <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-users"></i>
+                <i class="nav-icon fas fa-user-cog"></i>
                 <p>Usuarios</p>
             </a>
         </li>
@@ -251,6 +252,15 @@
             <a href="{{ route('roles.index') }}" class="nav-link {{ Request::is('roles*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-user-tag"></i>
                 <p>Roles</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('ayuda index')
+        <li class="nav-item">
+            <a href="{{ route('ayuda.index') }}" class="nav-link {{ Request::is('ayuda*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-question-circle"></i>
+                <p>Ayuda (PDF)</p>
             </a>
         </li>
         @endcan

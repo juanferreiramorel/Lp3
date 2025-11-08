@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ComprasController;
+use App\Http\Controllers\HelpTopicController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,10 @@ Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);
 Route::resource('cobros', App\Http\Controllers\CobroController::class);
 Route::resource('pagos', App\Http\Controllers\PagoController::class);
+Route::get('ayuda/{ayuda}/archivo', [HelpTopicController::class, 'file'])->name('ayuda.pdf');
+Route::resource('ayuda', HelpTopicController::class)
+    ->names('ayuda')
+    ->parameters(['ayuda' => 'ayuda']);
 // Rutas específicas para cuentas a cobrar (ANTES del resource)
 Route::get('cuentasacobrar/{id}/detalle', [App\Http\Controllers\CuentasACobrarController::class, 'detalle'])->name('cuentasacobrar.detalle');
 Route::post('cuentasacobrar/{id}/cobrar', [App\Http\Controllers\CuentasACobrarController::class, 'cobrar'])->name('cuentasacobrar.cobrar');
