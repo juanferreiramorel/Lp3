@@ -51,11 +51,8 @@ class CuentasACobrarController extends Controller
 
         // FILTRO POR ESTADO DE CUOTAS
         if (!empty($input['estado_cuota'])) {
-            if ($input['estado_cuota'] == 'PENDIENTE') {
-                $sql_filtros .= " AND EXISTS (SELECT 1 FROM cuentas_a_cobrar WHERE id_venta = v.id_venta AND estado = 'PENDIENTE')";
-            } elseif ($input['estado_cuota'] == 'VENCIDO') {
-                $sql_filtros .= " AND EXISTS (SELECT 1 FROM cuentas_a_cobrar WHERE id_venta = v.id_venta AND estado = 'PENDIENTE' AND vencimiento < CURRENT_DATE)";
-            }
+            $extracondition = $input['estado_cuota']=='VENCIDO' ? "AND estado = 'PENDIENTE' AND vencimiento < CURRENT_DATE" : "AND estado = '".$input['estado_cuota']."'";
+            $sql_filtros .= " AND EXISTS (SELECT 1 FROM cuentas_a_cobrar WHERE id_venta = v.id_venta ".$extracondition.")";
         }
 
         // Obtener el término de búsqueda del request
@@ -139,8 +136,9 @@ class CuentasACobrarController extends Controller
         $clientes = DB::table('clientes')->selectRaw("id_cliente, CONCAT(clie_nombre, ' ', clie_apellido) as cliente")->pluck('cliente', 'id_cliente');
         $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
         $estados_cuota = [
-            'PENDIENTE' => 'Pendiente',
-            'VENCIDO' => 'Vencido'
+            'PENDIENTE' => 'PENDIENTE',
+            'VENCIDO' => 'VENCIDO',
+            'PAGADO' => 'PAGADO'
         ];
 
         return view('cuentasacobrar.index')
@@ -166,7 +164,7 @@ class CuentasACobrarController extends Controller
                 CASE
                     WHEN ca.estado = \'PAGADO\' THEN \'PAGADO\'
                     WHEN ca.estado = \'PARCIAL\' THEN \'PARCIAL\'
-                    WHEN ca.estado = \'PENDIENTE\' AND ca.vencimiento < CURRENT_DATE THEN \'VENCIDA\'
+                    WHEN ca.estado = \'PENDIENTE\' AND ca.vencimiento < CURRENT_DATE THEN \'VENCIDO\'
                     ELSE ca.estado
                 END AS estado_actual
             FROM cuentas_a_cobrar ca

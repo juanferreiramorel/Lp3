@@ -129,9 +129,9 @@ class AuditoriaController extends Controller
         $sucursales = DB::table('sucursales')
             ->pluck('descripcion', 'id_sucursal');
         $operaciones = [
-            'INSERT' => 'INSERT',
-            'UPDATE' => 'UPDATE',
-            'DELETE' => 'DELETE'
+            'AGREGA' => 'AGREGA',
+            'MODIFICA' => 'MODIFICA',
+            'ELIMINA' => 'ELIMINA'
         ];
         // Obtener tablas únicas del log de auditoría
         $tablas = DB::table('audit.log')

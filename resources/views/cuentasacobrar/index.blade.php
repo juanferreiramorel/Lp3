@@ -245,8 +245,8 @@
                                 'data-saldo="' + item.saldo + '" ' +
                                 'data-vencimiento="' + fechaFormateada + '">' +
                                 '<i class="fas fa-dollar-sign"></i> Pagar</button>';
-                        } else if (estadoMostrar === 'VENCIDA') {
-                            estadoBadge = '<span class="badge badge-danger">VENCIDA</span>';
+                        } else if (estadoMostrar === 'VENCIDO') {
+                            estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                             botonPagar = '<button class="btn btn-sm btn-warning btn-cobrar-cuenta" ' +
                                 'data-id-cta="' + item.nro_cuenta + '" ' +
                                 'data-nro-cuota="' + item.nro_cuota + '" ' +
@@ -376,8 +376,8 @@
                                     'data-saldo="' + item.saldo + '" ' +
                                     'data-vencimiento="' + fechaFormateada + '">' +
                                     '<i class="fas fa-dollar-sign"></i> Pagar</button>';
-                            } else if (estadoMostrar === 'VENCIDA') {
-                                estadoBadge = '<span class="badge badge-danger">VENCIDA</span>';
+                            } else if (estadoMostrar === 'VENCIDO') {
+                                estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                                 botonPagar = '<button class="btn btn-sm btn-warning btn-cobrar-cuenta" ' +
                                     'data-id-cta="' + item.nro_cuenta + '" ' +
                                     'data-nro-cuota="' + item.nro_cuota + '" ' +
