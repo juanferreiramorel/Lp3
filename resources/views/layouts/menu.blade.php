@@ -152,6 +152,18 @@
 </li>
 
 {{-- Configuraciones --}}
+@if(auth()->user()->can('departamentos index') ||
+    auth()->user()->can('ciudades index') ||
+    auth()->user()->can('sucursales index') ||
+    auth()->user()->can('stock index') ||
+    auth()->user()->can('cajas index') ||
+    auth()->user()->can('cargos index') ||
+    auth()->user()->can('marcas index') ||
+    auth()->user()->can('proveedores index') ||
+    auth()->user()->can('users index') ||
+    auth()->user()->can('permissions index') ||
+    auth()->user()->can('roles index') ||
+    auth()->user()->can('ayuda index'))
 <li class="nav-item {{ $isConfigOpen ? 'menu-is-opening menu-open' : '' }}">
     <a href="#" class="nav-link">
         <i class="nav-icon fas fa-tools"></i>
@@ -266,3 +278,4 @@
         @endcan
     </ul>
 </li>
+@endif

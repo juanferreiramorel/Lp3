@@ -441,25 +441,22 @@
             @endif
 
             <!-- Login form -->
-            <form method="POST" action="{{ url('/login') }}">
+            <form method="POST" action="{{ url('/login') }}" novalidate>
                 @csrf
 
-                <!-- Email -->
+                <!-- Nombre de Usuario -->
                 <div class="form-group">
                     <div class="input-wrapper">
                         <input
-                            type="email"
+                            type="text"
                             name="email"
                             value="{{ old('email') }}"
-                            placeholder="Correo electrónico"
-                            class="form-control @error('email') is-invalid @enderror"
+                            placeholder="Nombre de usuario"
+                            class="form-control"
                             autofocus
                         >
-                        <i class="fas fa-envelope input-icon"></i>
+                        <i class="fas fa-user input-icon"></i>
                     </div>
-                    @error('email')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <!-- Password -->
@@ -470,6 +467,8 @@
                             name="password"
                             placeholder="Contraseña"
                             class="form-control @error('password') is-invalid @enderror"
+                            autocomplete="current-password"
+                            required
                         >
                         <i class="fas fa-lock input-icon"></i>
                     </div>

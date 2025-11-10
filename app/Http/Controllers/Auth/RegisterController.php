@@ -48,11 +48,36 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $messages = [
+            'name.required'                  => 'El nombre es obligatorio.',
+            'email.required'                 => 'El nombre de usuario es obligatorio.',
+            'email.alpha_dash'               => 'El nombre de usuario solo puede contener letras, numeros, guiones y guiones bajos.',
+            'email.min'                      => 'El nombre de usuario debe tener al menos :min caracteres.',
+            'email.max'                      => 'El nombre de usuario no puede tener mas de :max caracteres.',
+            'email.unique'                   => 'El nombre de usuario ya esta registrado.',
+            'password.required'              => 'La contrasena es obligatoria.',
+            'password.min'                   => 'La contrasena debe tener al menos :min caracteres.',
+            'password.confirmed'             => 'Las contrasenas no coinciden.',
+            'password_confirmation.required' => 'Debe confirmar la contrasena.',
+        ];
+
+        $attributes = [
+            'name'                  => 'nombre',
+            'password'              => 'contrasena',
+            'password_confirmation' => 'confirmacion de contrasena',
+        ];
+
+        return Validator::make(
+            $data,
+            [
+                'name'                  => ['required', 'string', 'max:255'],
+                'email'              => ['required', 'string', 'alpha_dash', 'min:3', 'max:32', 'unique:users,email'],
+                'password'              => ['required', 'string', 'min:8', 'confirmed'],
+                'password_confirmation' => ['required'],
+            ],
+            $messages,
+            $attributes
+        );
     }
 
     /**

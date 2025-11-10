@@ -420,7 +420,7 @@
             @endif
 
             <!-- Register form -->
-            <form method="POST" action="{{ route('register') }}">
+            <form method="POST" action="{{ route('register') }}" novalidate>
                 @csrf
 
                 <!-- Nombre -->
@@ -433,6 +433,8 @@
                             placeholder="Nombre completo"
                             class="form-control @error('name') is-invalid @enderror"
                             autofocus
+                            autocomplete="name"
+                            required
                         >
                         <i class="fas fa-user input-icon"></i>
                     </div>
@@ -441,17 +443,18 @@
                     @enderror
                 </div>
 
-                <!-- Email -->
+                <!-- Nombre de Usuario -->
                 <div class="form-group">
                     <div class="input-wrapper">
                         <input
-                            type="email"
+                            type="text"
                             name="email"
                             value="{{ old('email') }}"
-                            placeholder="Correo electrónico"
+                            placeholder="Nombre de usuario"
                             class="form-control @error('email') is-invalid @enderror"
+                            required
                         >
-                        <i class="fas fa-envelope input-icon"></i>
+                        <i class="fas fa-user-circle input-icon"></i>
                     </div>
                     @error('email')
                         <span class="invalid-feedback">{{ $message }}</span>
@@ -466,6 +469,8 @@
                             name="password"
                             placeholder="Contraseña"
                             class="form-control @error('password') is-invalid @enderror"
+                            autocomplete="new-password"
+                            required
                         >
                         <i class="fas fa-lock input-icon"></i>
                     </div>
@@ -481,10 +486,15 @@
                             type="password"
                             name="password_confirmation"
                             placeholder="Confirmar contraseña"
-                            class="form-control"
+                            class="form-control @error('password_confirmation') is-invalid @enderror"
+                            autocomplete="new-password"
+                            required
                         >
                         <i class="fas fa-lock input-icon"></i>
                     </div>
+                    @error('password_confirmation')
+                        <span class="invalid-feedback">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Submit button -->

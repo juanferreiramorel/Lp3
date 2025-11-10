@@ -7,8 +7,6 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Laracasts\Flash\Flash;
 
 class LoginController extends Controller
 {
@@ -45,55 +43,50 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
-         ##campos del formulario
-        $input = $request->all();
+        // Validar entradas y generar mensajes claros para la vista
+        $credentials = $request->validate(
+            [
+                'email'    => ['required', 'string'],
+                'password' => ['required', 'string'],
+            ],
+            [
+                'email.required'    => 'El nombre de usuario es obligatorio.',
+                'password.required' => 'La contrasena es obligatoria.',
+            ]
+        );
 
+        // Bloquear inicio de sesion si el usuario esta inactivo
+        $inactiveUser = DB::selectOne(
+            'SELECT * FROM users WHERE email = ? AND cast(estado as integer) = 0',
+            [$credentials['email']]
+        );
 
-        ##validacion de campos recibidos
-        $validacion = Validator::make($request->all(), [
-            'email'    => 'required',
-            'password' => 'required',
-        ], [
-            'email.required'    => 'El campo email es obligatorio.',
-            'password.required' => 'El campo password es obligatorio.',
-        ]);
-
-        // si la validacion falla
-        if ($validacion->fails()) {
-            return redirect('/login')
-                ->withErrors($validacion)
-                ->withInput();
-        }
-        ##credenciales
-        $credenciales = [
-            'email'    => $input['email'],
-            'password' => $input['password']
-        ];
-
-        ##autenticacion estado
-        $usuario = DB::selectOne('SELECT * FROM users WHERE email = ? AND cast(estado as integer) = 0', [$input['email']]);
-
-        // si el usuario esta inactivo
-        if (!empty($usuario)) {
-            Flash::info('El usuario se encuentra inactivo.');
-            return redirect('/')->withInput();
+        if (!empty($inactiveUser)) {
+            return back()
+                ->withErrors(['email' => 'El usuario se encuentra inactivo.'])
+                ->withInput($request->except('password'));
         }
 
-        // intento de autenticacion con las credenciales recibidas
-        if (Auth::attempt($credenciales)) {
-            return redirect()->to($this->redirectTo);
-        } else {
-            Flash::info('El correo electrónico y/o la contraseña no son correctos.
-            Por favor, intentá de nuevo.');
-            return redirect('/login')->withInput();
+        // Intentar autenticacion y regenerar la sesion por seguridad
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+
+            return redirect()->intended($this->redirectTo);
         }
 
+        return back()
+            ->withErrors([
+                'email' => 'El nombre de usuario y/o la contrasena no son correctos. Por favor, intentalo de nuevo.',
+            ])
+            ->withInput($request->except('password'));
     }
 
     public function logout(Request $request)
     {
         // matar sesion
         Auth::logout();
+
         return redirect('/');
     }
 }
+

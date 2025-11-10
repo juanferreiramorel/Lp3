@@ -91,7 +91,7 @@
                             <button class="nav-link btn btn-link p-0" type="button"
                                     data-toggle="modal" data-target="#helpTopicModal"
                                     aria-label="Abrir ayuda">
-                                <i class="fas fa-question-circle"></i>
+                                <i class="fas fa-question-circle"></i> Ayuda 
                             </button>
                         </li>
                     @endif
