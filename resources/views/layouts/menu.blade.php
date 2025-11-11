@@ -42,6 +42,16 @@
 </li>
 @endcan
 
+{{-- Cuentas A Pagar --}}
+@can('cuentasapagar index')
+<li class="nav-item">
+    <a href="{{ route('cuentasapagar.index') }}" class="nav-link {{ Request::is('cuentasapagar*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-hand-holding-usd"></i>
+        <p>Cuentas A Pagar</p>
+    </a>
+</li>
+@endcan
+
 {{-- Ordenes De Compra --}}
 @can('ordencompra index')
 <li class="nav-item">

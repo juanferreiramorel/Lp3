@@ -17,7 +17,7 @@ class CuentasACobrarController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:cuentasacobrar index')->only(['index', 'detalle', 'obtenerHistorialCobros']);
+        $this->middleware('permission:cuentasacobrar index')->only(['index', 'detalle', 'obtenerHistorialCobros', 'imprimirRecibo']);
         $this->middleware('permission:cuentasacobrar create')->only(['cobrar']);
         $this->middleware('permission:cuentasacobrar destroy')->only(['anularCobro']);
     }
@@ -287,10 +287,14 @@ class CuentasACobrarController extends Controller
 
             DB::commit();
 
+            // Obtener el ID del cobro recién insertado
+            $id_cobro = DB::selectOne('SELECT MAX(id_cobro) as id FROM cobros WHERE id_cta = ?', [$id_cta])->id;
+
             return response()->json([
                 'success' => true,
                 'message' => $mensaje,
-                'es_pago_completo' => $monto >= $cuenta->importe
+                'es_pago_completo' => $monto >= $cuenta->importe,
+                'id_cobro' => $id_cobro
             ]);
 
         } catch (\Exception $e) {
@@ -418,6 +422,62 @@ class CuentasACobrarController extends Controller
                 'success' => false,
                 'message' => 'Error al anular el cobro: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function imprimirRecibo($id_cobro)
+    {
+        try {
+            // Obtener datos del cobro con toda la información relacionada
+            $cobro = DB::selectOne(
+                'SELECT
+                    c.id_cobro,
+                    c.cobro_fecha,
+                    c.cobro_importe,
+                    c.nro_voucher,
+                    c.cobro_estado,
+                    ca.id_cta,
+                    ca.nro_cuota,
+                    ca.importe as importe_cuota,
+                    ca.vencimiento,
+                    v.id_venta,
+                    v.factura_nro,
+                    v.fecha_venta,
+                    v.total as total_venta,
+                    CONCAT(cl.clie_nombre, \' \', cl.clie_apellido) as cliente_nombre,
+                    cl.clie_ci as cliente_ci,
+                    cl.clie_telefono as cliente_telefono,
+                    cl.clie_direccion as cliente_direccion,
+                    mp.descripcion as metodo_pago,
+                    u.name as usuario_registro,
+                    s.descripcion as sucursal,
+                    s.direccion as sucursal_direccion,
+                    s.telefono as sucursal_telefono
+                FROM cobros c
+                INNER JOIN cuentas_a_cobrar ca ON ca.id_cta = c.id_cta
+                INNER JOIN ventas v ON v.id_venta = ca.id_venta
+                INNER JOIN clientes cl ON cl.id_cliente = v.id_cliente
+                LEFT JOIN metodo_pagos mp ON mp.id_metodo_pago = c.id_metodo_pago
+                LEFT JOIN users u ON u.id = c.user_id
+                LEFT JOIN sucursales s ON s.id_sucursal = v.id_sucursal
+                WHERE c.id_cobro = ?',
+                [$id_cobro]
+            );
+
+            if (empty($cobro)) {
+                abort(404, 'Recibo no encontrado');
+            }
+
+            // Verificar si el cobro está anulado
+            if ($cobro->cobro_estado === 'ANULADO') {
+                return view('cuentasacobrar.recibo')->with('cobro', $cobro)->with('anulado', true);
+            }
+
+            return view('cuentasacobrar.recibo')->with('cobro', $cobro)->with('anulado', false);
+
+        } catch (\Exception $e) {
+            Log::error('Error al imprimir recibo: ' . $e->getMessage());
+            abort(500, 'Error al generar el recibo');
         }
     }
 }

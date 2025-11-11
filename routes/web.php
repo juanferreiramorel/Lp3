@@ -63,7 +63,15 @@ Route::get('cuentasacobrar/{id}/detalle', [App\Http\Controllers\CuentasACobrarCo
 Route::post('cuentasacobrar/{id}/cobrar', [App\Http\Controllers\CuentasACobrarController::class, 'cobrar'])->name('cuentasacobrar.cobrar');
 Route::get('cuentasacobrar/cobros/{id}', [App\Http\Controllers\CuentasACobrarController::class, 'obtenerHistorialCobros'])->name('cuentasacobrar.historial');
 Route::post('cuentasacobrar/cobros/{id}/anular', [App\Http\Controllers\CuentasACobrarController::class, 'anularCobro'])->name('cuentasacobrar.anular');
+Route::get('cuentasacobrar/recibo/{id}', [App\Http\Controllers\CuentasACobrarController::class, 'imprimirRecibo'])->name('cuentasacobrar.recibo');
 Route::resource('cuentasacobrar', App\Http\Controllers\CuentasACobrarController::class);
+// Rutas específicas para cuentas a pagar (ANTES del resource)
+Route::get('cuentasapagar/{id}/detalle', [App\Http\Controllers\CuentasAPagarController::class, 'detalle'])->name('cuentasapagar.detalle');
+Route::post('cuentasapagar/{id}/pagar', [App\Http\Controllers\CuentasAPagarController::class, 'pagar'])->name('cuentasapagar.pagar');
+Route::get('cuentasapagar/pagos/{id}', [App\Http\Controllers\CuentasAPagarController::class, 'obtenerHistorialPagos'])->name('cuentasapagar.historial');
+Route::post('cuentasapagar/pagos/{id}/anular', [App\Http\Controllers\CuentasAPagarController::class, 'anularPago'])->name('cuentasapagar.anular');
+Route::get('cuentasapagar/recibo/{id}', [App\Http\Controllers\CuentasAPagarController::class, 'imprimirRecibo'])->name('cuentasapagar.recibo');
+Route::resource('cuentasapagar', App\Http\Controllers\CuentasAPagarController::class);
 Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil']);
 Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserController::class, 'cambiarPassword']);
 
