@@ -39,21 +39,3 @@
         </div>
     </div>
 @endsection
-@push('scripts')
-<script type="text/javascript">
-    $(document).ready(function(){
-        $("#checkall").click(function() {
-            $(".child").prop("checked", this.checked);
-        });
-         
-
-      //  $('.child').click(function() {
-    //        if ($('.child:checked').length == $('.child').length) {
-    //            $('#parent').prop('checked', true);
-    //        } else {
-    //        $('#parent').prop('checked', false);
-    //        }
-    //    });
-    });
-</script>
-@endpush
