@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -70,7 +71,7 @@ class EmpresaController extends AppBaseController
                 'direccion' => 'nullable|string',
                 'telefono' => 'nullable|string|max:40',
                 'email' => 'nullable|email|max:100',
-                'logo' => 'nullable|string|max:255',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
                 'razon_social.required' => 'El campo razón social es obligatorio.',
@@ -79,6 +80,9 @@ class EmpresaController extends AppBaseController
                 'ruc.max' => 'El RUC no debe exceder los 50 caracteres.',
                 'ruc.unique' => 'El RUC ya está registrado.',
                 'email.email' => 'El email debe ser una dirección válida.',
+                'logo.image' => 'El archivo debe ser una imagen.',
+                'logo.mimes' => 'El logo debe ser un archivo de tipo: jpeg, png, jpg, gif.',
+                'logo.max' => 'El logo no debe ser mayor a 2MB.',
             ]
         );
 
@@ -88,6 +92,12 @@ class EmpresaController extends AppBaseController
 
         DB::beginTransaction();
         try {
+            // Manejar la subida del logo
+            $logoPath = null;
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('logos', 'public');
+            }
+
             DB::insert(
                 'INSERT INTO empresas (razon_social, nombre_comercial, ruc, direccion, telefono, email, logo, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
@@ -98,13 +108,17 @@ class EmpresaController extends AppBaseController
                     $input['direccion'] ?? null,
                     $input['telefono'] ?? null,
                     $input['email'] ?? null,
-                    $input['logo'] ?? null,
+                    $logoPath,
                 ]
             );
 
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
+            // Eliminar el logo si se subió pero falló la transacción
+            if (isset($logoPath) && $logoPath) {
+                Storage::disk('public')->delete($logoPath);
+            }
             Alert::toast('Error al registrar la empresa: ' . $e->getMessage(), 'error');
             return redirect()->back()->withInput();
         }
@@ -162,13 +176,16 @@ class EmpresaController extends AppBaseController
                 'direccion' => 'nullable|string',
                 'telefono' => 'nullable|string|max:40',
                 'email' => 'nullable|email|max:100',
-                'logo' => 'nullable|string|max:255',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
                 'razon_social.required' => 'El campo razón social es obligatorio.',
                 'ruc.required' => 'El campo RUC es obligatorio.',
                 'ruc.unique' => 'El RUC ya está registrado.',
                 'email.email' => 'El email debe ser una dirección válida.',
+                'logo.image' => 'El archivo debe ser una imagen.',
+                'logo.mimes' => 'El logo debe ser un archivo de tipo: jpeg, png, jpg, gif.',
+                'logo.max' => 'El logo no debe ser mayor a 2MB.',
             ]
         );
 
@@ -178,6 +195,18 @@ class EmpresaController extends AppBaseController
 
         DB::beginTransaction();
         try {
+            // Manejar la subida del nuevo logo
+            $logoPath = $empresa->logo; // Mantener el logo anterior por defecto
+
+            if ($request->hasFile('logo')) {
+                // Eliminar el logo anterior si existe
+                if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
+                    Storage::disk('public')->delete($empresa->logo);
+                }
+                // Guardar el nuevo logo
+                $logoPath = $request->file('logo')->store('logos', 'public');
+            }
+
             DB::update(
                 'UPDATE empresas SET razon_social = ?, nombre_comercial = ?, ruc = ?,
                 direccion = ?, telefono = ?, email = ?, logo = ?, updated_at = NOW()
@@ -189,7 +218,7 @@ class EmpresaController extends AppBaseController
                     $input['direccion'] ?? null,
                     $input['telefono'] ?? null,
                     $input['email'] ?? null,
-                    $input['logo'] ?? null,
+                    $logoPath,
                     $id
                 ]
             );
@@ -224,6 +253,11 @@ class EmpresaController extends AppBaseController
 
         DB::beginTransaction();
         try {
+            // Eliminar el logo si existe
+            if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
+                Storage::disk('public')->delete($empresa->logo);
+            }
+
             DB::delete('DELETE FROM empresas WHERE id_empresa = ?', [$id]);
             DB::commit();
         } catch (\Exception $e) {

@@ -30,9 +30,16 @@
 
 <!-- Logo Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('logo', 'URL del Logo:') !!}
-    {!! Form::text('logo', null, ['class' => 'form-control', 'maxlength' => 255, 'placeholder' => 'URL de la imagen del logo']) !!}
-    <small class="form-text text-muted">Ingrese la URL completa del logo (ej: https://ejemplo.com/logo.png)</small>
+    {!! Form::label('logo', 'Logo de la Empresa:') !!}
+    <input type="file" name="logo" id="logo" class="form-control" accept="image/*">
+    <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF (máx. 2MB)</small>
+
+    @if(isset($empresa) && $empresa->logo)
+        <div class="mt-2">
+            <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo actual" style="max-width: 150px; max-height: 150px;">
+            <p class="text-muted"><small>Logo actual</small></p>
+        </div>
+    @endif
 </div>
 
 <!-- Dirección Field -->

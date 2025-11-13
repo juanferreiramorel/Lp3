@@ -509,7 +509,7 @@
             </div>
             <div class="company-logo">
                 @if($recibo->empresa_logo)
-                <img alt="Logo {{ $recibo->empresa_nombre }}" src="{{ $recibo->empresa_logo }}">
+                <img alt="Logo {{ $recibo->empresa_nombre }}" src="{{ asset('storage/' . $recibo->empresa_logo) }}">
                 @endif
             </div>
         </header>
