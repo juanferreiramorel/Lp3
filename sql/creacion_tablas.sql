@@ -21,7 +21,7 @@ create table ciudades(
 create table clientes(
     id_cliente  serial not null,
     clie_nombre varchar(255) not null,
-    cli_apellido varchar(255) not null,
+    clie_apellido varchar(255) not null,
     clie_ci varchar(40) not null,
     clie_telefono varchar(40),
     clie_direccion text,
