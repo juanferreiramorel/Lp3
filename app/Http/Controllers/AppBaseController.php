@@ -32,4 +32,42 @@ class AppBaseController extends Controller
             'message' => $message
         ], 200);
     }
+
+    /**
+     * Procesa la búsqueda detectando si es por ID exacto o búsqueda múltiple
+     * Soporta sintaxis: id:123 o #123 para búsqueda exacta por ID
+     *
+     * @param string $buscar Término de búsqueda
+     * @param string $searchMode Modo de búsqueda ('all' o 'id')
+     * @return array ['mode' => 'id'|'all', 'term' => 'valor limpio']
+     */
+    protected function parseSearchMode($buscar, $searchMode = 'all')
+    {
+        // Si no hay búsqueda, retornar null
+        if (empty($buscar)) {
+            return null;
+        }
+
+        // Detectar sintaxis especial: id:123 o #123
+        if (preg_match('/^(id:|#)(\d+)$/', $buscar, $matches)) {
+            return [
+                'mode' => 'id',
+                'term' => $matches[2]
+            ];
+        }
+
+        // Si el modo es 'id' y el término es numérico, es búsqueda por ID
+        if ($searchMode === 'id' && is_numeric($buscar)) {
+            return [
+                'mode' => 'id',
+                'term' => $buscar
+            ];
+        }
+
+        // Búsqueda normal en todos los campos
+        return [
+            'mode' => 'all',
+            'term' => $buscar
+        ];
+    }
 }

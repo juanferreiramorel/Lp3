@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class OrdenCompraController extends Controller
+class OrdenCompraController extends AppBaseController
 {
     public function __construct()
     {
@@ -56,6 +56,7 @@ class OrdenCompraController extends Controller
         }
 
         $buscar = $request->buscar;
+        $searchMode = $request->get('search_mode', 'all');
         $porPagina = 10;
         $page = $request->input('page', 1);
         $offset = ($page - 1) * $porPagina;
@@ -70,22 +71,33 @@ class OrdenCompraController extends Controller
         $where = "WHERE 1=1" . $sql_filtros;
         $params = [];
 
-        if ($buscar) {
-            $where .= " AND (
-                cast(oc.id_orden_compra as text) ILIKE ? OR
-                p.descripcion ILIKE ? OR
-                cast(oc.fecha_orden as text) ILIKE ? OR
-                TO_CHAR(oc.fecha_orden, 'DD/MM/YYYY') ILIKE ? OR
-                cast(oc.total_orden as text) ILIKE ? OR
-                TO_CHAR(oc.total_orden, 'FM999G999G999G999G999') ILIKE ? OR
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $where .= " AND oc.id_orden_compra = ?";
+                $params[] = (int)$searchConfig['term'];
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $where .= " AND (
+                    cast(oc.id_orden_compra as text) ILIKE ? OR
+                    p.descripcion ILIKE ? OR
+                    cast(oc.fecha_orden as text) ILIKE ? OR
+                    TO_CHAR(oc.fecha_orden, 'DD/MM/YYYY') ILIKE ? OR
+                    cast(oc.total_orden as text) ILIKE ? OR
+                    TO_CHAR(oc.total_orden, 'FM999G999G999G999G999') ILIKE ? OR
                 u.name ILIKE ? OR
                 oc.estado ILIKE ? OR
                 s.descripcion ILIKE ? OR
                 cast(oc.fecha_entrega_esperada as text) ILIKE ? OR
                 TO_CHAR(oc.fecha_entrega_esperada, 'DD/MM/YYYY') ILIKE ?
-            )";
-            $searchTerm = "%{$buscar}%";
-            $params = array_fill(0, 11, $searchTerm);
+                )";
+                $searchTerm = "%{$buscarTerm}%";
+                $params = array_fill(0, 11, $searchTerm);
+            }
         }
 
         // Contar total de registros

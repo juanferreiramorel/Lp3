@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class StockController extends Controller
+class StockController extends AppBaseController
 {
     // Definir una variable para el path
     private $path;
@@ -20,18 +20,26 @@ class StockController extends Controller
     {
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
         $input = $request->all();
         $filtro_sucursales = "";
         $filtro_productos = "";
         // validar que contenga un valor el buscar
         $sql = '';// definir una variable sql vacia
 
-        if (!empty($buscar)) {
-            $sql = "AND (p.descripcion iLIKE '%" . $buscar . "%' 
-            or m.descripcion iLIKE '%" . $buscar . "%' 
-            or sc.descripcion iLIKE '%" . $buscar . "%' 
-            or m.descripcion iLIKE '%" . $buscar . "%' 
-            or cast(s.cantidad as text)iLIKE '%" . $buscar . "%')"; // si tiene valor agregar la condicion a la variable sql
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql = "AND s.id_stock = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda general en múltiples campos
+                $buscarTerm = $searchConfig['term'];
+                $sql = "AND (p.descripcion iLIKE '%" . $buscarTerm . "%'
+                or m.descripcion iLIKE '%" . $buscarTerm . "%'
+                or sc.descripcion iLIKE '%" . $buscarTerm . "%'
+                or cast(s.cantidad as text)iLIKE '%" . $buscarTerm . "%')";
+            }
         }
         
         if (!empty($input['sucursales'])) {

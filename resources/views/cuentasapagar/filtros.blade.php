@@ -76,24 +76,7 @@
 </div>
 
 <!-- BÚSQUEDA POR TEXTO -->
-<div class="clearfix mb-3">
-    <form id="form-busqueda-texto">
-        <div class="input-group">
-            <div class="input-group-prepend">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-            </div>
-            <input type="text" class="form-control buscar" name="buscar"
-                value="{{ request()->get('buscar', null) }}"
-                placeholder="Buscar por: Factura, Proveedor, Fecha, Monto..."
-                data-url="{{ url()->current() }}">
-            <div class="input-group-append">
-                <button class="btn btn-primary" type="submit">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
+@include('components.search-input')
 
 @push('scripts')
     <script>
@@ -138,6 +121,7 @@
                 var estadoCuota = $('#estado_cuota').val();
                 var idSucursal = $('#id_sucursal').val();
                 var buscar = $('.buscar').val();
+                var searchMode = $('.search-mode').val();
 
                 if (fechaDesde) params.set('fecha_desde', fechaDesde);
                 if (fechaHasta) params.set('fecha_hasta', fechaHasta);
@@ -145,27 +129,11 @@
                 if (estadoCuota) params.set('estado_cuota', estadoCuota);
                 if (idSucursal) params.set('id_sucursal', idSucursal);
                 if (buscar) params.set('buscar', buscar);
+                if (searchMode) params.set('search_mode', searchMode);
 
                 var queryString = params.toString();
                 window.location.href = url + (queryString ? '?' + queryString : '');
             }
-
-            // Manejar el submit del formulario de búsqueda de texto
-            $('#form-busqueda-texto').on('submit', function(e) {
-                e.preventDefault();
-                var buscar = $('.buscar').val();
-                var url = '{{ url()->current() }}';
-
-                // Mantener los filtros actuales
-                var params = new URLSearchParams(window.location.search);
-                if (buscar) {
-                    params.set('buscar', buscar);
-                } else {
-                    params.delete('buscar');
-                }
-
-                window.location.href = url + '?' + params.toString();
-            });
 
             // Abrir card de filtros si hay filtros activos
             @if(request()->get('fecha_desde') || request()->get('fecha_hasta') || request()->get('id_proveedor') || request()->get('estado_cuota') || request()->get('id_sucursal'))

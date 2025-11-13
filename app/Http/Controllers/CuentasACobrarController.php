@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class CuentasACobrarController extends Controller
+class CuentasACobrarController extends AppBaseController
 {
     // Definir una variable para el path
     private $path;
@@ -57,30 +57,43 @@ class CuentasACobrarController extends Controller
 
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
         $sql_busqueda = 'WHERE v.condicion_venta = \'CREDITO\' AND v.estado != \'ANULADO\' AND v.estado != \'PAGADO\'';
 
-        // Agrupar por factura para mostrar el resumen
-        if (!empty($buscar)) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql_busqueda = "WHERE v.condicion_venta = 'CREDITO'
+                    AND v.estado != 'ANULADO' AND v.estado != 'PAGADO'
+                    AND v.id_venta = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                // Limpiar separadores de miles para búsqueda de montos
+                $buscarMonto = str_replace('.', '', $buscarTerm);
+
+                $sql_busqueda = "WHERE v.condicion_venta = 'CREDITO'
+                    AND v.estado != 'ANULADO' AND v.estado != 'PAGADO'
+                    AND (
+                        v.factura_nro ILIKE '%{$buscarTerm}%'
+                        OR CONCAT(clie_nombre,' ',clie_apellido) ILIKE '%{$buscarTerm}%'
+                        OR clie_ci ILIKE '%{$buscarTerm}%'
+                        OR cast(v.fecha_venta as text) ILIKE '%{$buscarFecha}%'
+                        OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscarTerm}%'
+                        OR cast(v.total as text) ILIKE '%{$buscarMonto}%'
+                        OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscarTerm}%'
+                    )";
             }
-
-            // Limpiar separadores de miles para búsqueda de montos
-            $buscarMonto = str_replace('.', '', $buscar);
-
-            $sql_busqueda = "WHERE v.condicion_venta = 'CREDITO'
-                AND v.estado != 'ANULADO' AND v.estado != 'PAGADO'
-                AND (
-                    v.factura_nro ILIKE '%{$buscar}%'
-                    OR CONCAT(clie_nombre,' ',clie_apellido) ILIKE '%{$buscar}%'
-                    OR clie_ci ILIKE '%{$buscar}%'
-                    OR cast(v.fecha_venta as text) ILIKE '%{$buscarFecha}%'
-                    OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
-                    OR cast(v.total as text) ILIKE '%{$buscarMonto}%'
-                    OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
-                )";
         }
 
         $cuentasacobrar = DB::select(

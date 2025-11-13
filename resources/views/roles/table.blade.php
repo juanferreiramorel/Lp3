@@ -3,6 +3,7 @@
         <table class="table" id="roles-table">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Name</th>
                     <th>Guard Name</th>
                     <th colspan="3">Action</th>
@@ -11,6 +12,7 @@
             <tbody>
                 @foreach ($roles as $rol)
                     <tr>
+                        <td>{{ $rol->id }}</td>
                         <td>{{ $rol->name }}</td>
                         <td>{{ $rol->guard_name }}</td>
                         <td style="width: 120px">

@@ -10,7 +10,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\Permission\Models\Role;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class RoleController extends Controller
+class RoleController extends AppBaseController
 {
     public function __construct()
     {
@@ -26,16 +26,32 @@ class RoleController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
         // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            $roles = DB::select(
-                'SELECT * FROM roles
-                WHERE name ILIKE ?
-                OR guard_name ILIKE ?
-                ORDER BY id DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                $roles = DB::select(
+                    'SELECT * FROM roles WHERE id = ? ORDER BY id DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                $buscarTerm = $searchConfig['term'];
+                $roles = DB::select(
+                    'SELECT * FROM roles
+                    WHERE CAST(id AS TEXT) ILIKE ?
+                    OR name ILIKE ?
+                    OR guard_name ILIKE ?
+                    ORDER BY id DESC',
+                    [
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%'
+                    ]
+                );
+            }
         } else {
             $roles = DB::select('SELECT * FROM roles ORDER BY id DESC');
         }

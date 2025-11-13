@@ -11,7 +11,7 @@ use Laracasts\Flash\Flash;
 use Maatwebsite\Excel\Facades\Excel;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class CiudadController extends Controller
+class CiudadController extends AppBaseController
 {
     public function __construct()
     {
@@ -26,17 +26,36 @@ class CiudadController extends Controller
     {
         // buscar
         $buscar = $request->get('buscar');
-        if($buscar) {
-            $ciudades = DB::select(
-                'SELECT c.*, d.descripcion as departamento
-                FROM ciudades c
-                JOIN departamentos d ON c.id_departamento = d.id_departamento
-                WHERE c.descripcion ILIKE ?
-                OR d.descripcion ILIKE ?
-                OR cast(c.id_ciudad as text) ILIKE ?
-                ORDER BY c.id_ciudad DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        $searchMode = $request->get('search_mode', 'all');
+
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $ciudades = DB::select(
+                    'SELECT c.*, d.descripcion as departamento
+                    FROM ciudades c
+                    JOIN departamentos d ON c.id_departamento = d.id_departamento
+                    WHERE c.id_ciudad = ?
+                    ORDER BY c.id_ciudad DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $ciudades = DB::select(
+                    'SELECT c.*, d.descripcion as departamento
+                    FROM ciudades c
+                    JOIN departamentos d ON c.id_departamento = d.id_departamento
+                    WHERE c.descripcion ILIKE ?
+                    OR d.descripcion ILIKE ?
+                    OR cast(c.id_ciudad as text) ILIKE ?
+                    ORDER BY c.id_ciudad DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         }else{
             $ciudades = DB::select(
                 'SELECT c.*, d.descripcion as departamento

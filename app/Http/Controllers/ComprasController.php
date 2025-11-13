@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class ComprasController extends Controller
+class ComprasController extends AppBaseController
 {
     public function __construct()
     {
@@ -58,30 +58,41 @@ class ComprasController extends Controller
 
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
         $sql_busqueda = 'WHERE 1=1';
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql_busqueda = "WHERE c.id_compra = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
+                $buscarMonto = str_replace('.', '', $buscarTerm);
+
+                $sql_busqueda = "WHERE (cast(c.id_compra as text) ILIKE '%{$buscarTerm}%'
+                       OR cast(c.fecha_compra as text) ILIKE '%{$buscarFecha}%'
+                       OR TO_CHAR(c.fecha_compra, 'DD/MM/YYYY') ILIKE '%{$buscarTerm}%'
+                       OR c.condicion_compra ILIKE '%{$buscarTerm}%'
+                       OR c.factura ILIKE '%{$buscarTerm}%'
+                       OR p.descripcion ILIKE '%{$buscarTerm}%'
+                       OR cast(c.id_proveedor as text) ILIKE '%{$buscarTerm}%'
+                       OR u.name ILIKE '%{$buscarTerm}%'
+                       OR c.estado ILIKE '%{$buscarTerm}%'
+                       OR cast(c.total as text) ILIKE '%{$buscarMonto}%'
+                       OR TO_CHAR(c.total, 'FM999G999G999G999G999') ILIKE '%{$buscarTerm}%')";
             }
-
-            // Limpiar separadores de miles para búsqueda de montos (3.200.000 -> 3200000)
-            $buscarMonto = str_replace('.', '', $buscar);
-
-            $sql_busqueda = "WHERE (cast(c.id_compra as text) ILIKE '%{$buscar}%'
-                   OR cast(c.fecha_compra as text) ILIKE '%{$buscarFecha}%'
-                   OR TO_CHAR(c.fecha_compra, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
-                   OR c.condicion_compra ILIKE '%{$buscar}%'
-                   OR c.factura ILIKE '%{$buscar}%'
-                   OR p.descripcion ILIKE '%{$buscar}%'
-                   OR cast(c.id_proveedor as text) ILIKE '%{$buscar}%'
-                   OR u.name ILIKE '%{$buscar}%'
-                   OR c.estado ILIKE '%{$buscar}%'
-                   OR cast(c.total as text) ILIKE '%{$buscarMonto}%'
-                   OR TO_CHAR(c.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%')";
         }
 
         $compras = DB::select(

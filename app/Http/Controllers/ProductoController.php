@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Laracasts\Flash\Flash;
 use Illuminate\Pagination\LengthAwarePaginator;// libreria a importar para paginacion manual
 
-class ProductoController extends Controller
+class ProductoController extends AppBaseController
 {
     // Definir una variable para el path
     private $path;
@@ -28,25 +28,44 @@ class ProductoController extends Controller
     {
         // Obtener el término de búsqueda del request
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        if (!empty($buscar)) {
-            // Limpiar separadores de miles para búsqueda de precios
-            $buscarPrecio = str_replace('.', '', $buscar);
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
-            // Consulta con parámetros preparados para seguridad
-            $productos = DB::select(
-                'SELECT p.*, m.descripcion as marcas
-                 FROM productos p
-                    JOIN marcas m ON p.id_marca = m.id_marca
-                 WHERE p.descripcion ILIKE ?
-                 OR m.descripcion ILIKE ?
-                 OR cast(p.id_producto as text) ILIKE ?
-                 OR cast(p.precio as text) ILIKE ?
-                 OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
-                 OR cast(p.tipo_iva as text) ILIKE ?
-                 ORDER BY p.id_producto DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarPrecio . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $productos = DB::select(
+                    'SELECT p.*, m.descripcion as marcas
+                     FROM productos p
+                        JOIN marcas m ON p.id_marca = m.id_marca
+                     WHERE p.id_producto = ?
+                     ORDER BY p.id_producto DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Limpiar separadores de miles para búsqueda de precios
+                $buscarPrecio = str_replace('.', '', $buscarTerm);
+
+                // Consulta con parámetros preparados para seguridad
+                $productos = DB::select(
+                    'SELECT p.*, m.descripcion as marcas
+                     FROM productos p
+                        JOIN marcas m ON p.id_marca = m.id_marca
+                     WHERE p.descripcion ILIKE ?
+                     OR m.descripcion ILIKE ?
+                     OR cast(p.id_producto as text) ILIKE ?
+                     OR cast(p.precio as text) ILIKE ?
+                     OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
+                     OR cast(p.tipo_iva as text) ILIKE ?
+                     ORDER BY p.id_producto DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             // Consulta para obtener los productos con la marca asociada
             $productos = DB::select(

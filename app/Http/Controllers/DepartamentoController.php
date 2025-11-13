@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class DepartamentoController extends Controller
+class DepartamentoController extends AppBaseController
 {
     public function __construct()
     {
@@ -24,16 +24,31 @@ class DepartamentoController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            $departamentos = DB::select(
-                'SELECT * FROM departamentos
-                WHERE descripcion ILIKE ?
-                OR cast(id_departamento as text) ILIKE ?
-                ORDER BY id_departamento DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $departamentos = DB::select(
+                    'SELECT * FROM departamentos
+                    WHERE id_departamento = ?
+                    ORDER BY id_departamento DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $departamentos = DB::select(
+                    'SELECT * FROM departamentos
+                    WHERE descripcion ILIKE ?
+                    OR cast(id_departamento as text) ILIKE ?
+                    ORDER BY id_departamento DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             $departamentos = DB::select('SELECT * FROM departamentos ORDER BY id_departamento DESC');
         }

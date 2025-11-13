@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class CajaController extends Controller
+class CajaController extends AppBaseController
 {
     public function __construct()
     {
@@ -23,21 +23,38 @@ class CajaController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            $cajas = DB::select(
-                'SELECT c.*, s.descripcion as sucursal
-                FROM cajas c
-                JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-                WHERE c.descripcion ILIKE ?
-                OR s.descripcion ILIKE ?
-                OR cast(c.punto_expedicion as text) ILIKE ?
-                OR cast(c.ultima_factura_impresa as text) ILIKE ?
-                OR cast(c.id_caja as text) ILIKE ?
-                ORDER BY c.id_caja DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $cajas = DB::select(
+                    'SELECT c.*, s.descripcion as sucursal
+                    FROM cajas c
+                    JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+                    WHERE c.id_caja = ?
+                    ORDER BY c.id_caja DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $cajas = DB::select(
+                    'SELECT c.*, s.descripcion as sucursal
+                    FROM cajas c
+                    JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+                    WHERE c.descripcion ILIKE ?
+                    OR s.descripcion ILIKE ?
+                    OR cast(c.punto_expedicion as text) ILIKE ?
+                    OR cast(c.ultima_factura_impresa as text) ILIKE ?
+                    OR cast(c.id_caja as text) ILIKE ?
+                    ORDER BY c.id_caja DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             $cajas = DB::select(
                 'SELECT c.*, s.descripcion as sucursal

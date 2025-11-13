@@ -15,7 +15,7 @@ use Luecano\NumeroALetras\NumeroALetras;
 
 use function Laravel\Prompts\error;
 
-class VentaController extends Controller
+class VentaController extends AppBaseController
 {
     public function __construct()
     {
@@ -64,30 +64,42 @@ class VentaController extends Controller
         }
 
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
         $sql_busqueda = 'WHERE 1=1';
 
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql_busqueda = "WHERE v.id_venta = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                // Limpiar separadores de miles para búsqueda de montos
+                $buscarMonto = str_replace('.', '', $buscarTerm);
+
+                $sql_busqueda = "WHERE (CAST(v.id_venta AS TEXT) iLIKE '%{$buscarTerm}%'
+                    OR CAST(c.clie_nombre AS TEXT) iLIKE '%{$buscarTerm}%'
+                    OR CAST(c.clie_apellido AS TEXT) iLIKE '%{$buscarTerm}%'
+                    OR CAST(v.factura_nro AS TEXT) iLIKE '%{$buscarTerm}%'
+                    OR CAST(c.clie_ci AS TEXT) iLIKE '%{$buscarTerm}%'
+                    OR CAST(v.fecha_venta AS TEXT) ILIKE '%{$buscarFecha}%'
+                    OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscarTerm}%'
+                    OR v.condicion_venta ILIKE '%{$buscarTerm}%'
+                    OR CAST(v.total AS TEXT) ILIKE '%{$buscarMonto}%'
+                    OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscarTerm}%'
+                    OR users.name ILIKE '%{$buscarTerm}%'
+                    OR v.estado ILIKE '%{$buscarTerm}%')";
             }
-
-            // Limpiar separadores de miles para búsqueda de montos
-            $buscarMonto = str_replace('.', '', $buscar);
-
-            $sql_busqueda = "WHERE (CAST(v.id_venta AS TEXT) iLIKE '%{$buscar}%'
-                OR CAST(c.clie_nombre AS TEXT) iLIKE '%{$buscar}%'
-                OR CAST(c.clie_apellido AS TEXT) iLIKE '%{$buscar}%'
-                OR CAST(v.factura_nro AS TEXT) iLIKE '%{$buscar}%'
-                OR CAST(c.clie_ci AS TEXT) iLIKE '%{$buscar}%'
-                OR CAST(v.fecha_venta AS TEXT) ILIKE '%{$buscarFecha}%'
-                OR TO_CHAR(v.fecha_venta, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
-                OR v.condicion_venta ILIKE '%{$buscar}%'
-                OR CAST(v.total AS TEXT) ILIKE '%{$buscarMonto}%'
-                OR TO_CHAR(v.total, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
-                OR users.name ILIKE '%{$buscar}%'
-                OR v.estado ILIKE '%{$buscar}%')";
         }
 
         $ventas = DB::select(

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class PermissionController extends Controller
+class PermissionController extends AppBaseController
 {
     public function __construct()
     {
@@ -24,15 +24,32 @@ class PermissionController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
         // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            $permisos = DB::select(
-                'SELECT * FROM permissions
-                WHERE name ILIKE ?
-                ORDER BY id DESC',
-                ['%' . $buscar . '%']
-            );
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                $permisos = DB::select(
+                    'SELECT * FROM permissions WHERE id = ? ORDER BY id DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                $buscarTerm = $searchConfig['term'];
+                $permisos = DB::select(
+                    'SELECT * FROM permissions
+                    WHERE CAST(id AS TEXT) ILIKE ?
+                    OR name ILIKE ?
+                    OR guard_name ILIKE ?
+                    ORDER BY id DESC',
+                    [
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%'
+                    ]
+                );
+            }
         } else {
             $permisos = DB::select('SELECT * FROM permissions ORDER BY id DESC');
         }

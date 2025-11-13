@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class ClienteController extends Controller
+class ClienteController extends AppBaseController
 {
     public function __construct()
     {
@@ -25,43 +25,64 @@ class ClienteController extends Controller
     {
         // Buscar
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $clientes = DB::select(
+                    'SELECT c.*, ciu.descripcion as ciudad,
+                    d.descripcion as departamento
+                    FROM clientes c
+                        JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
+                        JOIN departamentos d ON d.id_departamento = c.id_departamento
+                    WHERE c.id_cliente = ?
+                    ORDER BY c.id_cliente DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                // Búsqueda con formato de fecha para TO_CHAR
+                $clientes = DB::select(
+                    'SELECT c.*, ciu.descripcion as ciudad,
+                    d.descripcion as departamento
+                    FROM clientes c
+                        JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
+                        JOIN departamentos d ON d.id_departamento = c.id_departamento
+                    WHERE c.clie_nombre ILIKE ?
+                    OR c.clie_apellido ILIKE ?
+                    OR c.clie_ci ILIKE ?
+                    OR c.clie_telefono ILIKE ?
+                    OR ciu.descripcion ILIKE ?
+                    OR d.descripcion ILIKE ?
+                    OR cast(c.id_cliente as text) ILIKE ?
+                    OR cast(c.clie_fecha_nac as text) ILIKE ?
+                    OR TO_CHAR(c.clie_fecha_nac, \'DD/MM/YYYY\') ILIKE ?
+                    ORDER BY c.id_cliente DESC',
+                    [
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarTerm . '%',
+                        '%' . $buscarFecha . '%',
+                        '%' . $buscarTerm . '%'
+                    ]
+                );
             }
-
-            // Búsqueda con formato de fecha para TO_CHAR
-            $clientes = DB::select(
-                'SELECT c.*, ciu.descripcion as ciudad,
-                d.descripcion as departamento
-                FROM clientes c
-                    JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
-                    JOIN departamentos d ON d.id_departamento = c.id_departamento
-                WHERE c.clie_nombre ILIKE ?
-                OR c.clie_apellido ILIKE ?
-                OR c.clie_ci ILIKE ?
-                OR c.clie_telefono ILIKE ?
-                OR ciu.descripcion ILIKE ?
-                OR d.descripcion ILIKE ?
-                OR cast(c.id_cliente as text) ILIKE ?
-                OR cast(c.clie_fecha_nac as text) ILIKE ?
-                OR TO_CHAR(c.clie_fecha_nac, \'DD/MM/YYYY\') ILIKE ?
-                ORDER BY c.id_cliente DESC',
-                [
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscar . '%',
-                    '%' . $buscarFecha . '%',
-                    '%' . $buscar . '%'
-                ]
-            );
         } else {
             $clientes = DB::select('
                 SELECT c.*, ciu.descripcion as ciudad,

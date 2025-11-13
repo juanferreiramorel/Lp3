@@ -285,11 +285,11 @@
                 /** bucador mediante peticiones fetch*/
                 $('.buscar').on('keyup', function() {
                     var query = this.value; // valor del input buscar
+                    var searchMode = $('.search-mode').val() || 'all'; // obtener modo de búsqueda
                     // Obtener el data-url del parametro input
                     var url = this.getAttribute('data-url');
                     // Fetch para realizar peticion de busqueda
-                    fetch(url + '?buscar=' +
-                            encodeURIComponent(query), {
+                    fetch(url + '?buscar=' + encodeURIComponent(query) + '&search_mode=' + searchMode, {
                                 method: 'GET',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -312,6 +312,55 @@
                         .catch(error => { // manejar si hay errores en la consulta
                             console.error('Hubo un problema con la solicitud Fetch:', error);
                         });
+                });
+
+                // Trigger search cuando cambia el modo de búsqueda
+                $(document).on('change', '.search-mode', function() {
+                    if ($('.buscar').val()) {
+                        $('.buscar').trigger('keyup');
+                    }
+                });
+
+                // FUNCIONALIDAD: Click en cabecera ID para activar búsqueda por ID
+                $(document).on('click', 'table thead tr th:first-child', function() {
+                    console.log('Click en cabecera de columna ID');
+
+                    // Buscar el input de búsqueda
+                    var $searchInput = $('.buscar');
+                    var $searchMode = $('.search-mode');
+
+                    if ($searchInput.length && $searchMode.length) {
+                        // Cambiar el modo de búsqueda a "Solo ID"
+                        $searchMode.val('id');
+
+                        // Hacer scroll al input de búsqueda y enfocarlo
+                        $('html, body').animate({
+                            scrollTop: $searchInput.offset().top - 100
+                        }, 300);
+
+                        // Enfocar el input con un pequeño delay
+                        setTimeout(function() {
+                            $searchInput.focus();
+                            // Seleccionar todo el texto si hay algo
+                            if ($searchInput.val()) {
+                                $searchInput.select();
+                            }
+                        }, 350);
+
+                        // Feedback visual
+                        $searchMode.addClass('border-info');
+                        setTimeout(function() {
+                            $searchMode.removeClass('border-info');
+                        }, 1000);
+                    }
+                });
+
+                // Agregar cursor pointer y hover a la cabecera de ID
+                $(document).on('mouseenter', 'table thead tr th:first-child', function() {
+                    $(this).css('cursor', 'pointer');
+                    $(this).css('background-color', '#d1ecf1');
+                }).on('mouseleave', 'table thead tr th:first-child', function() {
+                    $(this).css('background-color', '');
                 });
             });
 

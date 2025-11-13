@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class CargoController extends Controller
+class CargoController extends AppBaseController
 {
     public function __construct()
     {
@@ -23,11 +23,25 @@ class CargoController extends Controller
     public function index(Request $request)
     {
         $buscar = $request->get('buscar');
-        # Ejemplo query builder
-        #$cargos = DB::table('cargos')->get();
-        # Ejemplo con sql puro a utilizar
-        if ($buscar) {
-            $cargos = DB::select('select * from cargos where descripcion ilike ?', ['%' . $buscar . '%']);
+        $searchMode = $request->get('search_mode', 'all');
+
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $cargos = DB::select('select * from cargos where id_cargo = ?', [(int)$searchConfig['term']]);
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $cargos = DB::select(
+                    'select * from cargos
+                    where descripcion ilike ?
+                    or cast(id_cargo as text) ilike ?',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             $cargos = DB::select('select * from cargos');
         }

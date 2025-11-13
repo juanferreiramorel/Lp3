@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class SucursalController extends Controller
+class SucursalController extends AppBaseController
 {
     public function __construct()
     {
@@ -22,21 +22,38 @@ class SucursalController extends Controller
     public function index(Request $request){
        // Obtener el término de búsqueda
        $buscar = $request->get('buscar');
+       $searchMode = $request->get('search_mode', 'all');
 
-       // Construir consulta con filtros de búsqueda por todos los campos visibles
-       if ($buscar) {
-           $sucursales = DB::select(
-               'SELECT s.*, c.descripcion as ciudades
-                FROM sucursales s
-                JOIN ciudades c ON s.id_ciudad = c.id_ciudad
-                WHERE s.descripcion ILIKE ?
-                OR s.direccion ILIKE ?
-                OR s.telefono ILIKE ?
-                OR c.descripcion ILIKE ?
-                OR cast(s.id_sucursal as text) ILIKE ?
-                ORDER BY s.id_sucursal DESC',
-               ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-           );
+       // Procesar modo de búsqueda
+       $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+       if ($searchConfig) {
+           if ($searchConfig['mode'] === 'id') {
+               // Búsqueda exacta por ID
+               $sucursales = DB::select(
+                   'SELECT s.*, c.descripcion as ciudades
+                    FROM sucursales s
+                    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                    WHERE s.id_sucursal = ?
+                    ORDER BY s.id_sucursal DESC',
+                   [(int)$searchConfig['term']]
+               );
+           } else {
+               // Búsqueda múltiple en todos los campos
+               $buscarTerm = $searchConfig['term'];
+               $sucursales = DB::select(
+                   'SELECT s.*, c.descripcion as ciudades
+                    FROM sucursales s
+                    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                    WHERE s.descripcion ILIKE ?
+                    OR s.direccion ILIKE ?
+                    OR s.telefono ILIKE ?
+                    OR c.descripcion ILIKE ?
+                    OR cast(s.id_sucursal as text) ILIKE ?
+                    ORDER BY s.id_sucursal DESC',
+                   ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+               );
+           }
        } else {
            $sucursales = DB::select(
                'SELECT s.*, c.descripcion as ciudades

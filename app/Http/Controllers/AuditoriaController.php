@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class AuditoriaController extends Controller
+class AuditoriaController extends AppBaseController
 {
     private $path;
     public function __construct()
@@ -53,24 +53,35 @@ class AuditoriaController extends Controller
             $sql_filtros .= " AND sc.id_sucursal = " . (int)$input['id_sucursal'];
         }
 
-        // BÚSQUEDA POR TEXTO GENERAL
+        // BÚSQUEDA POR TEXTO GENERAL CON MODO
         $buscar = $request->get('buscar');
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
-            }
+        $searchMode = $request->get('search_mode', 'all');
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
-            $sql_filtros .= " AND (
-                cast(s.id as text) ILIKE '%{$buscar}%'
-                OR sc.descripcion ILIKE '%{$buscar}%'
-                OR u.name ILIKE '%{$buscar}%'
-                OR s.operation ILIKE '%{$buscar}%'
-                OR s.table_name ILIKE '%{$buscar}%'
-                OR cast(s.changed_at as text) ILIKE '%{$buscarFecha}%'
-                OR TO_CHAR(s.changed_at, 'DD/MM/YYYY HH24:MI:SS') ILIKE '%{$buscar}%'
-            )";
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql_filtros .= " AND s.id = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda general en múltiples campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                $sql_filtros .= " AND (
+                    cast(s.id as text) ILIKE '%{$buscarTerm}%'
+                    OR sc.descripcion ILIKE '%{$buscarTerm}%'
+                    OR u.name ILIKE '%{$buscarTerm}%'
+                    OR s.operation ILIKE '%{$buscarTerm}%'
+                    OR s.table_name ILIKE '%{$buscarTerm}%'
+                    OR cast(s.changed_at as text) ILIKE '%{$buscarFecha}%'
+                    OR TO_CHAR(s.changed_at, 'DD/MM/YYYY HH24:MI:SS') ILIKE '%{$buscarTerm}%'
+                )";
+            }
         }
 
         // Construir WHERE

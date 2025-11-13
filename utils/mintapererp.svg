@@ -1,0 +1,17 @@
+<svg width="112" height="112" viewBox="0 0 86 86" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Isotipo TAPERP">
+<defs>
+    <linearGradient id="g1s" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="var(--tape-primary)"></stop>
+    <stop offset="100%" stop-color="var(--tape-accent)"></stop>
+    </linearGradient>
+    <linearGradient id="g2s" x1="100%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="var(--tape-accent2)"></stop>
+    <stop offset="100%" stop-color="var(--tape-accent)"></stop>
+    </linearGradient>
+</defs>
+<rect x="0" y="0" rx="18" ry="18" width="86" height="86" fill="#ffffff" fill-opacity=".9"></rect>
+<path d="M12,72 C18,48 40,26 72,18" fill="none" stroke="url(#g1s)" stroke-width="10" stroke-linecap="round"></path>
+<path d="M12,16 C36,28 58,50 74,74" fill="none" stroke="url(#g2s)" stroke-width="10" stroke-linecap="round"></path>
+<circle cx="44" cy="44" r="10" fill="#fff"></circle>
+<circle cx="44" cy="44" r="7" fill="url(#g1s)"></circle>
+</svg>

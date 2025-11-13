@@ -3,6 +3,7 @@
         <table class="table" id="permissions-table">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Permisos</th>
                     <th colspan="3">Action</th>
                 </tr>
@@ -10,6 +11,7 @@
             <tbody>
                 @foreach ($permisos as $permiso)
                     <tr>
+                        <td>{{ $permiso->id }}</td>
                         <td>{{ $permiso->name }}</td>
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['permissions.destroy', $permiso->id], 'method' => 'delete']) !!}

@@ -12,7 +12,7 @@ use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class UserController extends Controller
+class UserController extends AppBaseController
 {
     public function __construct()
     {
@@ -28,33 +28,51 @@ class UserController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        // Construir consulta con filtros de búsqueda
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $users = DB::select(
+                    'SELECT u.*, r.name as rol, s.descripcion as sucursal
+                    FROM users u
+                        LEFT JOIN roles r ON u.role_id = r.id
+                        LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+                    WHERE u.id = ?
+                    ORDER BY u.id DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda general en múltiples campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                $users = DB::select(
+                    'SELECT u.*, r.name as rol, s.descripcion as sucursal
+                    FROM users u
+                        LEFT JOIN roles r ON u.role_id = r.id
+                        LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+                    WHERE cast(u.id as text) ILIKE ?
+                    OR u.name ILIKE ?
+                    OR u.email ILIKE ?
+                    OR u.ci ILIKE ?
+                    OR u.telefono ILIKE ?
+                    OR cast(u.fecha_ingreso as text) ILIKE ?
+                    OR TO_CHAR(u.fecha_ingreso, \'DD/MM/YYYY\') ILIKE ?
+                    OR r.name ILIKE ?
+                    OR s.descripcion ILIKE ?
+                    ORDER BY u.id DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarFecha . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
             }
-
-            $users = DB::select(
-                'SELECT u.*, r.name as rol, s.descripcion as sucursal
-                FROM users u
-                    LEFT JOIN roles r ON u.role_id = r.id
-                    LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
-                WHERE cast(u.id as text) ILIKE ?
-                OR u.name ILIKE ?
-                OR u.email ILIKE ?
-                OR u.ci ILIKE ?
-                OR u.telefono ILIKE ?
-                OR cast(u.fecha_ingreso as text) ILIKE ?
-                OR TO_CHAR(u.fecha_ingreso, \'DD/MM/YYYY\') ILIKE ?
-                OR r.name ILIKE ?
-                OR s.descripcion ILIKE ?
-                ORDER BY u.id DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscarFecha . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
-        } else{
+        } else {
             $users = DB::select('SELECT u.*, r.name as rol, s.descripcion as sucursal
             FROM users u
                 LEFT JOIN roles r ON u.role_id = r.id

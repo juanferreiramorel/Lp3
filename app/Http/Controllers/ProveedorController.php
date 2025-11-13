@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class ProveedorController extends Controller
+class ProveedorController extends AppBaseController
 {
     public function __construct()
     {
@@ -23,18 +23,33 @@ class ProveedorController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        // Construir consulta con filtros de búsqueda por todos los campos visibles
-        if ($buscar) {
-            $proveedores = DB::select(
-                'SELECT * FROM proveedores
-                WHERE descripcion ILIKE ?
-                OR direccion ILIKE ?
-                OR telefono ILIKE ?
-                OR cast(id_proveedor as text) ILIKE ?
-                ORDER BY id_proveedor DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $proveedores = DB::select(
+                    'SELECT * FROM proveedores
+                    WHERE id_proveedor = ?
+                    ORDER BY id_proveedor DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $proveedores = DB::select(
+                    'SELECT * FROM proveedores
+                    WHERE descripcion ILIKE ?
+                    OR direccion ILIKE ?
+                    OR telefono ILIKE ?
+                    OR cast(id_proveedor as text) ILIKE ?
+                    ORDER BY id_proveedor DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             $proveedores = DB::select('SELECT * FROM proveedores ORDER BY id_proveedor DESC');
         }

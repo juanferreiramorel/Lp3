@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class MarcaController extends Controller
+class MarcaController extends AppBaseController
 {
     public function __construct()
     {
@@ -23,16 +23,31 @@ class MarcaController extends Controller
     {
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
+        $searchMode = $request->get('search_mode', 'all');
 
-        // Construir consulta con filtros de búsqueda
-        if ($buscar) {
-            $marcas = DB::select(
-                'SELECT * FROM marcas
-                WHERE descripcion ILIKE ?
-                OR cast(id_marca as text) ILIKE ?
-                ORDER BY id_marca DESC',
-                ['%' . $buscar . '%', '%' . $buscar . '%']
-            );
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $marcas = DB::select(
+                    'SELECT * FROM marcas
+                    WHERE id_marca = ?
+                    ORDER BY id_marca DESC',
+                    [(int)$searchConfig['term']]
+                );
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+                $marcas = DB::select(
+                    'SELECT * FROM marcas
+                    WHERE descripcion ILIKE ?
+                    OR cast(id_marca as text) ILIKE ?
+                    ORDER BY id_marca DESC',
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                );
+            }
         } else {
             $marcas = DB::SELECT('SELECT * FROM marcas ORDER BY id_marca DESC');
         }

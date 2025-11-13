@@ -10,7 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class PedidosController extends Controller
+class PedidosController extends AppBaseController
 {
     public function __construct()
     {
@@ -58,27 +58,40 @@ class PedidosController extends Controller
 
         // BÚSQUEDA POR TEXTO GENERAL
         $buscar = $request->get('buscar');
-        if ($buscar) {
-            // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
-            $buscarFecha = $buscar;
-            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscar, $matches)) {
-                $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+        $searchMode = $request->get('search_mode', 'all');
+
+        // Procesar modo de búsqueda
+        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
+
+        if ($searchConfig) {
+            if ($searchConfig['mode'] === 'id') {
+                // Búsqueda exacta por ID
+                $sql_filtros .= " AND p.id_pedido = " . (int)$searchConfig['term'];
+            } else {
+                // Búsqueda múltiple en todos los campos
+                $buscarTerm = $searchConfig['term'];
+
+                // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd
+                $buscarFecha = $buscarTerm;
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                    $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
+                }
+
+                // Limpiar separadores de miles para búsqueda de montos
+                $buscarMonto = str_replace('.', '', $buscarTerm);
+
+                $sql_filtros .= " AND (
+                    cast(p.id_pedido as text) ILIKE '%{$buscarTerm}%'
+                    OR c.clie_ci ILIKE '%{$buscarTerm}%'
+                    OR CONCAT(c.clie_nombre,' ', c.clie_apellido) ILIKE '%{$buscarTerm}%'
+                    OR cast(p.fecha_pedido as text) ILIKE '%{$buscarFecha}%'
+                    OR TO_CHAR(p.fecha_pedido, 'DD/MM/YYYY') ILIKE '%{$buscarTerm}%'
+                    OR cast(p.total_pedido as text) ILIKE '%{$buscarMonto}%'
+                    OR TO_CHAR(p.total_pedido, 'FM999G999G999G999G999') ILIKE '%{$buscarTerm}%'
+                    OR u.name ILIKE '%{$buscarTerm}%'
+                    OR p.estado ILIKE '%{$buscarTerm}%'
+                )";
             }
-
-            // Limpiar separadores de miles para búsqueda de montos
-            $buscarMonto = str_replace('.', '', $buscar);
-
-            $sql_filtros .= " AND (
-                cast(p.id_pedido as text) ILIKE '%{$buscar}%'
-                OR c.clie_ci ILIKE '%{$buscar}%'
-                OR CONCAT(c.clie_nombre,' ', c.clie_apellido) ILIKE '%{$buscar}%'
-                OR cast(p.fecha_pedido as text) ILIKE '%{$buscarFecha}%'
-                OR TO_CHAR(p.fecha_pedido, 'DD/MM/YYYY') ILIKE '%{$buscar}%'
-                OR cast(p.total_pedido as text) ILIKE '%{$buscarMonto}%'
-                OR TO_CHAR(p.total_pedido, 'FM999G999G999G999G999') ILIKE '%{$buscar}%'
-                OR u.name ILIKE '%{$buscar}%'
-                OR p.estado ILIKE '%{$buscar}%'
-            )";
         }
 
         // Construir WHERE

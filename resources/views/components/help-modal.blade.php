@@ -65,12 +65,6 @@
                             </div>
                         </div>
                         <div class="col-lg-8">
-                            <div class="mb-3">
-                                <h5 id="helpTopicViewerTitle" class="mb-1">{{ $firstHelpTopic->title ?? 'Ayuda' }}</h5>
-                                <p id="helpTopicViewerDescription" class="text-muted small mb-2">
-                                    {{ $firstHelpTopic->description ?? 'Selecciona un manual para ver su contenido.' }}
-                                </p>
-                            </div>
                             <div class="embed-responsive embed-responsive-16by9 mb-3" style="min-height: 60vh;">
                                 <iframe id="helpTopicFrame" class="embed-responsive-item"
                                         src="{{ $firstHelpTopic ? route('ayuda.pdf', $firstHelpTopic->id_help) : '' }}"
