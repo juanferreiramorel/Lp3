@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ClienteController extends AppBaseController
@@ -137,27 +136,22 @@ class ClienteController extends AppBaseController
     public function store(Request $request)
     {
         $input = $request->all();
-        # Obtener fecha actual
-        $fec_actual = Carbon::now();
-        # Parsear la fecha de nacimiento input clie_fecha_nac
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
 
         $validacion = Validator::make(
             $input,
             [
-                'clie_nombre.required',
-                'clie_apellido.required',
-                #'clie_ci.required|unique:clientes,clie_ci|max:8',
-                'clie_fecha_nac.required|date',
-                'id_departamento.required|exists:departamentos,id_departamento',
-                'id_ciudad.required|exists:ciudades,id_ciudad',
+                'clie_nombre' => 'required',
+                'clie_apellido' => 'required',
+                'clie_ci' => 'required',
+                'clie_fecha_nac' => 'required|date',
+                'id_departamento' => 'required|exists:departamentos,id_departamento',
+                'id_ciudad' => 'required|exists:ciudades,id_ciudad',
             ],
             [
                 'clie_nombre.required' => 'Campo nombre obligatorio',
                 'clie_apellido.required' => 'Campo apellido obligatorio',
                 'clie_ci.required' => 'Campo CI obligatorio',
                 'clie_ci.unique' => 'El dato de CI ya existe',
-                #'clie_ci.max' => 'El campo CI debe tener como máximo 8 caracteres',
                 'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
                 'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
                 'id_departamento.required' => 'Campo departamento obligatorio',
@@ -167,16 +161,25 @@ class ClienteController extends AppBaseController
             ]
         );
 
+        if ($validacion->fails()) {
+            Alert::error('Error', 'Error en la validación de datos.');
+            return redirect()->back()->withErrors($validacion)->withInput();
+        }
+
+        # Obtener fecha actual
+        $fec_actual = Carbon::now();
+        # Parsear la fecha de nacimiento input clie_fecha_nac
+        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
+
         ##validar edad del cliente
         $edad = $fec_actual->diffInYears($fecha_nac);
         if ($edad < 18) {
-            Flash::error('El cliente debe ser mayor de 18 años.');
+            Alert::error('Error', 'El cliente debe ser mayor de 18 años.');
             return redirect(route('clientes.create'))->withInput();
         }
 
         ## validar fecha mayor al actual
         if ($fecha_nac > $fec_actual) {
-            // Flash::error('La fecha de nacimiento no puede ser mayor a la fecha actual.');
             Alert::error('Error', 'La fecha de nacimiento no puede ser mayor a la fecha actual.');
             return redirect(route('clientes.create'))->withInput();
         }
@@ -184,7 +187,6 @@ class ClienteController extends AppBaseController
         ##validar cantidad de digitos del campo ci
         $ci = strlen($input['clie_ci']); // utilizar strlen para contar caracteres
         if ($ci > 8) { # mayor a 8 caracteres
-            // Flash::error('El nro de cedula solo podra contener 8 digítos.');
             Alert::error('Error', 'El nro de cedula solo podra contener 8 digítos.');
             return redirect(route('clientes.create'))->withInput();
         }
@@ -204,14 +206,13 @@ class ClienteController extends AppBaseController
             strtoupper($input['clie_nombre']),
             strtoupper($input['clie_apellido']),
             $input['clie_ci'],
-            $input['clie_telefono'],
-            strtoupper($input['clie_direccion']),
+            isset($input['clie_telefono']) ? $input['clie_telefono'] : null,
+            isset($input['clie_direccion']) ? strtoupper($input['clie_direccion']) : null,
             $input['clie_fecha_nac'],
             $input['id_departamento'],
             $input['id_ciudad']
         ]);
 
-        // Flash::success('Cliente creado correctamente.');
         Alert::success('Exito', 'Cliente creado correctamente.');
 
         return redirect(route('clientes.index'));
@@ -249,28 +250,22 @@ class ClienteController extends AppBaseController
             return redirect(route('clientes.index'));
         }
 
-        # Obtener fecha actual
-        $fec_actual = Carbon::now();
-        # Parsear la fecha de nacimiento input clie_fecha_nac
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
-
         // Validaciones
         $validacion = Validator::make(
             $input,
             [
-                'clie_nombre.required',
-                'clie_apellido.required',
-                #'clie_ci.required|unique:clientes,clie_ci|max:8',
-                'clie_fecha_nac.required|date',
-                'id_departamento.required|exists:departamentos,id_departamento',
-                'id_ciudad.required|exists:ciudades,id_ciudad',
+                'clie_nombre' => 'required',
+                'clie_apellido' => 'required',
+                'clie_ci' => 'required',
+                'clie_fecha_nac' => 'required|date',
+                'id_departamento' => 'required|exists:departamentos,id_departamento',
+                'id_ciudad' => 'required|exists:ciudades,id_ciudad',
             ],
             [
                 'clie_nombre.required' => 'Campo nombre obligatorio',
                 'clie_apellido.required' => 'Campo apellido obligatorio',
                 'clie_ci.required' => 'Campo CI obligatorio',
                 'clie_ci.unique' => 'El dato de CI ya existe',
-                #'clie_ci.max' => 'El campo CI debe tener como máximo 8 caracteres',
                 'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
                 'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
                 'id_departamento.required' => 'Campo departamento obligatorio',
@@ -281,10 +276,14 @@ class ClienteController extends AppBaseController
         );
 
         if ($validacion->fails()) {
-            // Flash::error('Error en la validación de datos.');
             Alert::error('Error', 'Error en la validación de datos.');
             return redirect()->back()->withErrors($validacion)->withInput();
         }
+
+        # Obtener fecha actual
+        $fec_actual = Carbon::now();
+        # Parsear la fecha de nacimiento input clie_fecha_nac
+        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
 
         ##validar edad del cliente
         $edad = $fec_actual->diffInYears($fecha_nac);
@@ -319,22 +318,22 @@ class ClienteController extends AppBaseController
         }
 
         DB::update(
-            'UPDATE clientes SET 
-            clie_nombre = ?, 
-            clie_apellido = ?, 
-            clie_ci = ?, 
-            clie_telefono = ?, 
-            clie_direccion = ?, 
-            clie_fecha_nac = ?, 
-            id_departamento = ?, 
-            id_ciudad = ? 
+            'UPDATE clientes SET
+            clie_nombre = ?,
+            clie_apellido = ?,
+            clie_ci = ?,
+            clie_telefono = ?,
+            clie_direccion = ?,
+            clie_fecha_nac = ?,
+            id_departamento = ?,
+            id_ciudad = ?
         WHERE id_cliente = ?',
             [
-                $input['clie_nombre'],
-                $input['clie_apellido'],
+                strtoupper($input['clie_nombre']),
+                strtoupper($input['clie_apellido']),
                 $input['clie_ci'],
-                $input['clie_telefono'],
-                $input['clie_direccion'],
+                isset($input['clie_telefono']) ? $input['clie_telefono'] : null,
+                isset($input['clie_direccion']) ? strtoupper($input['clie_direccion']) : null,
                 $input['clie_fecha_nac'],
                 $input['id_departamento'],
                 $input['id_ciudad'],
