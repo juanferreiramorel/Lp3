@@ -104,56 +104,122 @@
 
 @push('scripts')
 <script>
+
 $(document).ready(function() {
+    const $modal = $('#modalCliente');
+    const $modalForm = $('#formNuevoCliente');
+    const $modalSelects = $('.select2-modal');
+    const $departamentoSelect = $('#modal_id_departamento');
+    const $ciudadSelect = $('#modal_id_ciudad');
+    const departamentosUrl = '{{ route('departamentos.listadoSimple') }}';
+    const ciudadesUrlTemplate = '{{ route('ciudades.porDepartamento', ['id_departamento' => '__ID__']) }}';
+    let departamentosCargados = $departamentoSelect.find('option').length > 1;
+
     // Initialize Select2 for modal selects
-    $('.select2-modal').select2({
+    $modalSelects.select2({
         theme: 'bootstrap4',
         width: '100%',
-        dropdownParent: $('#modalCliente')
+        dropdownParent: $modal
     });
 
-    // Cargar ciudades cuando se selecciona departamento
-    $('#modal_id_departamento').on('change', function() {
-        const departamentoId = $(this).val();
-        const ciudadSelect = $('#modal_id_ciudad');
-
-        ciudadSelect.empty().append('<option value="">Cargando...</option>');
-
-        if (departamentoId) {
-            $.ajax({
-                url: '/api/ciudades/' + departamentoId,
-                type: 'GET',
-                success: function(data) {
-                    ciudadSelect.empty().append('<option value="">Seleccionar Ciudad...</option>');
-                    $.each(data, function(id, nombre) {
-                        ciudadSelect.append('<option value="' + id + '">' + nombre + '</option>');
-                    });
-                },
-                error: function() {
-                    ciudadSelect.empty().append('<option value="">Error al cargar ciudades</option>');
-                }
-            });
-        } else {
-            ciudadSelect.empty().append('<option value="">Seleccionar Ciudad...</option>');
+    const resetSelect2ErrorState = (element) => {
+        if (element.hasClass('select2-hidden-accessible')) {
+            element.next('.select2-container').find('.select2-selection').removeClass('is-invalid');
         }
+    };
+
+    const applySelect2ErrorState = (element) => {
+        if (element.hasClass('select2-hidden-accessible')) {
+            element.next('.select2-container').find('.select2-selection').addClass('is-invalid');
+        }
+    };
+
+    const clearModalErrors = () => {
+        $modal.find('.text-danger').addClass('d-none').text('');
+        $modal.find('.form-control').removeClass('is-invalid');
+        $modalSelects.each(function() {
+            resetSelect2ErrorState($(this));
+        });
+    };
+
+    const poblarDepartamentos = (data) => {
+        $departamentoSelect.empty().append('<option value="">Seleccionar Departamento...</option>');
+        $.each(data, function(id, nombre) {
+            $departamentoSelect.append(new Option(nombre, id, false, false));
+        });
+        $departamentoSelect.trigger('change.select2');
+    };
+
+    const cargarDepartamentos = () => {
+        if (departamentosCargados) {
+            return $.Deferred().resolve().promise();
+        }
+
+        return $.ajax({
+            url: departamentosUrl,
+            type: 'GET'
+        }).done(function(data) {
+            poblarDepartamentos(data);
+            departamentosCargados = true;
+        }).fail(function() {
+            $departamentoSelect.empty().append('<option value="">Error al cargar departamentos</option>');
+            $departamentoSelect.trigger('change.select2');
+        });
+    };
+
+    const poblarCiudades = (data) => {
+        $ciudadSelect.empty().append('<option value="">Seleccionar Ciudad...</option>');
+        $.each(data, function(id, nombre) {
+            $ciudadSelect.append(new Option(nombre, id, false, false));
+        });
+        $ciudadSelect.trigger('change.select2');
+    };
+
+    const cargarCiudades = (departamentoId) => {
+        if (!departamentoId) {
+            poblarCiudades({});
+            return;
+        }
+
+        $ciudadSelect.empty().append('<option value="">Cargando...</option>');
+        $ciudadSelect.trigger('change.select2');
+
+        const url = ciudadesUrlTemplate.replace('__ID__', departamentoId);
+
+        $.ajax({
+            url: url,
+            type: 'GET'
+        }).done(function(data) {
+            poblarCiudades(data);
+        }).fail(function() {
+            $ciudadSelect.empty().append('<option value="">Error al cargar ciudades</option>');
+            $ciudadSelect.trigger('change.select2');
+        });
+    };
+
+    $departamentoSelect.on('change', function() {
+        cargarCiudades($(this).val());
+    });
+
+    $modal.on('shown.bs.modal', function() {
+        cargarDepartamentos();
     });
 
     // Limpiar formulario al cerrar modal
-    $('#modalCliente').on('hidden.bs.modal', function() {
-        $('#formNuevoCliente')[0].reset();
-        $('.text-danger').addClass('d-none').text('');
-        $('.form-control').removeClass('is-invalid');
-        $('#modal_id_ciudad').empty().append('<option value="">Seleccionar Ciudad...</option>');
+    $modal.on('hidden.bs.modal', function() {
+        $modalForm[0].reset();
+        clearModalErrors();
+        $departamentoSelect.val('').trigger('change.select2');
+        poblarCiudades({});
     });
 
     // Guardar cliente
     $('#btnGuardarCliente').on('click', function() {
         const btn = $(this);
-        const form = $('#formNuevoCliente');
+        const form = $modalForm;
 
         // Limpiar errores previos
-        $('.text-danger').addClass('d-none').text('');
-        $('.form-control').removeClass('is-invalid');
+        clearModalErrors();
 
         // Deshabilitar botón
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
@@ -165,12 +231,16 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     // Cerrar modal
-                    $('#modalCliente').modal('hide');
+                    $modal.modal('hide');
 
                     // Agregar nuevo cliente al select principal
                     const nuevoCliente = response.cliente;
                     const option = new Option(nuevoCliente.nombre_completo, nuevoCliente.id_cliente, true, true);
-                    $('#id_cliente').append(option).trigger('change');
+                    const $clienteSelect = $('#id_cliente');
+                    if ($clienteSelect.find('option[value="' + nuevoCliente.id_cliente + '"]').length === 0) {
+                        $clienteSelect.append(option);
+                    }
+                    $clienteSelect.val(nuevoCliente.id_cliente).trigger('change');
 
                     // Mostrar mensaje de éxito
                     Swal.fire({
@@ -192,6 +262,7 @@ $(document).ready(function() {
 
                         errorElement.removeClass('d-none').text(messages[0]);
                         inputElement.addClass('is-invalid');
+                        applySelect2ErrorState(inputElement);
                     });
                 } else {
                     Swal.fire({
@@ -208,5 +279,6 @@ $(document).ready(function() {
         });
     });
 });
+
 </script>
 @endpush

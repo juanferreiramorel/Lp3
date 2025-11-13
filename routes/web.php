@@ -31,6 +31,12 @@ Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']
 Route::get('pedidos/pendientes', [App\Http\Controllers\PedidosController::class, 'getPendientes'])->name('pedidos.getPendientes');
 Route::get('ventas/crear-desde-pedido/{id}', [App\Http\Controllers\VentaController::class, 'crearDesdePedido'])->name('ventas.crearDesdePedido');
 
+// Rutas utilitarias para selects dependientes
+Route::get('departamentos/lista-simple', [App\Http\Controllers\DepartamentoController::class, 'listadoSimple'])
+    ->name('departamentos.listadoSimple');
+Route::get('ciudades/por-departamento/{id_departamento}', [App\Http\Controllers\CiudadController::class, 'getByDepartamento'])
+    ->name('ciudades.porDepartamento');
+
 // Recursos principales
 Route::resource('cargos', App\Http\Controllers\CargoController::class);
 Route::resource('departamentos', App\Http\Controllers\DepartamentoController::class);

@@ -616,7 +616,8 @@ class PlantillaContratoController extends AppBaseController
             );
 
             if (!$contrato) {
-                return $this->sendError('Contrato no encontrado');
+                $this->sendError('Contrato no encontrado');
+                return redirect()->route('plantillas_contratos.contratos_generados');
             }
 
             DB::beginTransaction();
@@ -630,6 +631,7 @@ class PlantillaContratoController extends AppBaseController
             DB::rollBack();
             return $this->sendError('Error al eliminar el contrato: ' . $e->getMessage());
         }
+         return redirect(route('plantillas_contratos.contratos_generados'));
     }
 
     /**

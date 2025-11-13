@@ -204,4 +204,16 @@ class DepartamentoController extends AppBaseController
 
         return redirect(route('departamentos.index'));
     }
+
+    /**
+     * Devuelve un listado simple de departamentos para peticiones AJAX.
+     */
+    public function listadoSimple()
+    {
+        $departamentos = DB::table('departamentos')
+            ->orderBy('descripcion')
+            ->pluck('descripcion', 'id_departamento');
+
+        return response()->json($departamentos);
+    }
 }
