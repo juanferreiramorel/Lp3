@@ -102,6 +102,16 @@
 </li>
 @endcan
 
+{{-- Plantillas de Contratos --}}
+@can('plantillas_contratos index')
+<li class="nav-item">
+    <a href="{{ route('plantillas_contratos.index') }}" class="nav-link {{ Request::is('plantillas-contratos*') || Request::is('plantillas_contratos*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-file-contract"></i>
+        <p>Plantillas Contratos</p>
+    </a>
+</li>
+@endcan
+
 {{-- Reportes --}}
 <li class="nav-item {{ $isReportOpen ? 'menu-is-opening menu-open' : '' }}">
     <a href="#" class="nav-link">
