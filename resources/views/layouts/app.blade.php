@@ -1,6 +1,7 @@
 <x-laravel-ui-adminlte::adminlte-layout>
     <head>
         <title>LP@2</title>
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/x-icon" href="">
         <!-- librerias css select2 -->
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />

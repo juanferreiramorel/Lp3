@@ -17,19 +17,26 @@
 </div>
 
 <!-- Id Cliente Field -->
-<div class="form-group col-sm-3 col-12">
+<div class="form-group col-sm-6 col-12">
     {!! Form::label('id_cliente', 'Cliente:') !!}
-    <div class="input-group">
-        {!! Form::select('id_cliente', $clientes, isset($recibo) ? $recibo->id_cliente : null, [
-            'class' => 'form-control select2',
-            'required',
-            'placeholder' => 'Seleccione un cliente',
-        ]) !!}
-        <div class="input-group-append">
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCliente" title="Crear nuevo cliente">
-                <i class="fas fa-user-plus"></i>
-            </button>
+    <div class="cliente-field-wrapper d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center">
+        <div class="flex-grow-1 mb-2 mb-sm-0">
+            {!! Form::select('id_cliente', $clientes, isset($recibo) ? $recibo->id_cliente : null, [
+                'class' => 'form-control select2',
+                'required',
+                'placeholder' => 'Seleccione un cliente',
+            ]) !!}
         </div>
+        <button type="button"
+            class="btn btn-success btn-nuevo-cliente ml-0 ml-sm-2 mt-0"
+            data-toggle="modal"
+            data-target="#modalCliente"
+            title="Crear nuevo cliente">
+            <span class="btn-nuevo-cliente__icon">
+                <i class="fas fa-user-plus"></i>
+            </span>
+            <span class="btn-nuevo-cliente__text">Nuevo cliente</span>
+        </button>
     </div>
 </div>
 
@@ -67,7 +74,66 @@
 </div>
 
 @includeIf('recibossimples.modal_producto')
-@includeIf('recibossimples.modal_cliente')
+@include('recibossimples.modal_cliente', [
+    'departamentos' => collect($departamentos ?? [])->toArray(),
+    'ciudadesPorDepartamento' => $ciudadesPorDepartamento ?? []
+])
+
+@push('styles')
+<style>
+    .cliente-field-wrapper {
+        gap: 0.5rem;
+    }
+
+    .btn-nuevo-cliente {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        padding: 0.45rem 1rem;
+        border-radius: 0.4rem;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        width: 100%;
+    }
+
+    .btn-nuevo-cliente__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        margin-right: 0.35rem;
+    }
+
+    .btn-nuevo-cliente:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(40, 167, 69, 0.45);
+    }
+
+    .btn-nuevo-cliente:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.35);
+    }
+
+    .btn-nuevo-cliente__text {
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    @media (min-width: 576px) {
+        .btn-nuevo-cliente {
+            width: auto;
+            min-width: 170px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .btn-nuevo-cliente__text {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
     <script>

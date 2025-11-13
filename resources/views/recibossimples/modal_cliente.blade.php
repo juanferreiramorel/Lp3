@@ -10,10 +10,9 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <form id="formNuevoCliente">
-                    @csrf
-                    <div class="row">
+            <div class="modal-body" id="formNuevoCliente">
+                @csrf
+                <div class="row">
                         <!-- Nombre Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_clie_nombre">Nombre: <span class="text-danger">*</span></label>
@@ -59,11 +58,13 @@
                         <!-- Departamento Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_id_departamento">Departamento: <span class="text-danger">*</span></label>
-                            <select class="form-control select2-modal" id="modal_id_departamento" name="id_departamento" required>
+                            <select class="form-control select2" id="modal_id_departamento" name="id_departamento" required>
                                 <option value="">Seleccionar Departamento...</option>
-                                @foreach($departamentos as $id => $nombre)
-                                    <option value="{{ $id }}">{{ $nombre }}</option>
-                                @endforeach
+                                @if(isset($departamentos))
+                                    @foreach($departamentos as $id => $nombre)
+                                        <option value="{{ $id }}">{{ $nombre }}</option>
+                                    @endforeach
+                                @endif
                             </select>
                             <small class="text-danger d-none" id="error_id_departamento"></small>
                         </div>
@@ -71,13 +72,12 @@
                         <!-- Ciudad Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_id_ciudad">Ciudad: <span class="text-danger">*</span></label>
-                            <select class="form-control select2-modal" id="modal_id_ciudad" name="id_ciudad" required>
+                            <select class="form-control select2" id="modal_id_ciudad" name="id_ciudad" required>
                                 <option value="">Seleccionar Ciudad...</option>
                             </select>
                             <small class="text-danger d-none" id="error_id_ciudad"></small>
                         </div>
                     </div>
-                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -104,23 +104,66 @@
 
 @push('scripts')
 <script>
+(function() {
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery no está cargado!');
+        return;
+    }
 
-$(document).ready(function() {
+    jQuery(document).ready(function($) {
+    // Evitar inicialización múltiple
+    if (window.modalClienteInitialized) {
+        return;
+    }
+    window.modalClienteInitialized = true;
+
+    // Verificar que los elementos existen
     const $modal = $('#modalCliente');
-    const $modalForm = $('#formNuevoCliente');
-    const $modalSelects = $('.select2-modal');
+    const $formContainer = $('#formNuevoCliente');
     const $departamentoSelect = $('#modal_id_departamento');
     const $ciudadSelect = $('#modal_id_ciudad');
+
+    if ($modal.length === 0) {
+        console.error('Modal de cliente no encontrado');
+        return;
+    }
+
     const departamentosUrl = '{{ route('departamentos.listadoSimple') }}';
     const ciudadesUrlTemplate = '{{ route('ciudades.porDepartamento', ['id_departamento' => '__ID__']) }}';
-    let departamentosCargados = $departamentoSelect.find('option').length > 1;
+    let departamentosCargados = false;
 
     // Initialize Select2 for modal selects
-    $modalSelects.select2({
-        theme: 'bootstrap4',
-        width: '100%',
-        dropdownParent: $modal
-    });
+    function initSelect2() {
+        if (typeof $.fn.select2 !== 'undefined') {
+            try {
+                // Destruir select2 si ya existe
+                if ($departamentoSelect.hasClass('select2-hidden-accessible')) {
+                    $departamentoSelect.select2('destroy');
+                }
+                if ($ciudadSelect.hasClass('select2-hidden-accessible')) {
+                    $ciudadSelect.select2('destroy');
+                }
+
+                $departamentoSelect.select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    dropdownParent: $modal,
+                    placeholder: 'Seleccionar Departamento...',
+                    allowClear: false
+                });
+
+                $ciudadSelect.select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    dropdownParent: $modal,
+                    placeholder: 'Seleccionar Ciudad...',
+                    allowClear: false
+                });
+            } catch(e) {
+                console.error('Error al inicializar Select2:', e);
+            }
+        }
+    }
 
     const resetSelect2ErrorState = (element) => {
         if (element.hasClass('select2-hidden-accessible')) {
@@ -137,17 +180,30 @@ $(document).ready(function() {
     const clearModalErrors = () => {
         $modal.find('.text-danger').addClass('d-none').text('');
         $modal.find('.form-control').removeClass('is-invalid');
-        $modalSelects.each(function() {
-            resetSelect2ErrorState($(this));
-        });
+        resetSelect2ErrorState($departamentoSelect);
+        resetSelect2ErrorState($ciudadSelect);
     };
 
     const poblarDepartamentos = (data) => {
+        // Destruir Select2 temporalmente
+        if ($departamentoSelect.hasClass('select2-hidden-accessible')) {
+            $departamentoSelect.select2('destroy');
+        }
+
+        // Poblar opciones
         $departamentoSelect.empty().append('<option value="">Seleccionar Departamento...</option>');
         $.each(data, function(id, nombre) {
             $departamentoSelect.append(new Option(nombre, id, false, false));
         });
-        $departamentoSelect.trigger('change.select2');
+
+        // Reinicializar Select2
+        $departamentoSelect.select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            dropdownParent: $modal,
+            placeholder: 'Seleccionar Departamento...',
+            allowClear: false
+        });
     };
 
     const cargarDepartamentos = () => {
@@ -161,18 +217,32 @@ $(document).ready(function() {
         }).done(function(data) {
             poblarDepartamentos(data);
             departamentosCargados = true;
-        }).fail(function() {
+        }).fail(function(xhr) {
+            console.error('Error al cargar departamentos:', xhr.responseText);
             $departamentoSelect.empty().append('<option value="">Error al cargar departamentos</option>');
-            $departamentoSelect.trigger('change.select2');
         });
     };
 
     const poblarCiudades = (data) => {
+        // Destruir Select2 temporalmente
+        if ($ciudadSelect.hasClass('select2-hidden-accessible')) {
+            $ciudadSelect.select2('destroy');
+        }
+
+        // Poblar opciones
         $ciudadSelect.empty().append('<option value="">Seleccionar Ciudad...</option>');
         $.each(data, function(id, nombre) {
             $ciudadSelect.append(new Option(nombre, id, false, false));
         });
-        $ciudadSelect.trigger('change.select2');
+
+        // Reinicializar Select2
+        $ciudadSelect.select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            dropdownParent: $modal,
+            placeholder: 'Seleccionar Ciudad...',
+            allowClear: false
+        });
     };
 
     const cargarCiudades = (departamentoId) => {
@@ -181,9 +251,6 @@ $(document).ready(function() {
             return;
         }
 
-        $ciudadSelect.empty().append('<option value="">Cargando...</option>');
-        $ciudadSelect.trigger('change.select2');
-
         const url = ciudadesUrlTemplate.replace('__ID__', departamentoId);
 
         $.ajax({
@@ -191,32 +258,50 @@ $(document).ready(function() {
             type: 'GET'
         }).done(function(data) {
             poblarCiudades(data);
-        }).fail(function() {
-            $ciudadSelect.empty().append('<option value="">Error al cargar ciudades</option>');
-            $ciudadSelect.trigger('change.select2');
+        }).fail(function(xhr) {
+            console.error('Error al cargar ciudades:', xhr.responseText);
+            poblarCiudades({});
         });
     };
 
+    // Escuchar cambios en departamento
     $departamentoSelect.on('change', function() {
         cargarCiudades($(this).val());
     });
 
+    // Cuando el modal se muestre completamente
     $modal.on('shown.bs.modal', function() {
+        initSelect2();
         cargarDepartamentos();
     });
 
     // Limpiar formulario al cerrar modal
     $modal.on('hidden.bs.modal', function() {
-        $modalForm[0].reset();
+        // Limpiar todos los campos manualmente
+        $('#modal_clie_nombre').val('');
+        $('#modal_clie_apellido').val('');
+        $('#modal_clie_ci').val('');
+        $('#modal_clie_fecha_nac').val('');
+        $('#modal_clie_telefono').val('');
+        $('#modal_clie_direccion').val('');
+
         clearModalErrors();
-        $departamentoSelect.val('').trigger('change.select2');
+        $departamentoSelect.val('');
+        if ($departamentoSelect.hasClass('select2-hidden-accessible')) {
+            $departamentoSelect.trigger('change.select2');
+        } else {
+            $departamentoSelect.trigger('change');
+        }
         poblarCiudades({});
     });
 
-    // Guardar cliente
-    $('#btnGuardarCliente').on('click', function() {
+    // Guardar cliente - usando delegación de eventos
+    $(document).on('click', '#btnGuardarCliente', function(e) {
+        e.preventDefault();
+
         const btn = $(this);
-        const form = $modalForm;
+        const $modalElement = $('#modalCliente');
+        const $formContainer = $('#formNuevoCliente');
 
         // Limpiar errores previos
         clearModalErrors();
@@ -224,14 +309,46 @@ $(document).ready(function() {
         // Deshabilitar botón
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
 
+        // Recopilar datos manualmente desde los inputs dentro del contenedor
+        const formData = {
+            clie_nombre: $('#modal_clie_nombre').val(),
+            clie_apellido: $('#modal_clie_apellido').val(),
+            clie_ci: $('#modal_clie_ci').val(),
+            clie_fecha_nac: $('#modal_clie_fecha_nac').val(),
+            clie_telefono: $('#modal_clie_telefono').val(),
+            clie_direccion: $('#modal_clie_direccion').val(),
+            id_departamento: $('#modal_id_departamento').val(),
+            id_ciudad: $('#modal_id_ciudad').val()
+        };
+
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+        if (!csrfToken) {
+            console.error('CSRF Token no encontrado en la página');
+            alert('Error: Token de seguridad no encontrado. Recargue la página.');
+            btn.prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Cliente');
+            return;
+        }
+
         $.ajax({
             url: '{{ route("clientes.store.ajax") }}',
             type: 'POST',
-            data: form.serialize(),
+            data: formData,
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
             success: function(response) {
                 if (response.success) {
-                    // Cerrar modal
-                    $modal.modal('hide');
+                    // Cerrar modal y limpiar backdrop
+                    $modalElement.modal('hide');
+
+                    // Forzar la eliminación del backdrop y restaurar el scroll
+                    setTimeout(function() {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css('padding-right', '');
+                    }, 100);
 
                     // Agregar nuevo cliente al select principal
                     const nuevoCliente = response.cliente;
@@ -243,16 +360,22 @@ $(document).ready(function() {
                     $clienteSelect.val(nuevoCliente.id_cliente).trigger('change');
 
                     // Mostrar mensaje de éxito
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: 'Cliente creado correctamente',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: 'Cliente creado correctamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Cliente creado correctamente');
+                    }
                 }
             },
             error: function(xhr) {
+                console.error('Error al guardar cliente:', xhr);
+
                 if (xhr.status === 422) {
                     // Errores de validación
                     const errors = xhr.responseJSON.errors;
@@ -265,11 +388,23 @@ $(document).ready(function() {
                         applySelect2ErrorState(inputElement);
                     });
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error al crear el cliente. Por favor, intente nuevamente.'
-                    });
+                    let errorMsg = 'Error al crear el cliente. Por favor, intente nuevamente.';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        errorMsg = 'Error: ' + xhr.status + ' - ' + xhr.statusText;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMsg
+                        });
+                    } else {
+                        alert(errorMsg);
+                    }
                 }
             },
             complete: function() {
@@ -278,7 +413,8 @@ $(document).ready(function() {
             }
         });
     });
-});
+    }); // Cierre de jQuery(document).ready
+})(); // Cierre de IIFE
 
 </script>
 @endpush

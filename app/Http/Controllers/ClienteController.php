@@ -373,8 +373,6 @@ class ClienteController extends AppBaseController
     public function storeAjax(Request $request)
     {
         $input = $request->all();
-        $fec_actual = Carbon::now();
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
 
         // Validación
         $validator = Validator::make(
@@ -408,6 +406,8 @@ class ClienteController extends AppBaseController
         }
 
         // Validar edad del cliente
+        $fec_actual = Carbon::now();
+        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
         $edad = $fec_actual->diffInYears($fecha_nac);
         if ($edad < 18) {
             return response()->json([
@@ -445,27 +445,21 @@ class ClienteController extends AppBaseController
             ], 422);
         }
 
-        // Insertar datos en clientes
-        DB::insert('INSERT INTO clientes (clie_nombre, clie_apellido, clie_ci, clie_telefono, clie_direccion, clie_fecha_nac, id_departamento, id_ciudad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
-            strtoupper($input['clie_nombre']),
-            strtoupper($input['clie_apellido']),
-            $input['clie_ci'],
-            $input['clie_telefono'] ?? '',
-            strtoupper($input['clie_direccion'] ?? ''),
-            $input['clie_fecha_nac'],
-            $input['id_departamento'],
-            $input['id_ciudad']
-        ]);
-
-        // Obtener el ID del último cliente insertado
-        $lastId = DB::getPdo()->lastInsertId();
-
-        // Obtener el cliente recién creado
+        // Insertar datos en clientes y obtener el registro creado
         $nuevoCliente = DB::selectOne(
-            'SELECT id_cliente, clie_nombre, clie_apellido, clie_ci
-            FROM clientes
-            WHERE id_cliente = ?',
-            [$lastId]
+            'INSERT INTO clientes (clie_nombre, clie_apellido, clie_ci, clie_telefono, clie_direccion, clie_fecha_nac, id_departamento, id_ciudad)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id_cliente, clie_nombre, clie_apellido, clie_ci',
+            [
+                strtoupper($input['clie_nombre']),
+                strtoupper($input['clie_apellido']),
+                $input['clie_ci'],
+                $input['clie_telefono'] ?? '',
+                strtoupper($input['clie_direccion'] ?? ''),
+                $input['clie_fecha_nac'],
+                $input['id_departamento'],
+                $input['id_ciudad']
+            ]
         );
 
         return response()->json([
