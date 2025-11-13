@@ -46,8 +46,12 @@ Route::resource('clientes', App\Http\Controllers\ClienteController::class);
 // Rutas específicas para plantillas de contratos (ANTES del resource)
 Route::get('plantillas-contratos/{id}/generar-formulario', [App\Http\Controllers\PlantillaContratoController::class, 'generarFormulario'])->name('plantillas_contratos.generar_formulario');
 Route::post('plantillas-contratos/{id}/generar', [App\Http\Controllers\PlantillaContratoController::class, 'generar'])->name('plantillas_contratos.generar');
+Route::post('plantillas-contratos/guardar-contrato', [App\Http\Controllers\PlantillaContratoController::class, 'guardarContrato'])->name('plantillas_contratos.guardar_contrato');
 Route::get('plantillas-contratos/contratos-generados', [App\Http\Controllers\PlantillaContratoController::class, 'contratosGenerados'])->name('plantillas_contratos.contratos_generados');
 Route::get('plantillas-contratos/contrato/{id}', [App\Http\Controllers\PlantillaContratoController::class, 'verContrato'])->name('plantillas_contratos.ver_contrato');
+Route::get('plantillas-contratos/contrato/{id}/editar', [App\Http\Controllers\PlantillaContratoController::class, 'editarContrato'])->name('plantillas_contratos.editar_contrato');
+Route::put('plantillas-contratos/contrato/{id}/actualizar', [App\Http\Controllers\PlantillaContratoController::class, 'actualizarContrato'])->name('plantillas_contratos.actualizar_contrato');
+Route::delete('plantillas-contratos/contrato/{id}/eliminar', [App\Http\Controllers\PlantillaContratoController::class, 'eliminarContrato'])->name('plantillas_contratos.eliminar_contrato');
 Route::get('plantillas-contratos/contrato/{id}/pdf', [App\Http\Controllers\PlantillaContratoController::class, 'descargarPdf'])->name('plantillas_contratos.descargar_pdf');
 Route::resource('plantillas-contratos', App\Http\Controllers\PlantillaContratoController::class)->names('plantillas_contratos');
 Route::resource('ventas', App\Http\Controllers\VentaController::class);

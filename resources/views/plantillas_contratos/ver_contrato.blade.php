@@ -12,7 +12,7 @@
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right" href="{{ route('plantillas_contratos.contratos_generados') }}">
-                        <i class="fas fa-list"></i> Ver Todos los Contratos
+                        <i class="fas fa-list"></i> Ver Todos
                     </a>
                     <a class="btn btn-danger float-right mr-2" href="{{ route('plantillas_contratos.descargar_pdf', $contrato->id_contrato_generado) }}" target="_blank">
                         <i class="fas fa-file-pdf"></i> Descargar PDF
@@ -20,6 +20,9 @@
                     <button class="btn btn-primary float-right mr-2" onclick="imprimirContrato()">
                         <i class="fas fa-print"></i> Imprimir
                     </button>
+                    <a class="btn btn-warning float-right mr-2" href="{{ route('plantillas_contratos.editar_contrato', $contrato->id_contrato_generado) }}">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
                 </div>
             </div>
         </div>
