@@ -350,7 +350,7 @@ class PlantillaContratoController extends AppBaseController
     }
 
     /**
-     * Generar contrato desde plantilla
+     * Vista previa editable del contrato antes de guardar
      */
     public function generar(Request $request, $id)
     {
@@ -389,7 +389,53 @@ class PlantillaContratoController extends AppBaseController
 
             $contenidoGenerado = $plantilla->generarContrato($request->id_cliente, $datosAdicionales);
 
-            // Guardar contrato generado en la base de datos
+            // Obtener datos del cliente para mostrar en la vista previa
+            $cliente = DB::selectOne(
+                'SELECT c.*, ciu.descripcion as ciudad, dep.descripcion as departamento
+                FROM clientes c
+                LEFT JOIN ciudades ciu ON c.id_ciudad = ciu.id_ciudad
+                LEFT JOIN departamentos dep ON c.id_departamento = dep.id_departamento
+                WHERE c.id_cliente = ?',
+                [$request->id_cliente]
+            );
+
+            // Mostrar vista previa editable
+            return view('plantillas_contratos.previa_editable')
+                ->with('plantilla', $plantilla)
+                ->with('cliente', $cliente)
+                ->with('contenidoGenerado', $contenidoGenerado)
+                ->with('observaciones', $request->observaciones)
+                ->with('fecha_contrato', $request->fecha_contrato ?? Carbon::now()->format('Y-m-d'));
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo generar el contrato: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
+    }
+
+    /**
+     * Guardar contrato después de edición
+     */
+    public function guardarContrato(Request $request)
+    {
+        $validacion = Validator::make(
+            $request->all(),
+            [
+                'id_plantilla_contrato' => 'required|exists:plantillas_contratos,id_plantilla_contrato',
+                'id_cliente' => 'required|exists:clientes,id_cliente',
+                'contenido_generado' => 'required|string',
+                'observaciones' => 'nullable|string'
+            ],
+            [
+                'contenido_generado.required' => 'El contenido del contrato es obligatorio'
+            ]
+        );
+
+        if ($validacion->fails()) {
+            Alert::error('Error', $validacion->errors()->first());
+            return redirect()->back()->withInput()->withErrors($validacion);
+        }
+
+        try {
             DB::beginTransaction();
 
             DB::insert(
@@ -397,9 +443,9 @@ class PlantillaContratoController extends AppBaseController
                 (id_plantilla_contrato, id_cliente, contenido_generado, observaciones, user_id, fecha_generacion)
                 VALUES (?, ?, ?, ?, ?, ?)',
                 [
-                    $id,
+                    $request->id_plantilla_contrato,
                     $request->id_cliente,
-                    $contenidoGenerado,
+                    $request->contenido_generado,
                     $request->observaciones ?? null,
                     Auth::id(),
                     Carbon::now()
@@ -410,12 +456,11 @@ class PlantillaContratoController extends AppBaseController
 
             DB::commit();
 
-            // Redirigir a vista de previsualización o descarga
-            Alert::success('¡Éxito!', 'Contrato generado correctamente.');
+            Alert::success('¡Éxito!', 'Contrato guardado correctamente.');
             return redirect()->route('plantillas_contratos.ver_contrato', $idContratoGenerado);
         } catch (\Exception $e) {
             DB::rollBack();
-            Alert::error('Error', 'No se pudo generar el contrato: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo guardar el contrato: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
@@ -472,6 +517,119 @@ class PlantillaContratoController extends AppBaseController
         $nombreArchivo = 'Contrato_' . $contrato->clie_apellido . '_' . $contrato->clie_ci . '_' . date('YmdHis') . '.pdf';
 
         return $pdf->download($nombreArchivo);
+    }
+
+    /**
+     * Editar contrato generado
+     */
+    public function editarContrato($idContratoGenerado)
+    {
+        $contrato = DB::selectOne(
+            'SELECT cg.*,
+                    pc.nombre_plantilla,
+                    c.clie_nombre, c.clie_apellido, c.clie_ci,
+                    u.name as usuario_nombre
+            FROM contratos_generados cg
+            LEFT JOIN plantillas_contratos pc ON pc.id_plantilla_contrato = cg.id_plantilla_contrato
+            LEFT JOIN clientes c ON c.id_cliente = cg.id_cliente
+            LEFT JOIN users u ON u.id = cg.user_id
+            WHERE cg.id_contrato_generado = ?',
+            [$idContratoGenerado]
+        );
+
+        if (!$contrato) {
+            Alert::error('Error', 'Contrato no encontrado.');
+            return redirect()->route('plantillas_contratos.contratos_generados');
+        }
+
+        return view('plantillas_contratos.editar_contrato')->with('contrato', $contrato);
+    }
+
+    /**
+     * Actualizar contrato generado
+     */
+    public function actualizarContrato(Request $request, $idContratoGenerado)
+    {
+        $validacion = Validator::make(
+            $request->all(),
+            [
+                'contenido_generado' => 'required|string',
+                'observaciones' => 'nullable|string'
+            ],
+            [
+                'contenido_generado.required' => 'El contenido del contrato es obligatorio'
+            ]
+        );
+
+        if ($validacion->fails()) {
+            Alert::error('Error', $validacion->errors()->first());
+            return redirect()->back()->withInput()->withErrors($validacion);
+        }
+
+        try {
+            // Verificar que el contrato existe
+            $contrato = DB::selectOne(
+                'SELECT * FROM contratos_generados WHERE id_contrato_generado = ?',
+                [$idContratoGenerado]
+            );
+
+            if (!$contrato) {
+                Alert::error('Error', 'Contrato no encontrado.');
+                return redirect()->route('plantillas_contratos.contratos_generados');
+            }
+
+            DB::beginTransaction();
+
+            DB::update(
+                'UPDATE contratos_generados
+                SET contenido_generado = ?,
+                    observaciones = ?
+                WHERE id_contrato_generado = ?',
+                [
+                    $request->contenido_generado,
+                    $request->observaciones ?? null,
+                    $idContratoGenerado
+                ]
+            );
+
+            DB::commit();
+
+            Alert::success('¡Éxito!', 'Contrato actualizado correctamente.');
+            return redirect()->route('plantillas_contratos.ver_contrato', $idContratoGenerado);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Alert::error('Error', 'No se pudo actualizar el contrato: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
+    }
+
+    /**
+     * Eliminar contrato generado
+     */
+    public function eliminarContrato($idContratoGenerado)
+    {
+        try {
+            // Verificar que el contrato existe
+            $contrato = DB::selectOne(
+                'SELECT * FROM contratos_generados WHERE id_contrato_generado = ?',
+                [$idContratoGenerado]
+            );
+
+            if (!$contrato) {
+                return $this->sendError('Contrato no encontrado');
+            }
+
+            DB::beginTransaction();
+
+            DB::delete('DELETE FROM contratos_generados WHERE id_contrato_generado = ?', [$idContratoGenerado]);
+
+            DB::commit();
+
+            return $this->sendSuccess('Contrato eliminado correctamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->sendError('Error al eliminar el contrato: ' . $e->getMessage());
+        }
     }
 
     /**

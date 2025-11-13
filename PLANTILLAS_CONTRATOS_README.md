@@ -9,8 +9,11 @@ Sistema CRUD completo para la gestión de plantillas de contratos con reemplazo 
 - ✅ CRUD completo de plantillas de contratos
 - ✅ Sistema de palabras clave con reemplazo automático (formato: `--palabra--`)
 - ✅ Generación de contratos personalizados por cliente
-- ✅ Historial de contratos generados
-- ✅ Exportación a PDF
+- ✅ **Vista previa editable antes de guardar** - Edite el contrato generado antes de guardarlo definitivamente
+- ✅ **Edición de contratos ya generados** - Modifique contratos existentes en cualquier momento
+- ✅ **Eliminación de contratos generados** - Borre contratos que ya no necesite
+- ✅ Historial completo de contratos generados
+- ✅ Exportación a PDF con diseño profesional
 - ✅ Impresión directa desde el navegador
 - ✅ Búsqueda y filtrado de plantillas y contratos
 - ✅ Sistema de permisos integrado con Spatie
@@ -51,8 +54,10 @@ El módulo incluye los siguientes archivos:
 - `resources/views/plantillas_contratos/show.blade.php` - Ver detalle de plantilla
 - `resources/views/plantillas_contratos/fields.blade.php` - Campos del formulario
 - `resources/views/plantillas_contratos/table.blade.php` - Tabla de plantillas
-- `resources/views/plantillas_contratos/generar.blade.php` - Generar contrato
+- `resources/views/plantillas_contratos/generar.blade.php` - Formulario para generar contrato
+- `resources/views/plantillas_contratos/previa_editable.blade.php` - **Vista previa editable del contrato**
 - `resources/views/plantillas_contratos/ver_contrato.blade.php` - Ver contrato generado
+- `resources/views/plantillas_contratos/editar_contrato.blade.php` - **Editar contrato existente**
 - `resources/views/plantillas_contratos/contratos_generados.blade.php` - Listado de contratos generados
 - `resources/views/plantillas_contratos/pdf.blade.php` - Plantilla PDF
 
@@ -191,25 +196,53 @@ CI: 1234567
 3. Opcionalmente, especifica una fecha del contrato
 4. Agrega observaciones si es necesario
 5. Haz clic en **Generar Contrato**
-6. El sistema reemplazará automáticamente todas las palabras clave con los datos del cliente
+6. **El sistema mostrará una vista previa editable** con:
+   - El contenido del contrato con todas las palabras clave reemplazadas
+   - Los datos del cliente en un panel lateral
+   - Un editor de texto donde puedes modificar el contrato antes de guardarlo
+7. **Edita el contrato** según tus necesidades (este es el momento ideal para personalizar el contenido)
+8. Haz clic en **Guardar Contrato** para guardarlo definitivamente
 
-### 3. Ver y Descargar Contratos
+💡 **Ventaja**: Puedes revisar y modificar cada contrato antes de guardarlo, ajustando detalles específicos para cada cliente.
+
+### 3. Editar un Contrato Ya Generado
+
+1. Accede a **Contratos Generados** desde el botón en la página de plantillas
+2. En el listado, localiza el contrato que deseas editar
+3. Haz clic en el botón amarillo **Editar** (icono de lápiz)
+4. Modifica el contenido del contrato y/o las observaciones
+5. Haz clic en **Actualizar Contrato** para guardar los cambios
+
+💡 **Útil para**: Corregir errores, actualizar información o ajustar términos después de guardar el contrato.
+
+### 4. Eliminar un Contrato Generado
+
+1. Accede a **Contratos Generados**
+2. Localiza el contrato que deseas eliminar
+3. Haz clic en el botón rojo **Eliminar** (icono de papelera)
+4. Confirma la eliminación en el diálogo de confirmación
+
+⚠️ **Atención**: Esta acción es permanente y no se puede deshacer.
+
+### 5. Ver y Descargar Contratos
 
 1. Accede a **Contratos Generados** desde el botón en la página de plantillas
 2. Visualiza el historial completo de contratos generados
-3. Opciones disponibles:
-   - **Ver**: Visualizar el contrato en pantalla
-   - **Descargar PDF**: Exportar el contrato a PDF
-   - **Imprimir**: Imprimir directamente desde el navegador
+3. Opciones disponibles en cada contrato:
+   - **Ver** (ojo): Visualizar el contrato en pantalla
+   - **Editar** (lápiz): Modificar el contenido del contrato
+   - **Descargar PDF** (PDF): Exportar el contrato a PDF
+   - **Eliminar** (papelera): Borrar el contrato permanentemente
+   - **Imprimir**: Imprimir directamente desde el navegador (disponible en la vista de detalle)
 
-### 4. Editar una Plantilla
+### 6. Editar una Plantilla
 
 1. En el listado de plantillas, haz clic en el botón de editar
 2. Modifica los campos necesarios
 3. Guarda los cambios
 4. La fecha de modificación se actualizará automáticamente
 
-### 5. Eliminar una Plantilla
+### 7. Eliminar una Plantilla
 
 ⚠️ **Importante**: No se puede eliminar una plantilla si tiene contratos generados asociados. En ese caso, puedes desactivarla usando el checkbox "Plantilla Activa".
 
@@ -244,18 +277,30 @@ PATCH /plantillas-contratos/{id}
 // Eliminar plantilla
 DELETE /plantillas-contratos/{id}
 
-// Generar contrato desde plantilla
+// Formulario para generar contrato
 GET /plantillas-contratos/{id}/generar-formulario
+
+// Generar contrato (muestra vista previa editable)
 POST /plantillas-contratos/{id}/generar
+
+// Guardar contrato después de edición
+POST /plantillas-contratos/guardar-contrato
+
+// Listado de contratos generados
+GET /plantillas-contratos/contratos-generados
 
 // Ver contrato generado
 GET /plantillas-contratos/contrato/{id}
 
+// Editar contrato generado
+GET /plantillas-contratos/contrato/{id}/editar
+PUT /plantillas-contratos/contrato/{id}/actualizar
+
+// Eliminar contrato generado
+DELETE /plantillas-contratos/contrato/{id}/eliminar
+
 // Descargar PDF
 GET /plantillas-contratos/contrato/{id}/pdf
-
-// Listado de contratos generados
-GET /plantillas-contratos/contratos-generados
 ```
 
 ## Características Técnicas
