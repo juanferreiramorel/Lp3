@@ -6,6 +6,7 @@
         || Request::is('proveedores*')
         || Request::is('ciudades*')
         || Request::is('sucursales*')
+        || Request::is('empresas*')
         || Request::is('marcas*')
         || Request::is('permissions*')
         || Request::is('cajas*')
@@ -185,6 +186,7 @@
 @if(auth()->user()->can('departamentos index') ||
     auth()->user()->can('ciudades index') ||
     auth()->user()->can('sucursales index') ||
+    auth()->user()->can('empresas index') ||
     auth()->user()->can('stock index') ||
     auth()->user()->can('cajas index') ||
     auth()->user()->can('cargos index') ||
@@ -224,6 +226,14 @@
             <a href="{{ route('sucursales.index') }}" class="nav-link {{ Request::is('sucursales*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-store"></i>
                 <p>Sucursales</p>
+            </a>
+        </li>
+        @endcan
+        @can('empresas index')
+        <li class="nav-item">
+            <a href="{{ route('empresas.index') }}" class="nav-link {{ Request::is('empresas*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-building"></i>
+                <p>Empresas</p>
             </a>
         </li>
         @endcan

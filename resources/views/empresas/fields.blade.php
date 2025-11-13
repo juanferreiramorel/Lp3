@@ -1,0 +1,42 @@
+<!-- Razón Social Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('razon_social', 'Razón Social:') !!}
+    {!! Form::text('razon_social', null, ['class' => 'form-control', 'required', 'maxlength' => 255, 'placeholder' => 'Ingrese la Razón Social']) !!}
+</div>
+
+<!-- Nombre Comercial Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('nombre_comercial', 'Nombre Comercial:') !!}
+    {!! Form::text('nombre_comercial', null, ['class' => 'form-control', 'maxlength' => 255, 'placeholder' => 'Ingrese el Nombre Comercial']) !!}
+</div>
+
+<!-- RUC Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('ruc', 'RUC:') !!}
+    {!! Form::text('ruc', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'placeholder' => 'Ingrese el RUC']) !!}
+</div>
+
+<!-- Teléfono Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('telefono', 'Teléfono:') !!}
+    {!! Form::text('telefono', null, ['class' => 'form-control', 'maxlength' => 40, 'placeholder' => 'Ingrese el Teléfono']) !!}
+</div>
+
+<!-- Email Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('email', 'Email:') !!}
+    {!! Form::email('email', null, ['class' => 'form-control', 'maxlength' => 100, 'placeholder' => 'Ingrese el Email']) !!}
+</div>
+
+<!-- Logo Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('logo', 'URL del Logo:') !!}
+    {!! Form::text('logo', null, ['class' => 'form-control', 'maxlength' => 255, 'placeholder' => 'URL de la imagen del logo']) !!}
+    <small class="form-text text-muted">Ingrese la URL completa del logo (ej: https://ejemplo.com/logo.png)</small>
+</div>
+
+<!-- Dirección Field -->
+<div class="form-group col-sm-12">
+    {!! Form::label('direccion', 'Dirección:') !!}
+    {!! Form::textarea('direccion', null, ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Ingrese la Dirección de la Empresa']) !!}
+</div>
