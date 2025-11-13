@@ -493,12 +493,24 @@
         <header>
             <div class="company-info">
                 <h1>RECIBO DE PAGO N° {{ str_pad($recibo->id_recibo, 8, '0', STR_PAD_LEFT) }}</h1>
-                <h4><strong>J&O DEPARTAMENTOS</strong></h4>
-                <p>Calle Leonardo Salinas</p>
-                <p>Barrio Kennedy-Capiata</p>
+                <h4><strong>{{ $recibo->empresa_nombre ?? $recibo->empresa_razon_social ?? 'Empresa' }}</strong></h4>
+                @if($recibo->empresa_ruc)
+                <p><strong>RUC:</strong> {{ $recibo->empresa_ruc }}</p>
+                @endif
+                @if($recibo->empresa_direccion)
+                <p>{{ $recibo->empresa_direccion }}</p>
+                @endif
+                @if($recibo->empresa_telefono)
+                <p>Tel: {{ $recibo->empresa_telefono }}</p>
+                @endif
+                @if($recibo->empresa_email)
+                <p>Email: {{ $recibo->empresa_email }}</p>
+                @endif
             </div>
             <div class="company-logo">
-                <img alt="Logo UTIC" src="https://www.utic.edu.py/v7/images/logosutic/Foto%20de%20perfil.png">
+                @if($recibo->empresa_logo)
+                <img alt="Logo {{ $recibo->empresa_nombre }}" src="{{ $recibo->empresa_logo }}">
+                @endif
             </div>
         </header>
 

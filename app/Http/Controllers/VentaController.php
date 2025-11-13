@@ -672,13 +672,29 @@ class VentaController extends AppBaseController
 
     public function factura($id)
     {
-        // recuperar datos de la venta
+        // recuperar datos de la venta con información de la empresa
         $ventas = DB::selectOne(
-            "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
-            users.name as usuario, c.clie_direccion, c.clie_telefono
+            "SELECT v.*,
+            concat(c.clie_nombre,' ', c.clie_apellido) as cliente,
+            c.clie_ci,
+            c.clie_direccion,
+            c.clie_telefono,
+            users.name as usuario,
+            e.razon_social as empresa_razon_social,
+            e.nombre_comercial as empresa_nombre,
+            e.ruc as empresa_ruc,
+            e.direccion as empresa_direccion,
+            e.telefono as empresa_telefono,
+            e.email as empresa_email,
+            e.logo as empresa_logo,
+            s.descripcion as sucursal_nombre
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
+                JOIN apertura_cierre_cajas acc ON v.id_apertura = acc.id_apertura
+                JOIN cajas cj ON acc.id_caja = cj.id_caja
+                JOIN sucursales s ON cj.id_sucursal = s.id_sucursal
+                LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
             WHERE v.id_venta = ?",
             [$id]
         );

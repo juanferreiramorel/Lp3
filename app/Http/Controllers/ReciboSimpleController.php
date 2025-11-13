@@ -614,7 +614,7 @@ class ReciboSimpleController extends AppBaseController
 
     public function imprimir($id)
     {
-        // Obtener datos del recibo
+        // Obtener datos del recibo con información de la empresa
         $recibo = DB::selectOne(
             "SELECT r.*,
                 CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente,
@@ -624,11 +624,19 @@ class ReciboSimpleController extends AppBaseController
                 users.name as usuario,
                 s.descripcion as sucursal,
                 s.direccion as sucursal_direccion,
-                s.telefono as sucursal_telefono
+                s.telefono as sucursal_telefono,
+                e.razon_social as empresa_razon_social,
+                e.nombre_comercial as empresa_nombre,
+                e.ruc as empresa_ruc,
+                e.direccion as empresa_direccion,
+                e.telefono as empresa_telefono,
+                e.email as empresa_email,
+                e.logo as empresa_logo
             FROM recibos_simples r
                 JOIN clientes c ON r.id_cliente = c.id_cliente
                 JOIN users ON r.user_id = users.id
                 JOIN sucursales s ON r.id_sucursal = s.id_sucursal
+                LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
             WHERE r.id_recibo = ?",
             [$id]
         );

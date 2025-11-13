@@ -43,6 +43,7 @@ Route::resource('departamentos', App\Http\Controllers\DepartamentoController::cl
 Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
 Route::resource('ciudades', App\Http\Controllers\CiudadController::class);
 Route::resource('sucursales', App\Http\Controllers\SucursalController::class);
+Route::resource('empresas', App\Http\Controllers\EmpresaController::class);
 Route::resource('marcas', App\Http\Controllers\MarcaController::class);
 Route::resource('productos', App\Http\Controllers\ProductoController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);

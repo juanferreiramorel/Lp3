@@ -313,12 +313,24 @@
         <header>
             <div class="company-info">
                 <h1>Factura</h1>
-                <p><strong>Empresa UTIC</strong></p>
-                <p>Atyra 1750 c/Capitán Rivas</p>
-                <p>Tel: 021 200 100</p>
+                <p><strong>{{ $ventas->empresa_nombre ?? $ventas->empresa_razon_social ?? 'Empresa' }}</strong></p>
+                @if($ventas->empresa_ruc)
+                <p><strong>RUC:</strong> {{ $ventas->empresa_ruc }}</p>
+                @endif
+                @if($ventas->empresa_direccion)
+                <p>{{ $ventas->empresa_direccion }}</p>
+                @endif
+                @if($ventas->empresa_telefono)
+                <p>Tel: {{ $ventas->empresa_telefono }}</p>
+                @endif
+                @if($ventas->empresa_email)
+                <p>Email: {{ $ventas->empresa_email }}</p>
+                @endif
             </div>
             <div class="company-logo">
-                <img alt="Logo UTIC" src="https://www.utic.edu.py/v7/images/logosutic/Foto%20de%20perfil.png">
+                @if($ventas->empresa_logo)
+                <img alt="Logo {{ $ventas->empresa_nombre }}" src="{{ $ventas->empresa_logo }}">
+                @endif
             </div>
         </header>
 
