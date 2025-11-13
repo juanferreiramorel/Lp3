@@ -186,8 +186,8 @@ class ClienteController extends AppBaseController
 
         ##validar cantidad de digitos del campo ci
         $ci = strlen($input['clie_ci']); // utilizar strlen para contar caracteres
-        if ($ci > 8) { # mayor a 8 caracteres
-            Alert::error('Error', 'El nro de cedula solo podra contener 8 digítos.');
+        if ($ci < 4) { # mayor a 8 caracteres
+            Alert::error('Error', 'El nro de cedula solo podra contener minimo 4 digitos.');
             return redirect(route('clientes.create'))->withInput();
         }
 
@@ -301,9 +301,9 @@ class ClienteController extends AppBaseController
 
         ##validar cantidad de digitos del campo ci
         $ci = strlen($input['clie_ci']); // utilizar strlen para contar caracteres
-        if ($ci > 8) { # mayor a 8 caracteres
+        if ($ci < 4) { # mayor a 8 caracteres
             // Flash::error('El nro de cedula solo podra contener 8 digítos.');
-            Alert::error('Error', 'El nro de cedula solo podra contener 8 digítos.');
+            Alert::error('Error', 'El nro de cedula solo podra contener minimo 4 digitos.');
             return redirect(route('clientes.edit', $id))->withInput();
         }
 
@@ -426,10 +426,10 @@ class ClienteController extends AppBaseController
 
         // Validar cantidad de dígitos del campo CI
         $ci = strlen($input['clie_ci']);
-        if ($ci > 8) {
+        if ($ci < 4) {
             return response()->json([
                 'success' => false,
-                'errors' => ['clie_ci' => ['El nro de cedula solo podra contener 8 digítos.']]
+                'errors' => ['clie_ci' => ['El nro de cedula solo podra contener minimo 4 digitos.']]
             ], 422);
         }
 
