@@ -42,6 +42,14 @@ Route::resource('productos', App\Http\Controllers\ProductoController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);
 Route::post('clientes/store-ajax', [App\Http\Controllers\ClienteController::class, 'storeAjax'])->name('clientes.store.ajax');
 Route::resource('clientes', App\Http\Controllers\ClienteController::class);
+
+// Rutas específicas para plantillas de contratos (ANTES del resource)
+Route::get('plantillas-contratos/{id}/generar-formulario', [App\Http\Controllers\PlantillaContratoController::class, 'generarFormulario'])->name('plantillas_contratos.generar_formulario');
+Route::post('plantillas-contratos/{id}/generar', [App\Http\Controllers\PlantillaContratoController::class, 'generar'])->name('plantillas_contratos.generar');
+Route::get('plantillas-contratos/contratos-generados', [App\Http\Controllers\PlantillaContratoController::class, 'contratosGenerados'])->name('plantillas_contratos.contratos_generados');
+Route::get('plantillas-contratos/contrato/{id}', [App\Http\Controllers\PlantillaContratoController::class, 'verContrato'])->name('plantillas_contratos.ver_contrato');
+Route::get('plantillas-contratos/contrato/{id}/pdf', [App\Http\Controllers\PlantillaContratoController::class, 'descargarPdf'])->name('plantillas_contratos.descargar_pdf');
+Route::resource('plantillas-contratos', App\Http\Controllers\PlantillaContratoController::class)->names('plantillas_contratos');
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);
 Route::resource('pedidos', App\Http\Controllers\PedidosController::class);
