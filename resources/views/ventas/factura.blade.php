@@ -1,419 +1,409 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
+    <meta charset="UTF-8">
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
+    <title>Factura - {{ $ventas->factura_nro }}</title>
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <!------ Include the above in your HEAD tag ---------->
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <style>
-        /* heading */
-
-        h1 {
-            font: bold 100% sans-serif;
-            letter-spacing: 0.5em;
-            text-align: center;
-            text-transform: uppercase;
-        }
-
-        /* table */
-
-        table {
-            font-size: 75%;
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        table {
-            border-collapse: separate;
-            border-spacing: 2px;
-        }
-
-        th,
-        td {
-            border-width: 1px;
-            padding: 0.5em;
-            position: relative;
-            text-align: left;
-        }
-
-        th,
-        td {
-            border-radius: 0.25em;
-            border-style: solid;
-        }
-
-        th {
-            background: #EEE;
-            border-color: #BBB;
-        }
-
-        td {
-            border-color: #DDD;
-        }
-
-        body {
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            height: 11in;
-            margin: 0 auto;
-            overflow: hidden;
-            padding: 0.5in;
-            width: 7.5in;
         }
 
         body {
-            background: #FFF;
-            border-radius: 1px;
-            box-shadow: 0 0 1in -0.25in rgba(0, 0, 0, 0.5);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
         }
 
-        /* header */
+        .invoice-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            padding: 20mm;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-height: 297mm;
+        }
 
+        /* Header */
         header {
-            margin: 0 0 3em;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e40101;
         }
 
-        header:after {
-            clear: both;
-            content: "";
-            display: table;
+        .company-info {
+            flex: 1;
         }
 
-        header h1 {
+        .company-info h1 {
+            color: #e40101;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .company-info p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .company-logo {
+            flex-shrink: 0;
+            margin-left: 20px;
+        }
+
+        .company-logo img {
+            max-width: 120px;
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        /* Client Info & Invoice Details */
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .client-info {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .client-info h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-bottom: 2px solid #e40101;
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        .client-info h4 {
+            color: #e40101;
+            font-size: 18px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .client-info p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .invoice-details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            min-width: 280px;
+        }
+
+        .invoice-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoice-details th {
+            text-align: left;
+            padding: 8px 10px;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .invoice-details td {
+            text-align: right;
+            padding: 8px 10px;
+            color: #333;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .invoice-details tr:last-child th,
+        .invoice-details tr:last-child td {
+            border-bottom: none;
+            font-weight: bold;
+            color: #e40101;
+            font-size: 16px;
+        }
+
+        /* Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table thead {
             background: #e40101;
-            border-radius: 0.25em;
-            color: #FFF;
-            margin: 0 0 1em;
-            padding: 0.5em 0;
+            color: white;
         }
 
-        header address {
-            float: left;
-            font-size: 95%;
-            font-style: normal;
-            line-height: 1.25;
-            margin: 0 1em 1em 0;
+        .items-table thead th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        article address.norm h4 {
-            font-size: 125%;
-            font-weight: bold;
+        .items-table thead th:nth-child(3),
+        .items-table thead th:nth-child(4),
+        .items-table thead th:nth-child(5) {
+            text-align: right;
         }
 
-        article address.norm {
-            float: left;
-            font-size: 95%;
-            font-style: normal;
-            font-weight: normal;
-            line-height: 1.25;
-            margin: 0 1em 1em 0;
+        .items-table tbody tr {
+            border-bottom: 1px solid #ddd;
         }
 
-        header address p {
-            margin: 0 0 0.25em;
+        .items-table tbody tr:hover {
+            background: #f9f9f9;
         }
 
-        header span,
-        header img {
-            display: block;
-            float: right;
+        .items-table tbody td {
+            padding: 10px;
+            color: #555;
+            font-size: 13px;
         }
 
-        header span {
-            margin: 0 0 1em 1em;
-            max-height: 25%;
-            max-width: 60%;
-            position: relative;
+        .items-table tbody td:nth-child(3),
+        .items-table tbody td:nth-child(4),
+        .items-table tbody td:nth-child(5) {
+            text-align: right;
+            font-weight: 500;
         }
 
-        header img {
-            max-height: 100%;
-            max-width: 100%;
+        /* Total Section */
+        .total-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border: 2px solid #e40101;
+            margin-bottom: 30px;
         }
 
-        header input {
-            cursor: pointer;
-            -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
-            height: 100%;
-            left: 0;
-            opacity: 0;
-            position: absolute;
-            top: 0;
+        .total-section table {
             width: 100%;
+            border-collapse: collapse;
         }
 
-        /* article */
-
-        article,
-        article address,
-        table.meta,
-        table.inventory {
-            margin: 0 0 3em;
+        .total-section th {
+            text-align: left;
+            padding: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
         }
 
-        article:after {
-            clear: both;
-            content: "";
-            display: table;
+        .total-section td {
+            text-align: right;
+            padding: 10px;
+            color: #333;
+            font-size: 14px;
         }
 
-        article h1 {
-            clip: rect(0 0 0 0);
-            position: absolute;
+        .total-section tr:first-child {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
         }
 
-        article address {
-            float: left;
-            font-size: 125%;
+        .total-section tr:last-child th,
+        .total-section tr:last-child td {
+            font-size: 18px;
             font-weight: bold;
+            color: #e40101;
+            padding-top: 15px;
         }
 
-        /* table meta & balance */
-
-        table.meta,
-        table.balance {
-            float: right;
-            width: 36%;
-        }
-
-        table.meta:after,
-        table.balance:after {
-            clear: both;
-            content: "";
-            display: table;
-        }
-
-        /* table meta */
-
-        table.meta th {
-            width: 40%;
-        }
-
-        table.meta td {
-            width: 60%;
-        }
-
-        /* table items */
-
-        table.inventory {
-            clear: both;
-            width: 100%;
-        }
-
-        table.inventory th:first-child {
-            width: 50px;
-        }
-
-        table.inventory th:nth-child(2) {
-            width: 300px;
-        }
-
-        table.inventory th {
-            font-weight: bold;
+        /* Action Buttons */
+        .action-buttons {
             text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
         }
 
-        table.inventory td:nth-child(1) {
-            width: 26%;
+        .action-buttons .btn {
+            margin: 0 10px;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
         }
 
-        table.inventory td:nth-child(2) {
-            width: 38%;
-        }
-
-        table.inventory td:nth-child(3) {
-            text-align: right;
-            width: 12%;
-        }
-
-        table.inventory td:nth-child(4) {
-            text-align: right;
-            width: 12%;
-        }
-
-        table.inventory td:nth-child(5) {
-            text-align: right;
-            width: 12%;
-        }
-
-        /* table balance */
-
-        table.balance th,
-        table.balance td {
-            width: 50%;
-        }
-
-        table.balance td {
-            text-align: right;
-        }
-
-        /* aside */
-
-        aside h1 {
-            border: none;
-            border-width: 0 0 1px;
-            margin: 0 0 1em;
-        }
-
-        aside h1 {
-            border-color: #999;
-            border-bottom-style: solid;
-        }
-
-        table.sign {
-            float: left;
-            width: 220px;
-        }
-
-        table.sign img {
-            width: 100%;
-        }
-
-        table.sign tr td {
-            border-color: transparent;
-        }
-
+        /* Print Styles */
         @media print {
             * {
                 -webkit-print-color-adjust: exact;
-            }
-
-            html {
-                background: none;
-                padding: 0;
+                print-color-adjust: exact;
             }
 
             body {
+                background: white;
+                padding: 0;
+            }
+
+            .invoice-container {
+                max-width: 100%;
                 box-shadow: none;
+                padding: 10mm;
                 margin: 0;
             }
 
-            span:empty {
-                display: none;
+            header {
+                page-break-after: avoid;
             }
 
-            .add,
-            .cut {
-                display: none;
+            .items-table {
+                page-break-inside: avoid;
+            }
+
+            .items-table thead {
+                display: table-header-group;
+            }
+
+            .items-table tbody tr {
+                page-break-inside: avoid;
+            }
+
+            .action-buttons {
+                display: none !important;
+            }
+
+            .total-section {
+                page-break-inside: avoid;
+            }
+
+            @page {
+                size: A4;
+                margin: 10mm;
             }
         }
 
-        @page {
-            margin: 0;
+        /* Screen only styles */
+        @media screen {
+            .invoice-container {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
 
-<header>
-    <h1>Factura</h1>
-    <address>
-        <p> Empresa Utic </p>
-        <p> Atyra 1750 c/Capitan Rivas </p>
-        <p> 021 200 100 </p>
-    </address>
-    <span>
-        <img alt="it" src="https://www.utic.edu.py/v7/images/logosutic/Foto%20de%20perfil.png" height="80px"
-            width="80px">
-    </span>
-</header>
+<body>
+    <div class="invoice-container">
+        <header>
+            <div class="company-info">
+                <h1>Factura</h1>
+                <p><strong>Empresa UTIC</strong></p>
+                <p>Atyra 1750 c/Capitán Rivas</p>
+                <p>Tel: 021 200 100</p>
+            </div>
+            <div class="company-logo">
+                <img alt="Logo UTIC" src="https://www.utic.edu.py/v7/images/logosutic/Foto%20de%20perfil.png">
+            </div>
+        </header>
 
-<body style=" overflow-y: scroll;">
-    <article>
-        <h1>Clientes</h1>
-        <address class="norm">
-            <h4>
-                {{ $ventas->cliente }}
-            </h4>
-            <p> {{ $ventas->clie_direccion }} <br>
-            <p> {{ $ventas->clie_telefono }} <br>
-        </address>
+        <div class="info-section">
+            <div class="client-info">
+                <h3>Cliente</h3>
+                <h4>{{ $ventas->cliente }}</h4>
+                <p><strong>Dirección:</strong> {{ $ventas->clie_direccion }}</p>
+                <p><strong>Teléfono:</strong> {{ $ventas->clie_telefono }}</p>
+            </div>
 
-        <table class="meta">
-            <tr>
-                <th><span>Factura #</span></th>
-                <td><span>{{ $ventas->factura_nro }}</span></td>
-            </tr>
-            <tr>
-                <th><span>Condición Venta</span></th>
-                <td><span>{{ $ventas->condicion_venta }}</span></td>
-            </tr>
-            <tr>
-                <th><span>Fecha</span></th>
-                <td>
-                    <span>
-                        {{ \Carbon\Carbon::parse($ventas->fecha_venta)->format('d/m/Y') }}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th><span>Monto Total</span></th>
-                <td>
-                    <span id="prefix">Gs.</span><span>
-                        {{ number_format($ventas->total, 0, ',', '.') }}
-                    </span>
-                </td>
-            </tr>
-        </table>
-        <table class="inventory">
+            <div class="invoice-details">
+                <table>
+                    <tr>
+                        <th>Factura Nº</th>
+                        <td>{{ $ventas->factura_nro }}</td>
+                    </tr>
+                    <tr>
+                        <th>Condición</th>
+                        <td>{{ $ventas->condicion_venta }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha</th>
+                        <td>{{ \Carbon\Carbon::parse($ventas->fecha_venta)->format('d/m/Y') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Monto Total</th>
+                        <td>Gs. {{ number_format($ventas->total, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <table class="items-table">
             <thead>
                 <tr>
-                    <th><span>Código</span></th>
-                    <th><span>Decripcion</span></th>
-                    <th><span>Cantidad</span></th>
-                    <th><span>Precio Unitario</span></th>
-                    <th><span>Subtotal</span></th>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
                 </tr>
             </thead>
             <tbody>
-                @if (count($detalle_venta))<!-- contar los elementos de un array -->
+                @if (count($detalle_venta))
                     @foreach ($detalle_venta as $value)
                         <tr>
-                            <td><span>{{ $value->id_producto }}</span></td>
-                            <td><span>{{ $value->descripcion }}</span></td>
-                            <td>
-                                <span data-prefix>Gs.</span><span>
-                                    {{ number_format($value->precio, 0, ',', '.') }}
-                                </span>
-                            </td>
-                            <td><span>{{ $value->cantidad }}</span></td>
-                            <td>
-                                <span data-prefix>Gs.</span>
-                                <span>{{ number_format($value->precio * $value->cantidad, 0, ',', '.') }}</span>
-                            </td>
+                            <td>{{ $value->id_producto }}</td>
+                            <td>{{ $value->descripcion }}</td>
+                            <td>{{ $value->cantidad }}</td>
+                            <td>Gs. {{ number_format($value->precio, 0, ',', '.') }}</td>
+                            <td>Gs. {{ number_format($value->precio * $value->cantidad, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 @endif
             </tbody>
         </table>
 
-        <table>
-            <!-- numero a letras -->
-            <tr>
-                <th>Total en letras</th>
-                <td colspan="3">
-                    <span>
-                        {{ $numero_a_letras }}
-                    </span>
-                </td>
-            </tr>
+        <div class="total-section">
+            <table>
+                <tr>
+                    <th>Total en letras:</th>
+                    <td colspan="2">{{ $numero_a_letras }}</td>
+                </tr>
+                <tr>
+                    <th>TOTAL:</th>
+                    <td>Gs. {{ number_format($ventas->total, 0, ',', '.') }}</td>
+                </tr>
+            </table>
+        </div>
 
-            <!-- total -->
-            <tr aria-rowspan="4">
-                <th><span>Total</span></th>
-                <td colspan="3" style="text-align: right">
-                    <span data-prefix>Gs.</span>
-                    <span>
-                        {{ number_format($ventas->total, 0, ',', '.') }}
-                    </span>
-                </td>
-            </tr>
-        </table>
-        <br>
-        <br>
-        <button onclick="window.print();" class="btn btn-primary">Imprimir</button>
-        <button onclick="window.location.href='{{ route('ventas.index') }}';" class="btn btn-secondary">Cerrar</button>
-    </article>
+        <div class="action-buttons">
+            <button onclick="window.print();" class="btn btn-primary">
+                <i class="fa fa-print"></i> Imprimir
+            </button>
+            <button onclick="window.location.href='{{ route('ventas.index') }}';" class="btn btn-secondary">
+                <i class="fa fa-times"></i> Cerrar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Auto-print option (uncomment if needed)
+        // window.onload = function() { window.print(); }
+    </script>
 </body>
 
 </html>
