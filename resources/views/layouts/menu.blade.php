@@ -72,6 +72,16 @@
 </li>
 @endcan
 
+{{-- Recibos Simples --}}
+@can('recibossimples index')
+<li class="nav-item">
+    <a href="{{ route('recibossimples.index') }}" class="nav-link {{ Request::is('recibossimples*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-file-invoice"></i>
+        <p>Recibos Simples</p>
+    </a>
+</li>
+@endcan
+
 {{-- Compras --}}
 @can('compras index')
 <li class="nav-item">

@@ -40,6 +40,7 @@ Route::resource('sucursales', App\Http\Controllers\SucursalController::class);
 Route::resource('marcas', App\Http\Controllers\MarcaController::class);
 Route::resource('productos', App\Http\Controllers\ProductoController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);
+Route::post('clientes/store-ajax', [App\Http\Controllers\ClienteController::class, 'storeAjax'])->name('clientes.store.ajax');
 Route::resource('clientes', App\Http\Controllers\ClienteController::class);
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);
@@ -72,6 +73,9 @@ Route::get('cuentasapagar/pagos/{id}', [App\Http\Controllers\CuentasAPagarContro
 Route::post('cuentasapagar/pagos/{id}/anular', [App\Http\Controllers\CuentasAPagarController::class, 'anularPago'])->name('cuentasapagar.anular');
 Route::get('cuentasapagar/recibo/{id}', [App\Http\Controllers\CuentasAPagarController::class, 'imprimirRecibo'])->name('cuentasapagar.recibo');
 Route::resource('cuentasapagar', App\Http\Controllers\CuentasAPagarController::class);
+// Rutas específicas para recibos simples (ANTES del resource)
+Route::get('recibossimples/{id}/imprimir', [App\Http\Controllers\ReciboSimpleController::class, 'imprimir'])->name('recibossimples.imprimir');
+Route::resource('recibossimples', App\Http\Controllers\ReciboSimpleController::class);
 Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil']);
 Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserController::class, 'cambiarPassword']);
 
@@ -79,6 +83,7 @@ Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserControlle
 Route::get('buscar-productos', [App\Http\Controllers\VentaController::class, 'buscarProducto']);
 Route::get('buscar-productoscompras', [ComprasController::class, 'buscarProducto']);
 Route::get('buscar-productos-oc', [App\Http\Controllers\OrdenCompraController::class, 'buscarProducto']);
+Route::get('buscar-productos-recibos', [App\Http\Controllers\ReciboSimpleController::class, 'buscarProducto']);
 Route::get('/search', [App\Http\Controllers\SearchController::class, 'index'])->name('search');
 
 // PDF y Reportes

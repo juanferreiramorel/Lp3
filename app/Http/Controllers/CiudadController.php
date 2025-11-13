@@ -248,4 +248,26 @@ class CiudadController extends AppBaseController
 
         return redirect(route('ciudades.index'));
     }
+
+    /**
+     * Get ciudades by departamento (for AJAX requests)
+     */
+    public function getByDepartamento($id_departamento)
+    {
+        $ciudades = DB::select(
+            'SELECT id_ciudad, descripcion
+            FROM ciudades
+            WHERE id_departamento = ?
+            ORDER BY descripcion ASC',
+            [$id_departamento]
+        );
+
+        // Format as key-value pairs for select options
+        $result = [];
+        foreach ($ciudades as $ciudad) {
+            $result[$ciudad->id_ciudad] = $ciudad->descripcion;
+        }
+
+        return response()->json($result);
+    }
 }

@@ -367,4 +367,114 @@ class ClienteController extends AppBaseController
 
         return redirect(route('clientes.index'));
     }
+
+    /**
+     * Store a newly created cliente via AJAX
+     */
+    public function storeAjax(Request $request)
+    {
+        $input = $request->all();
+        $fec_actual = Carbon::now();
+        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
+
+        // Validación
+        $validator = Validator::make(
+            $input,
+            [
+                'clie_nombre' => 'required',
+                'clie_apellido' => 'required',
+                'clie_ci' => 'required',
+                'clie_fecha_nac' => 'required|date',
+                'id_departamento' => 'required|exists:departamentos,id_departamento',
+                'id_ciudad' => 'required|exists:ciudades,id_ciudad',
+            ],
+            [
+                'clie_nombre.required' => 'Campo nombre obligatorio',
+                'clie_apellido.required' => 'Campo apellido obligatorio',
+                'clie_ci.required' => 'Campo CI obligatorio',
+                'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
+                'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
+                'id_departamento.required' => 'Campo departamento obligatorio',
+                'id_departamento.exists' => 'Campo departamento debe ser un departamento válido',
+                'id_ciudad.required' => 'Campo ciudad obligatorio',
+                'id_ciudad.exists' => 'Campo ciudad debe ser una ciudad válida',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Validar edad del cliente
+        $edad = $fec_actual->diffInYears($fecha_nac);
+        if ($edad < 18) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['clie_fecha_nac' => ['El cliente debe ser mayor de 18 años.']]
+            ], 422);
+        }
+
+        // Validar fecha mayor al actual
+        if ($fecha_nac > $fec_actual) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['clie_fecha_nac' => ['La fecha de nacimiento no puede ser mayor a la fecha actual.']]
+            ], 422);
+        }
+
+        // Validar cantidad de dígitos del campo CI
+        $ci = strlen($input['clie_ci']);
+        if ($ci > 8) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['clie_ci' => ['El nro de cedula solo podra contener 8 digítos.']]
+            ], 422);
+        }
+
+        // Validar que el CI no esté duplicado
+        $existe = DB::selectOne(
+            'SELECT * FROM clientes WHERE clie_ci = ?',
+            [$input['clie_ci']]
+        );
+        if ($existe) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['clie_ci' => ['Ya existe un cliente con este número de cédula.']]
+            ], 422);
+        }
+
+        // Insertar datos en clientes
+        DB::insert('INSERT INTO clientes (clie_nombre, clie_apellido, clie_ci, clie_telefono, clie_direccion, clie_fecha_nac, id_departamento, id_ciudad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+            strtoupper($input['clie_nombre']),
+            strtoupper($input['clie_apellido']),
+            $input['clie_ci'],
+            $input['clie_telefono'] ?? '',
+            strtoupper($input['clie_direccion'] ?? ''),
+            $input['clie_fecha_nac'],
+            $input['id_departamento'],
+            $input['id_ciudad']
+        ]);
+
+        // Obtener el ID del último cliente insertado
+        $lastId = DB::getPdo()->lastInsertId();
+
+        // Obtener el cliente recién creado
+        $nuevoCliente = DB::selectOne(
+            'SELECT id_cliente, clie_nombre, clie_apellido, clie_ci
+            FROM clientes
+            WHERE id_cliente = ?',
+            [$lastId]
+        );
+
+        return response()->json([
+            'success' => true,
+            'cliente' => [
+                'id_cliente' => $nuevoCliente->id_cliente,
+                'nombre_completo' => $nuevoCliente->clie_nombre . ' ' . $nuevoCliente->clie_apellido . ' - ' . $nuevoCliente->clie_ci
+            ]
+        ]);
+    }
 }
