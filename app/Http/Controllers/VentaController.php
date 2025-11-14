@@ -975,9 +975,14 @@ class VentaController extends AppBaseController
 
             // Obtener los detalles del pedido y mapearlos al formato que espera la vista de ventas
             $detalle_venta = DB::select(
-                "SELECT d.id_producto, d.cantidad, d.precio_unitario as precio, p.descripcion
+                "SELECT d.id_producto,
+                        d.cantidad,
+                        d.precio_unitario AS precio,
+                        p.descripcion,
+                        t.porcentaje AS tax_porcentaje
                  FROM detalle_pedido d
                  JOIN productos p ON d.id_producto = p.id_producto
+                 LEFT JOIN taxes t ON p.id_tax = t.id_tax
                  WHERE d.id_pedido = ?",
                 [$id]
             );
@@ -1028,6 +1033,21 @@ class VentaController extends AppBaseController
                 [auth()->user()->id]
             );
 
+            // Obtener timbrados vigentes para la sucursal de la que proviene el pedido (o la del usuario)
+            $timbrados_vigentes = [];
+            if (!empty($apertura_caja)) {
+                $sucursalParaTimbrado = $pedido->id_sucursal ?? auth()->user()->id_sucursal;
+                if (!empty($sucursalParaTimbrado)) {
+                    $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [$sucursalParaTimbrado]);
+                    if ($sucursal && $sucursal->id_empresa) {
+                        $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                            ->vigentes()
+                            ->orderBy('fecha_vencimiento', 'asc')
+                            ->get();
+                    }
+                }
+            }
+
             // Crear un objeto venta simulado con los datos del pedido para pre-llenar el formulario
             $venta = new \stdClass();
             $venta->id_cliente = $pedido->id_cliente;
@@ -1045,7 +1065,8 @@ class VentaController extends AppBaseController
                 'condicion_venta',
                 'intervalo_vencimiento',
                 'cantidad_cuotas',
-                'apertura_caja'
+                'apertura_caja',
+                'timbrados_vigentes'
             ))->with('desde_pedido', true);
 
         } catch (\Exception $e) {
