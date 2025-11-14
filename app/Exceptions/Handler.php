@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
@@ -47,7 +48,21 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            // Registrar todas las excepciones con contexto completo
+            Log::error('Excepción capturada', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'code' => $e->getCode(),
+                'user_id' => auth()->id() ?? 'guest',
+                'user_name' => auth()->user()->name ?? 'guest',
+                'url' => request()->fullUrl(),
+                'method' => request()->method(),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         });
     }
 
@@ -58,6 +73,14 @@ class Handler extends ExceptionHandler
     {
         // Manejar errores de base de datos (violación de llave foránea, etc.)
         if ($exception instanceof QueryException) {
+            // Log específico para errores de base de datos
+            Log::error('Error de base de datos', [
+                'sql_error' => $exception->getMessage(),
+                'sql_code' => $exception->getCode(),
+                'url' => $request->fullUrl(),
+                'user_id' => auth()->id() ?? 'guest',
+            ]);
+
             // Verificar si es error de violación de llave foránea
             if (strpos($exception->getMessage(), 'foreign key constraint') !== false ||
                 strpos($exception->getMessage(), 'SQLSTATE[23503]') !== false ||
