@@ -27,6 +27,6 @@
 <div class="form-group col-sm-6">
     {!! Form::label('id_empresa', 'Empresa:') !!}
     {!! Form::select('id_empresa', $empresas, null, [
-        'class' => 'form-control', 'placeholder' => 'Seleccione una Empresa (Opcional)']) !!}
+        'class' => 'form-control', 'required', 'placeholder' => 'Seleccione una Empresa']) !!}
     <small class="form-text text-muted">Seleccione la empresa a la que pertenece esta sucursal</small>
 </div>

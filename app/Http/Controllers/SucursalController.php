@@ -31,9 +31,10 @@ class SucursalController extends AppBaseController
            if ($searchConfig['mode'] === 'id') {
                // Búsqueda exacta por ID
                $sucursales = DB::select(
-                   'SELECT s.*, c.descripcion as ciudades
+                   'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
                     FROM sucursales s
                     JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                    LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
                     WHERE s.id_sucursal = ?
                     ORDER BY s.id_sucursal DESC',
                    [(int)$searchConfig['term']]
@@ -42,23 +43,26 @@ class SucursalController extends AppBaseController
                // Búsqueda múltiple en todos los campos
                $buscarTerm = $searchConfig['term'];
                $sucursales = DB::select(
-                   'SELECT s.*, c.descripcion as ciudades
+                   'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
                     FROM sucursales s
                     JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                    LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
                     WHERE s.descripcion ILIKE ?
                     OR s.direccion ILIKE ?
                     OR s.telefono ILIKE ?
                     OR c.descripcion ILIKE ?
+                    OR COALESCE(e.nombre_comercial, e.razon_social) ILIKE ?
                     OR cast(s.id_sucursal as text) ILIKE ?
                     ORDER BY s.id_sucursal DESC',
-                   ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                   ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                );
            }
        } else {
            $sucursales = DB::select(
-               'SELECT s.*, c.descripcion as ciudades
+               'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
                 FROM sucursales s
                 JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
                 ORDER BY s.id_sucursal DESC'
            );
        }
@@ -113,13 +117,14 @@ class SucursalController extends AppBaseController
             'direccion' => 'required',
             'telefono' => 'required',
             'id_ciudad' => 'required|exists:ciudades,id_ciudad',
-            'id_empresa' => 'nullable|exists:empresas,id_empresa',
+            'id_empresa' => 'required|exists:empresas,id_empresa',
         ], [
             'descripcion.required' => 'La descripcion es obligatoria',
             'direccion.required' => 'La direccion es obligatoria',
             'telefono.required' => 'El telefono es obligatorio',
             'id_ciudad.required' => 'La ciudad es obligatoria',
             'id_ciudad.exists' => 'La ciudad no existe',
+            'id_empresa.required' => 'La empresa es obligatoria',
             'id_empresa.exists' => 'La empresa no existe',
         ]);
         //si la validacion falla, redirigir con errores
@@ -146,7 +151,7 @@ class SucursalController extends AppBaseController
                 $input['direccion'],
                 $input['telefono'],
                 $input['id_ciudad'],
-                $input['id_empresa'] ?? null
+                $input['id_empresa']
             ]
         );
         //Redirigir a la lista de sucursales con un mesaje de exito
@@ -187,13 +192,14 @@ class SucursalController extends AppBaseController
             'direccion' => 'required',
             'telefono' => 'required',
             'id_ciudad' => 'required|exists:ciudades,id_ciudad',
-            'id_empresa' => 'nullable|exists:empresas,id_empresa',
+            'id_empresa' => 'required|exists:empresas,id_empresa',
         ], [
             'descripcion.required' => 'La descripcion es obligatoria',
             'direccion.required' => 'La direccion es obligatoria',
             'telefono.required' => 'El telefono es obligatorio',
             'id_ciudad.required' => 'La ciudad es obligatoria',
             'id_ciudad.exists' => 'La ciudad no existe',
+            'id_empresa.required' => 'La empresa es obligatoria',
             'id_empresa.exists' => 'La empresa no existe',
         ]);
         //si la validacion falla, redirigir con errores
@@ -220,7 +226,7 @@ class SucursalController extends AppBaseController
                 $input['direccion'],
                 $input['telefono'],
                 $input['id_ciudad'],
-                $input['id_empresa'] ?? null,
+                $input['id_empresa'],
                 $id
             ]
         );

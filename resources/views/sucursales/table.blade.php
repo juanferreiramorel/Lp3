@@ -8,6 +8,7 @@
                     <th>Direccion</th>
                     <th>Telefono</th>
                     <th>Ciudad</th>
+                    <th>Empresa</th>
                     <th colspan="3">Accion</th>
                 </tr>
             </thead>
@@ -19,6 +20,7 @@
                         <td>{{ $sucursal->direccion }}</td>
                         <td>{{ $sucursal->telefono }}</td>
                         <td>{{ $sucursal->ciudades }}</td>
+                        <td>{{ $sucursal->empresa }}</td>
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['sucursales.destroy', $sucursal->id_sucursal], 'method' => 'delete']) !!}
                             <div class='btn-group'>
