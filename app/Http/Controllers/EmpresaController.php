@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -62,6 +63,9 @@ class EmpresaController extends AppBaseController
     {
         $input = $request->all();
 
+        // Log de entrada para depuración
+        Log::info('Intentando crear empresa', ['data' => $input]);
+
         $validacion = Validator::make(
             $input,
             [
@@ -87,6 +91,8 @@ class EmpresaController extends AppBaseController
         );
 
         if ($validacion->fails()) {
+            Log::warning('Validación falló al crear empresa', ['errores' => $validacion->errors()->toArray()]);
+            Alert::error('Error de Validación', 'Por favor revise los campos del formulario.');
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
@@ -95,10 +101,12 @@ class EmpresaController extends AppBaseController
             // Manejar la subida del logo
             $logoPath = null;
             if ($request->hasFile('logo')) {
+                Log::info('Subiendo logo');
                 $logoPath = $request->file('logo')->store('logos', 'public');
+                Log::info('Logo subido exitosamente', ['path' => $logoPath]);
             }
 
-            DB::insert(
+            $result = DB::insert(
                 'INSERT INTO empresas (razon_social, nombre_comercial, ruc, direccion, telefono, email, logo, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
                 [
@@ -112,18 +120,28 @@ class EmpresaController extends AppBaseController
                 ]
             );
 
+            Log::info('Empresa insertada exitosamente', ['resultado' => $result]);
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
+
+            Log::error('Error al registrar empresa', [
+                'mensaje' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile()
+            ]);
+
             // Eliminar el logo si se subió pero falló la transacción
             if (isset($logoPath) && $logoPath) {
                 Storage::disk('public')->delete($logoPath);
             }
-            Alert::toast('Error al registrar la empresa: ' . $e->getMessage(), 'error');
+
+            Alert::error('Error al registrar empresa', $e->getMessage());
             return redirect()->back()->withInput();
         }
 
-        Alert::toast('Empresa registrada exitosamente.', 'success');
+        Alert::success('¡Éxito!', 'Empresa registrada exitosamente.');
         return redirect()->route('empresas.index');
     }
 
@@ -160,10 +178,12 @@ class EmpresaController extends AppBaseController
     {
         $input = $request->all();
 
+        Log::info('Intentando actualizar empresa', ['id' => $id, 'data' => $input]);
+
         $empresa = DB::selectOne('SELECT * FROM empresas WHERE id_empresa = ?', [$id]);
 
         if (empty($empresa)) {
-            Alert::toast('Empresa no encontrada', 'error');
+            Alert::error('Error', 'Empresa no encontrada');
             return redirect()->route('empresas.index');
         }
 
@@ -190,6 +210,8 @@ class EmpresaController extends AppBaseController
         );
 
         if ($validacion->fails()) {
+            Log::warning('Validación falló al actualizar empresa', ['errores' => $validacion->errors()->toArray()]);
+            Alert::error('Error de Validación', 'Por favor revise los campos del formulario.');
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
@@ -199,12 +221,15 @@ class EmpresaController extends AppBaseController
             $logoPath = $empresa->logo; // Mantener el logo anterior por defecto
 
             if ($request->hasFile('logo')) {
+                Log::info('Actualizando logo');
                 // Eliminar el logo anterior si existe
                 if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
                     Storage::disk('public')->delete($empresa->logo);
+                    Log::info('Logo anterior eliminado', ['path' => $empresa->logo]);
                 }
                 // Guardar el nuevo logo
                 $logoPath = $request->file('logo')->store('logos', 'public');
+                Log::info('Nuevo logo subido', ['path' => $logoPath]);
             }
 
             DB::update(
@@ -223,14 +248,23 @@ class EmpresaController extends AppBaseController
                 ]
             );
 
+            Log::info('Empresa actualizada exitosamente', ['id' => $id]);
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
-            Alert::toast('Error al actualizar la empresa: ' . $e->getMessage(), 'error');
+
+            Log::error('Error al actualizar empresa', [
+                'mensaje' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile()
+            ]);
+
+            Alert::error('Error al actualizar empresa', $e->getMessage());
             return redirect()->back()->withInput();
         }
 
-        Alert::toast('Empresa actualizada exitosamente.', 'success');
+        Alert::success('¡Éxito!', 'Empresa actualizada exitosamente.');
         return redirect()->route('empresas.index');
     }
 
