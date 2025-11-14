@@ -8,13 +8,8 @@
     </a>
     @{!! Form::button('<i class="fa fa-trash"></i>', [
         'type' => 'submit',
-        'class' => 'btn btn-danger btn-xs',
-@if($config->options->localized)
-        'onclick' => "return confirm('Are you sure?')"
-@else
-        'onclick' => 'return confirm("'.__('crud.are_you_sure').'")'
-@endif
-
+        'class' => 'btn btn-danger btn-xs alert-delete',
+        'data-mensaje' => 'this record'
     ]) !!}
 </div>
 @{!! Form::close() !!}

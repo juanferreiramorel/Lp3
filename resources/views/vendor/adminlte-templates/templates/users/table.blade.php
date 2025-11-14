@@ -21,7 +21,7 @@
                         <a href="{!! route('users.edit', [$user->id]) !!}" class='btn btn-default btn-xs'>
                             <i class="fa fa-edit"></i>
                         </a>
-                        {!! Form::button('<i class="fa fa-trash"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                        {!! Form::button('<i class="fa fa-trash"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs alert-delete', 'data-mensaje' => 'this user']) !!}
                     </div>
                     {!! Form::close() !!}
                 </td>

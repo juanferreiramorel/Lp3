@@ -283,6 +283,26 @@
                         });
                 });
 
+                // Función para manejar confirmación de eliminación en Livewire
+                window.handleLivewireDelete = function(recordId, button) {
+                    Swal.fire({
+                        title: "Atención",
+                        text: "¿Está seguro que desea eliminar este registro?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: "Confirmar",
+                        cancelButtonText: "Cancelar",
+                    }).then(resultado => {
+                        if (resultado.value) {
+                            // Disparar el evento Livewire
+                            const event = new CustomEvent('livewire:emit', {
+                                detail: ['deleteRecord', recordId]
+                            });
+                            button.dispatchEvent(event);
+                        }
+                    });
+                };
+
                 /** bucador mediante peticiones fetch*/
                 $('.buscar').on('keyup', function() {
                     var query = this.value; // valor del input buscar
