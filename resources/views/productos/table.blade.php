@@ -7,11 +7,7 @@
                         <th>Imagen</th>
                         <th>Descripción</th>
                         <th>Precio</th>
-<<<<<<< HEAD
-=======
-                        <th>Tipo Iva</th>
                         <th>Controla Stock</th>
->>>>>>> 4d2b079c9e2e7ab7dc981869c35892a73c7c3f00
                         <th>Marca</th>
                         <th colspan="3">Action</th>
                     </tr>
@@ -30,11 +26,7 @@
                             </td>
                             <td>{{ $producto->descripcion }}</td>
                             <td>{{ number_format($producto->precio, 0, ',', '.') }}</td>
-<<<<<<< HEAD
-=======
-                            <td>{{ $producto->tipo_iva }}</td>
                             <td>{{ !empty($producto->controlar_stock) ? 'Sí' : 'No' }}</td>
->>>>>>> 4d2b079c9e2e7ab7dc981869c35892a73c7c3f00
                             <td>{{ $producto->marcas }}</td>
                             <td style="width: 120px">
                                 {!! Form::open(['route' => ['productos.destroy', $producto->id_producto], 'method' => 'delete']) !!}
