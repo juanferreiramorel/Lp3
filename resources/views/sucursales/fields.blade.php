@@ -22,3 +22,11 @@
     {!! Form::select('id_ciudad',$ciudades, null, [
         'class' => 'form-control', 'required', 'placeholder' => 'Seleccione la Ciudad']) !!}
 </div>
+
+<!-- Id Empresa Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('id_empresa', 'Empresa:') !!}
+    {!! Form::select('id_empresa', $empresas, null, [
+        'class' => 'form-control', 'placeholder' => 'Seleccione una Empresa (Opcional)']) !!}
+    <small class="form-text text-muted">Seleccione la empresa a la que pertenece esta sucursal</small>
+</div>

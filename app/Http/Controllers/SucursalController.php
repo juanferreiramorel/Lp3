@@ -94,8 +94,15 @@ class SucursalController extends AppBaseController
         //Obtener ciudades
         $ciudades = DB::table('ciudades')->pluck('descripcion', 'id_ciudad');
 
-        return view('sucursales.create')->with('ciudades', $ciudades);
-        
+        //Obtener empresas
+        $empresas = DB::table('empresas')
+            ->selectRaw("id_empresa, COALESCE(nombre_comercial, razon_social) as nombre")
+            ->pluck('nombre', 'id_empresa');
+
+        return view('sucursales.create')
+            ->with('ciudades', $ciudades)
+            ->with('empresas', $empresas);
+
     }
     public function store(Request $request){
         $input = $request->all();
@@ -106,12 +113,14 @@ class SucursalController extends AppBaseController
             'direccion' => 'required',
             'telefono' => 'required',
             'id_ciudad' => 'required|exists:ciudades,id_ciudad',
+            'id_empresa' => 'nullable|exists:empresas,id_empresa',
         ], [
             'descripcion.required' => 'La descripcion es obligatoria',
             'direccion.required' => 'La direccion es obligatoria',
             'telefono.required' => 'El telefono es obligatorio',
             'id_ciudad.required' => 'La ciudad es obligatoria',
             'id_ciudad.exists' => 'La ciudad no existe',
+            'id_empresa.exists' => 'La empresa no existe',
         ]);
         //si la validacion falla, redirigir con errores
         if ($validacion->fails()) {
@@ -131,12 +140,13 @@ class SucursalController extends AppBaseController
 
         //Insertar el nuevo producto en la Base de datos
         DB::insert(
-            'INSERT INTO sucursales (descripcion, direccion, telefono, id_ciudad) VALUES (?, ?, ?, ?)',
+            'INSERT INTO sucursales (descripcion, direccion, telefono, id_ciudad, id_empresa) VALUES (?, ?, ?, ?, ?)',
             [
                 $input['descripcion'],
                 $input['direccion'],
                 $input['telefono'],
-                $input['id_ciudad']
+                $input['id_ciudad'],
+                $input['id_empresa'] ?? null
             ]
         );
         //Redirigir a la lista de sucursales con un mesaje de exito
@@ -151,7 +161,16 @@ class SucursalController extends AppBaseController
         }
         //Obtener ciudades
         $ciudades = DB::table('ciudades')->pluck('descripcion', 'id_ciudad');
-        return view('sucursales.edit')->with('sucursales', $sucursales)->with('ciudades', $ciudades);
+
+        //Obtener empresas
+        $empresas = DB::table('empresas')
+            ->selectRaw("id_empresa, COALESCE(nombre_comercial, razon_social) as nombre")
+            ->pluck('nombre', 'id_empresa');
+
+        return view('sucursales.edit')
+            ->with('sucursales', $sucursales)
+            ->with('ciudades', $ciudades)
+            ->with('empresas', $empresas);
     }
     public function update(Request $request, $id){
         $input = $request->all();
@@ -168,12 +187,14 @@ class SucursalController extends AppBaseController
             'direccion' => 'required',
             'telefono' => 'required',
             'id_ciudad' => 'required|exists:ciudades,id_ciudad',
+            'id_empresa' => 'nullable|exists:empresas,id_empresa',
         ], [
             'descripcion.required' => 'La descripcion es obligatoria',
             'direccion.required' => 'La direccion es obligatoria',
             'telefono.required' => 'El telefono es obligatorio',
             'id_ciudad.required' => 'La ciudad es obligatoria',
             'id_ciudad.exists' => 'La ciudad no existe',
+            'id_empresa.exists' => 'La empresa no existe',
         ]);
         //si la validacion falla, redirigir con errores
         if ($validacion->fails()) {
@@ -193,12 +214,13 @@ class SucursalController extends AppBaseController
 
         //Actualizar el producto en la Base de datos
         DB::update(
-            'UPDATE sucursales SET descripcion = ?, direccion = ?, telefono = ?, id_ciudad = ? WHERE id_sucursal = ?',
+            'UPDATE sucursales SET descripcion = ?, direccion = ?, telefono = ?, id_ciudad = ?, id_empresa = ? WHERE id_sucursal = ?',
             [
                 $input['descripcion'],
                 $input['direccion'],
                 $input['telefono'],
                 $input['id_ciudad'],
+                $input['id_empresa'] ?? null,
                 $id
             ]
         );
