@@ -29,6 +29,15 @@
     ]) !!}
 </div>
 
+<!-- Controlar Stock Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('controlar_stock', 'Controlar Stock:') !!}
+    {!! Form::select('controlar_stock', [1 => 'Sí', 0 => 'No'], old('controlar_stock', isset($productos) ? (int) $productos->controlar_stock : 1), [
+        'class' => 'form-control',
+        'required',
+    ]) !!}
+</div>
+
 <!-- Id Marca Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('id_marca', 'Marca:') !!}

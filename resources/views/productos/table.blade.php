@@ -8,6 +8,7 @@
                         <th>Descripción</th>
                         <th>Precio</th>
                         <th>Tipo Iva</th>
+                        <th>Controla Stock</th>
                         <th>Marca</th>
                         <th colspan="3">Action</th>
                     </tr>
@@ -27,6 +28,7 @@
                             <td>{{ $producto->descripcion }}</td>
                             <td>{{ number_format($producto->precio, 0, ',', '.') }}</td>
                             <td>{{ $producto->tipo_iva }}</td>
+                            <td>{{ !empty($producto->controlar_stock) ? 'Sí' : 'No' }}</td>
                             <td>{{ $producto->marcas }}</td>
                             <td style="width: 120px">
                                 {!! Form::open(['route' => ['productos.destroy', $producto->id_producto], 'method' => 'delete']) !!}

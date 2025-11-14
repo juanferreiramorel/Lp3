@@ -368,6 +368,15 @@ class VentaController extends AppBaseController
             $subtotal = 0;
             // validar que existea $input['codigo'] de productos
             if ($request->has('codigo')) {
+                $codigos = array_map('intval', $input['codigo'] ?? []);
+                $productosControl = !empty($codigos)
+                    ? DB::table('productos')
+                        ->whereIn('id_producto', $codigos)
+                        ->pluck('controlar_stock', 'id_producto')
+                        ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                        ->toArray()
+                    : [];
+
                 foreach ($input['codigo'] as $key => $codigo) {
                     // quitar separador de miles
                     $monto = str_replace('.', '', $input['precio'][$key]);
@@ -385,11 +394,14 @@ class VentaController extends AppBaseController
                     );
 
                     // disminuir stocks segun producto y sucursal
-                    DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                        $input['cantidad'][$key],
-                        $codigo,
-                        $input['id_sucursal']
-                    ]);
+                    $controlarStock = $productosControl[(int) $codigo] ?? true;
+                    if ($controlarStock) {
+                        DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
+                            $input['cantidad'][$key],
+                            $codigo,
+                            $input['id_sucursal']
+                        ]);
+                    }
                 }
                 // actualizar el total en la tabla ventas valor total
                 DB::update('UPDATE ventas SET total = ? WHERE id_venta = ?', [
@@ -563,12 +575,23 @@ class VentaController extends AppBaseController
                 $id
             ]);
 
+            $codigos = array_map('intval', $input['codigo'] ?? []);
+            $productosControl = !empty($codigos)
+                ? DB::table('productos')
+                    ->whereIn('id_producto', $codigos)
+                    ->pluck('controlar_stock', 'id_producto')
+                    ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                    ->toArray()
+                : [];
+
             // Actualizar los detalles de venta
             foreach ($input['codigo'] as $key => $codigo) {
                 // quitar separador de miles
                 $monto = str_replace('.', '', $input['precio'][$key]);
                 // obtener detalle de venta si existe segun producto recibido
                 $detalle = DB::selectOne('SELECT * FROM detalle_ventas WHERE id_venta = ? AND id_producto = ?', [$id, $codigo]);
+
+                $controlarStock = $productosControl[(int) $codigo] ?? true;
 
                 if (!empty($detalle)) {
                     // actualizar en detalle_ventas
@@ -584,7 +607,7 @@ class VentaController extends AppBaseController
                     // calcular diferencia de cantidad para disminucion de stock
                     $diferencia = $input['cantidad'][$key] - $detalle->cantidad;
                     // actualizar stocks segun producto y sucursal
-                    if ($diferencia != 0) {
+                    if ($diferencia != 0 && $controlarStock) {
                         DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
                             $diferencia,
                             $codigo,
@@ -604,11 +627,13 @@ class VentaController extends AppBaseController
                     );
 
                     // Disminuir stock
-                    DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                        $input['cantidad'][$key],
-                        $codigo,
-                        $ventas->id_sucursal
-                    ]);
+                    if ($controlarStock) {
+                        DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
+                            $input['cantidad'][$key],
+                            $codigo,
+                            $ventas->id_sucursal
+                        ]);
+                    }
                 }
             }
             // Si todo esta bien realiza el envio e inserta la venta y detalle
@@ -648,13 +673,25 @@ class VentaController extends AppBaseController
             // restaurar la cantidad de productos en stock para ello debemos consultar el detalle de venta para obtener datos del producto y cantidad
             $detalle_venta = DB::select('SELECT * FROM detalle_ventas WHERE id_venta = ?', [$id]);
 
+            $productosIds = array_unique(array_map(fn($item) => (int) $item->id_producto, $detalle_venta));
+            $productosControl = empty($productosIds)
+                ? []
+                : DB::table('productos')
+                    ->whereIn('id_producto', $productosIds)
+                    ->pluck('controlar_stock', 'id_producto')
+                    ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                    ->toArray();
+
             foreach ($detalle_venta as $item) {
-                // actualizar las cantidades en stock segun la sucursal que obtendremos de la variable $ventas
-                DB::update('UPDATE stocks SET cantidad = cantidad + ? WHERE id_producto = ? AND id_sucursal = ?', [
-                    $item->cantidad,
-                    $item->id_producto,
-                    $ventas->id_sucursal
-                ]);
+                $controlarStock = $productosControl[(int) $item->id_producto] ?? true;
+                if ($controlarStock) {
+                    // actualizar las cantidades en stock segun la sucursal que obtendremos de la variable $ventas
+                    DB::update('UPDATE stocks SET cantidad = cantidad + ? WHERE id_producto = ? AND id_sucursal = ?', [
+                        $item->cantidad,
+                        $item->id_producto,
+                        $ventas->id_sucursal
+                    ]);
+                }
             }
             // Si todo esta bien realiza el envio e inserta la venta y detalle
             DB::commit();
@@ -680,14 +717,14 @@ class VentaController extends AppBaseController
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
-                        JOIN stocks ON productos.id_producto = stocks.id_producto 
-                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
+                        LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
+                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
                     LIMIT 20",
                 [
+                    $cod_suc,
                     '%' . $query . '%',
-                    '%' . $query . '%',
-                    $cod_suc
+                    '%' . $query . '%'
                 ]
             );
         } else {
@@ -695,8 +732,8 @@ class VentaController extends AppBaseController
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
-                        JOIN stocks ON productos.id_producto = stocks.id_producto
-                 WHERE stocks.id_sucursal = ?
+                        LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
+                        AND stocks.id_sucursal = ?
                  LIMIT 20",
                 [$cod_suc]
             );
