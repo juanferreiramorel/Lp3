@@ -17,6 +17,22 @@
     ]) !!}
 </div>
 
+<!-- Timbrado Field -->
+@if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+<div class="form-group col-sm-4">
+    {!! Form::label('id_timbrado', 'Timbrado:') !!}
+    {!! Form::select('id_timbrado',
+        $timbrados_vigentes->pluck('numero_timbrado', 'id_timbrado')->prepend('Sin timbrado', ''),
+        null,
+        [
+            'class' => 'form-control',
+            'id' => 'id_timbrado',
+        ]
+    ) !!}
+    <small class="form-text text-muted">Seleccione un timbrado para generar factura timbrada</small>
+</div>
+@endif
+
 <!-- Factura Nro Field -->
 <div class="form-group col-sm-4">
     {!! Form::label('factura_nro', 'Factura Nro:') !!}
@@ -25,8 +41,15 @@
         isset($apertura_caja)
             ? ($apertura_caja->establecimiento . '-' . $apertura_caja->punto_expedicion . '-' . $apertura_caja->nro_factura)
             : null,
-        ['class' => 'form-control', 'readonly' => 'readonly'],
+        ['class' => 'form-control', 'readonly' => 'readonly', 'id' => 'factura_nro'],
     ) !!}
+    <small class="form-text text-muted" id="factura_help">
+        @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+            El número se generará automáticamente si selecciona un timbrado
+        @else
+            No hay timbrados vigentes disponibles
+        @endif
+    </small>
 </div>
 
 <!-- User Id Field -->

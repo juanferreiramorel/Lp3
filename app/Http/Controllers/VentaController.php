@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Luecano\NumeroALetras\NumeroALetras;
+use App\Models\Timbrado;
+use App\Models\Empresa;
 
 use function Laravel\Prompts\error;
 
@@ -226,12 +228,26 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
+        // Obtener timbrados vigentes de la empresa de la sucursal del usuario
+        $timbrados_vigentes = [];
+        if (!empty($apertura_caja)) {
+            // Obtener la empresa de la sucursal del usuario
+            $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [auth()->user()->id_sucursal]);
+            if ($sucursal && $sucursal->id_empresa) {
+                $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                    ->vigentes()
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->get();
+            }
+        }
+
         return view('ventas.create')->with('clientes', $clientes)
             ->with('usuario', $usuario)
             ->with('condicion_venta', $condicion_venta)
             ->with('intervalo_vencimiento', $intervalo_vencimiento)
             ->with('sucursales', $sucursales)
-            ->with('apertura_caja', $apertura_caja);
+            ->with('apertura_caja', $apertura_caja)
+            ->with('timbrados_vigentes', $timbrados_vigentes);
     }
 
     public function store(Request $request)
@@ -253,6 +269,7 @@ class VentaController extends AppBaseController
                 'id_apertura' => 'required|exists:apertura_cierre_cajas,id_apertura',
                 'id_sucursal' => 'required|exists:sucursales,id_sucursal',
                 'factura_nro' => 'nullable|string|max:15',
+                'id_timbrado' => 'nullable|exists:timbrados,id_timbrado',
             ],
             [
                 'id_cliente.required' => 'El campo cliente es obligatorio.',
@@ -296,6 +313,34 @@ class VentaController extends AppBaseController
             return redirect()->back()->withInput($input);
         }
 
+        // Manejar timbrado si está presente
+        $numero_factura_timbrado = null;
+        $timbrado = null;
+        if (!empty($input['id_timbrado'])) {
+            $timbrado = Timbrado::find($input['id_timbrado']);
+
+            if (!$timbrado) {
+                Alert::toast('Timbrado no encontrado', 'error');
+                return redirect()->back()->withInput($input);
+            }
+
+            if (!$timbrado->estaVigente()) {
+                Alert::toast('El timbrado seleccionado no está vigente', 'error');
+                return redirect()->back()->withInput($input);
+            }
+
+            // Generar número de factura con timbrado
+            $numero_factura_timbrado = $timbrado->generarNumeroFactura();
+
+            if (!$numero_factura_timbrado) {
+                Alert::toast('No se pudo generar el número de factura. Timbrado agotado o vencido', 'error');
+                return redirect()->back()->withInput($input);
+            }
+
+            // Usar el número de timbrado como número de factura principal
+            $input['factura_nro'] = $numero_factura_timbrado;
+        }
+
         // Si la validación pasa, continuar con el almacenamiento de la venta
         // Recuperamos el usuario en session
         $user_id = auth()->user()->id;
@@ -314,6 +359,8 @@ class VentaController extends AppBaseController
                 'cantidad_cuota' => $input['cantidad_cuota'] ?? 0,
                 'fecha_venta' => $input['fecha_venta'],
                 'factura_nro' => $input['factura_nro'] ?? '0',
+                'numero_factura_timbrado' => $numero_factura_timbrado,
+                'id_timbrado' => !empty($input['id_timbrado']) ? $input['id_timbrado'] : null,
                 'user_id' => $user_id,
                 'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
@@ -354,6 +401,11 @@ class VentaController extends AppBaseController
                     $subtotal,
                     $ventas
                 ]);
+            }
+
+            // Incrementar uso del timbrado si se utilizó
+            if ($timbrado) {
+                $timbrado->incrementarUso();
             }
 
             // actualizar la ultima factura impresa en cajas si es que se envio un nro de factura
@@ -672,7 +724,7 @@ class VentaController extends AppBaseController
 
     public function factura($id)
     {
-        // recuperar datos de la venta con información de la empresa
+        // recuperar datos de la venta con información de la empresa y timbrado
         $ventas = DB::selectOne(
             "SELECT v.*,
             concat(c.clie_nombre,' ', c.clie_apellido) as cliente,
@@ -687,7 +739,10 @@ class VentaController extends AppBaseController
             e.telefono as empresa_telefono,
             e.email as empresa_email,
             e.logo as empresa_logo,
-            s.descripcion as sucursal_nombre
+            s.descripcion as sucursal_nombre,
+            t.numero_timbrado,
+            t.fecha_inicio as timbrado_fecha_inicio,
+            t.fecha_vencimiento as timbrado_fecha_vencimiento
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
@@ -695,6 +750,7 @@ class VentaController extends AppBaseController
                 JOIN cajas cj ON acc.id_caja = cj.id_caja
                 JOIN sucursales s ON cj.id_sucursal = s.id_sucursal
                 LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
+                LEFT JOIN timbrados t ON v.id_timbrado = t.id_timbrado
             WHERE v.id_venta = ?",
             [$id]
         );
@@ -718,9 +774,13 @@ class VentaController extends AppBaseController
         $formateo = new NumeroALetras();
         $numero_a_letras = $formateo->toWords($ventas->total);// recuperar total de la venta y convertir a letras
 
+        // Determinar el número de factura a mostrar (priorizar timbrado)
+        $numero_factura_display = $ventas->numero_factura_timbrado ?? $ventas->factura_nro;
+
         return view('ventas.factura')->with('ventas', $ventas)
             ->with('detalle_venta', $detalle_venta)
-            ->with('numero_a_letras', $numero_a_letras);
+            ->with('numero_a_letras', $numero_a_letras)
+            ->with('numero_factura_display', $numero_factura_display);
     }
 
     /** CREAR VENTA DESDE PEDIDO */
