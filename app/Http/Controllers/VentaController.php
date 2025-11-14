@@ -366,48 +366,112 @@ class VentaController extends AppBaseController
 
             // insertar detalle ventas
             $subtotal = 0;
+            // Inicializar totales por tipo de impuesto
+            $total_exento = 0;
+            $total_gravado_5 = 0;
+            $total_gravado_10 = 0;
+            $total_iva_5 = 0;
+            $total_iva_10 = 0;
+
             // validar que existea $input['codigo'] de productos
             if ($request->has('codigo')) {
                 $codigos = array_map('intval', $input['codigo'] ?? []);
-                $productosControl = !empty($codigos)
-                    ? DB::table('productos')
-                        ->whereIn('id_producto', $codigos)
-                        ->pluck('controlar_stock', 'id_producto')
-                        ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+
+                // Obtener información de productos incluyendo impuestos
+                $productosInfo = !empty($codigos)
+                    ? DB::table('productos as p')
+                        ->leftJoin('taxes as t', 'p.id_tax', '=', 't.id_tax')
+                        ->whereIn('p.id_producto', $codigos)
+                        ->select('p.id_producto', 'p.controlar_stock', 'p.id_tax', 't.porcentaje')
+                        ->get()
+                        ->keyBy('id_producto')
                         ->toArray()
                     : [];
 
                 foreach ($input['codigo'] as $key => $codigo) {
                     // quitar separador de miles
-                    $monto = str_replace('.', '', $input['precio'][$key]);
-                    // calculo de subtotal
-                    $subtotal += $monto * $input['cantidad'][$key];
-                    // insertar en detalle_ventas
+                    $precio_con_iva = str_replace('.', '', $input['precio'][$key]);
+                    $cantidad = $input['cantidad'][$key];
+
+                    // Obtener información del producto
+                    $productoInfo = $productosInfo[(int) $codigo] ?? null;
+
+                    if (!$productoInfo || !$productoInfo->id_tax) {
+                        // Producto sin impuesto - ERROR, esto no debería pasar
+                        DB::rollback();
+                        Alert::toast('Error: El producto con ID ' . $codigo . ' no tiene un impuesto asignado. Todos los productos deben tener impuesto.', 'error');
+                        return redirect()->back()->withInput($request->all());
+                    }
+
+                    $porcentaje_impuesto = $productoInfo->porcentaje;
+                    $id_tax = $productoInfo->id_tax;
+
+                    // Calcular precio sin impuesto usando la fórmula paraguaya
+                    // Precio sin IVA = Precio / (1 + porcentaje/100)
+                    $precio_sin_impuesto = $porcentaje_impuesto > 0
+                        ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                        : $precio_con_iva;
+
+                    // Calcular monto del impuesto
+                    $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                    // Calcular subtotales por item
+                    $subtotal_item = $precio_con_iva * $cantidad;
+                    $subtotal += $subtotal_item;
+
+                    // Acumular en los totales según tipo de impuesto
+                    if ($porcentaje_impuesto == 0) {
+                        $total_exento += $subtotal_item;
+                    } elseif ($porcentaje_impuesto == 5) {
+                        $total_gravado_5 += $subtotal_item;
+                        $total_iva_5 += $monto_impuesto * $cantidad;
+                    } elseif ($porcentaje_impuesto == 10) {
+                        $total_gravado_10 += $subtotal_item;
+                        $total_iva_10 += $monto_impuesto * $cantidad;
+                    }
+
+                    // insertar en detalle_ventas CON campos de impuesto
                     DB::insert(
-                        'INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio) VALUES (?, ?, ?, ?)',
+                        'INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio, id_tax, precio_sin_impuesto, monto_impuesto) VALUES (?, ?, ?, ?, ?, ?, ?)',
                         [
                             $ventas,
                             $codigo,
-                            $input['cantidad'][$key],
-                            $monto
+                            $cantidad,
+                            $precio_con_iva,
+                            $id_tax,
+                            $precio_sin_impuesto,
+                            $monto_impuesto
                         ]
                     );
 
                     // disminuir stocks segun producto y sucursal
-                    $controlarStock = $productosControl[(int) $codigo] ?? true;
+                    $controlarStock = (bool)($productoInfo->controlar_stock ?? true);
                     if ($controlarStock) {
                         DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                            $input['cantidad'][$key],
+                            $cantidad,
                             $codigo,
                             $input['id_sucursal']
                         ]);
                     }
                 }
-                // actualizar el total en la tabla ventas valor total
-                DB::update('UPDATE ventas SET total = ? WHERE id_venta = ?', [
-                    $subtotal,
-                    $ventas
-                ]);
+
+                // Calcular total de IVA
+                $total_iva = $total_iva_5 + $total_iva_10;
+
+                // actualizar el total en la tabla ventas CON totales de impuestos
+                DB::update(
+                    'UPDATE ventas SET total = ?, total_exento = ?, total_gravado_5 = ?, total_gravado_10 = ?, total_iva_5 = ?, total_iva_10 = ?, total_iva = ? WHERE id_venta = ?',
+                    [
+                        $subtotal,
+                        $total_exento,
+                        $total_gravado_5,
+                        $total_gravado_10,
+                        $total_iva_5,
+                        $total_iva_10,
+                        $total_iva,
+                        $ventas
+                    ]
+                );
             }
 
             // Incrementar uso del timbrado
@@ -464,11 +528,12 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
-        // obtener los detalles de ventas
+        // obtener los detalles de ventas CON información de impuestos
         $detalle_venta = DB::select(
-            "SELECT dv.*, p.descripcion
+            "SELECT dv.*, p.descripcion, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
             FROM detalle_ventas dv
                 JOIN productos p ON dv.id_producto = p.id_producto
+                LEFT JOIN taxes t ON dv.id_tax = t.id_tax
             WHERE dv.id_venta = ?",
             [$id]
         );

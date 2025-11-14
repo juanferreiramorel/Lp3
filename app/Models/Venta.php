@@ -19,6 +19,12 @@ class Venta extends Model
         'id_sucursal',
         'id_timbrado',
         'total',
+        'total_exento',
+        'total_gravado_5',
+        'total_gravado_10',
+        'total_iva_5',
+        'total_iva_10',
+        'total_iva',
         'fecha_venta',
         'condicion_venta',
         'intervalo',
@@ -30,6 +36,12 @@ class Venta extends Model
     protected $casts = [
         'fecha_venta' => 'date',
         'total' => 'decimal:2',
+        'total_exento' => 'decimal:2',
+        'total_gravado_5' => 'decimal:2',
+        'total_gravado_10' => 'decimal:2',
+        'total_iva_5' => 'decimal:2',
+        'total_iva_10' => 'decimal:2',
+        'total_iva' => 'decimal:2',
         'intervalo' => 'integer',
         'cantidad_cuota' => 'integer',
     ];
@@ -56,6 +68,14 @@ class Venta extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relación con DetalleVenta
+     */
+    public function detalles()
+    {
+        return $this->hasMany(DetalleVenta::class, 'id_venta', 'id_venta');
     }
 
     /**
