@@ -53,7 +53,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => ['daily'],
             'ignore_exceptions' => false,
         ],
 
@@ -67,6 +67,31 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
+            'permission' => 0664,
+        ],
+
+        // Canal específico para excepciones
+        'exceptions' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/exceptions.log'),
+            'level' => 'error',
+            'days' => 30,
+        ],
+
+        // Canal para consultas SQL (debugging)
+        'queries' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/queries.log'),
+            'level' => 'debug',
+            'days' => 7,
+        ],
+
+        // Canal para requests HTTP
+        'requests' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/requests.log'),
+            'level' => 'info',
             'days' => 14,
         ],
 

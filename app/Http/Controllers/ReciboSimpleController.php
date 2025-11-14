@@ -249,8 +249,13 @@ class ReciboSimpleController extends AppBaseController
 
             // Insertar detalle del recibo (productos)
             $subtotal_calculado = 0;
-            if ($request->has('codigo')) {
+            if ($request->has('codigo') && is_array($input['codigo'])) {
                 foreach ($input['codigo'] as $key => $codigo) {
+                    // Validar que existan todos los elementos necesarios
+                    if (!isset($input['precio'][$key]) || !isset($input['cantidad'][$key]) || !isset($input['producto'][$key])) {
+                        continue; // Saltar este producto si faltan datos
+                    }
+
                     // Limpiar formato de precio
                     $precio = str_replace('.', '', $input['precio'][$key]);
                     $cantidad = $input['cantidad'][$key];
@@ -280,8 +285,13 @@ class ReciboSimpleController extends AppBaseController
             }
 
             // Insertar múltiples cobros/pagos
-            if ($request->has('metodo_pago')) {
+            if ($request->has('metodo_pago') && is_array($input['metodo_pago'])) {
                 foreach ($input['metodo_pago'] as $key => $id_metodo) {
+                    // Validar que exista el importe
+                    if (!isset($input['importe_pago'][$key])) {
+                        continue; // Saltar este pago si falta el importe
+                    }
+
                     $importe_pago = str_replace('.', '', $input['importe_pago'][$key]);
 
                     DB::insert(
@@ -522,8 +532,13 @@ class ReciboSimpleController extends AppBaseController
 
             // Insertar nuevos detalles (productos)
             $subtotal_calculado = 0;
-            if ($request->has('codigo')) {
+            if ($request->has('codigo') && is_array($input['codigo'])) {
                 foreach ($input['codigo'] as $key => $codigo) {
+                    // Validar que existan todos los elementos necesarios
+                    if (!isset($input['precio'][$key]) || !isset($input['cantidad'][$key]) || !isset($input['producto'][$key])) {
+                        continue; // Saltar este producto si faltan datos
+                    }
+
                     $precio = str_replace('.', '', $input['precio'][$key]);
                     $cantidad = $input['cantidad'][$key];
                     $subtotal = $precio * $cantidad;
@@ -554,8 +569,13 @@ class ReciboSimpleController extends AppBaseController
             DB::delete('DELETE FROM cobros_recibos_simples WHERE id_recibo = ?', [$id]);
 
             // Insertar nuevos cobros (múltiples formas de pago)
-            if ($request->has('metodo_pago')) {
+            if ($request->has('metodo_pago') && is_array($input['metodo_pago'])) {
                 foreach ($input['metodo_pago'] as $key => $id_metodo) {
+                    // Validar que exista el importe
+                    if (!isset($input['importe_pago'][$key])) {
+                        continue; // Saltar este pago si falta el importe
+                    }
+
                     $importe_pago = str_replace('.', '', $input['importe_pago'][$key]);
 
                     DB::insert(

@@ -16,28 +16,28 @@
                         <!-- Nombre Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_clie_nombre">Nombre: <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="modal_clie_nombre" name="clie_nombre" required>
+                            <input type="text" class="form-control" id="modal_clie_nombre" name="clie_nombre">
                             <small class="text-danger d-none" id="error_clie_nombre"></small>
                         </div>
 
                         <!-- Apellido Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_clie_apellido">Apellido: <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="modal_clie_apellido" name="clie_apellido" required>
+                            <input type="text" class="form-control" id="modal_clie_apellido" name="clie_apellido">
                             <small class="text-danger d-none" id="error_clie_apellido"></small>
                         </div>
 
                         <!-- CI Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_clie_ci">CI/RUC: <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="modal_clie_ci" name="clie_ci" required>
+                            <input type="text" class="form-control" id="modal_clie_ci" name="clie_ci">
                             <small class="text-danger d-none" id="error_clie_ci"></small>
                         </div>
 
                         <!-- Fecha Nacimiento Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_clie_fecha_nac">Fecha de Nacimiento: <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="modal_clie_fecha_nac" name="clie_fecha_nac" required>
+                            <input type="date" class="form-control" id="modal_clie_fecha_nac" name="clie_fecha_nac">
                             <small class="text-danger d-none" id="error_clie_fecha_nac"></small>
                         </div>
 
@@ -58,7 +58,7 @@
                         <!-- Departamento Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_id_departamento">Departamento: <span class="text-danger">*</span></label>
-                            <select class="form-control select2" id="modal_id_departamento" name="id_departamento" required>
+                            <select class="form-control select2" id="modal_id_departamento" name="id_departamento">
                                 <option value="">Seleccionar Departamento...</option>
                                 @if(isset($departamentos))
                                     @foreach($departamentos as $id => $nombre)
@@ -72,7 +72,7 @@
                         <!-- Ciudad Field -->
                         <div class="form-group col-md-6 col-12">
                             <label for="modal_id_ciudad">Ciudad: <span class="text-danger">*</span></label>
-                            <select class="form-control select2" id="modal_id_ciudad" name="id_ciudad" required>
+                            <select class="form-control select2" id="modal_id_ciudad" name="id_ciudad">
                                 <option value="">Seleccionar Ciudad...</option>
                             </select>
                             <small class="text-danger d-none" id="error_id_ciudad"></small>

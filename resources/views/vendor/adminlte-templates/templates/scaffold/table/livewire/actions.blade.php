@@ -5,8 +5,7 @@
     <a href="{{ $editUrl }}" class='btn btn-default btn-xs'>
         <i class="fa fa-edit"></i>
     </a>
-    <a class='btn btn-danger btn-xs' wire:click="deleteRecord({{ $recordId }})"
-       onclick="confirm('Are you sure you want to remove this Record?') || event.stopImmediatePropagation()">
+    <button type="button" class='btn btn-danger btn-xs' onclick="handleLivewireDelete({{ $recordId }}, this)">
         <i class="fa fa-trash"></i>
-    </a>
+    </button>
 </div>

@@ -41,14 +41,14 @@
                                     @if ($user->estado == true)
                                         {!! Form::button('<i class="far fa-trash-alt"></i>', [
                                             'type' => 'submit',
-                                            'class' => 'btn btn-danger btn-xs',
-                                            'onclick' => "return confirm('Desea inactivar el usuario?')",
+                                            'class' => 'btn btn-danger btn-xs alert-delete',
+                                            'data-mensaje' => 'el usuario (inactivar)',
                                         ]) !!}
                                     @else
                                         {!! Form::button('<i class="fas fa-check"></i>', [
                                             'type' => 'submit',
-                                            'class' => 'btn btn-success btn-xs',
-                                            'onclick' => "return confirm('Desea activar el usuario?')",
+                                            'class' => 'btn btn-success btn-xs alert-delete',
+                                            'data-mensaje' => 'el usuario (activar)',
                                         ]) !!}
                                     @endif
                                 @endcan

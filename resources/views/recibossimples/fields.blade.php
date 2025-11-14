@@ -5,7 +5,6 @@
         'class' => 'form-control',
         'id' => 'fecha_recibo',
         'required',
-        'readonly',
     ]) !!}
 </div>
 

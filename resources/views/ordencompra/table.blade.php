@@ -57,8 +57,8 @@
                                     </a>
                                     {!! Form::button('<i class="far fa-trash-alt"></i>', [
                                         'type' => 'submit',
-                                        'class' => 'btn btn-danger btn-xs',
-                                        'onclick' => "return confirm('¿Está seguro de anular esta Orden de Compra?')"
+                                        'class' => 'btn btn-danger btn-xs alert-delete',
+                                        'data-mensaje' => 'esta Orden de Compra'
                                     ]) !!}
                                 @endif
                             </div>
