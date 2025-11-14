@@ -23,16 +23,17 @@
                 <table class="table item-table detalle-venta">
                     <thead>
                         <tr>
-                            <th style="width:12%;">#</th>
-                            <th style="width:35%;min-width:240px;">Producto</th>
-                            <th class="text-center" style="width:15%;">Cantidad</th>
+                            <th style="width:10%;">#</th>
+                            <th style="width:30%;min-width:200px;">Producto</th>
+                            <th class="text-center" style="width:10%;">IVA</th>
+                            <th class="text-center" style="width:12%;">Cantidad</th>
                             <th class="text-center" style="width:15%;">Precio Unit</th>
                             <th class="text-center" style="width:15%;">Subtotal</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody id="selectedProducts">
-                        <!-- Los productos seleccionados se agregarán aquí --> 
+                        <!-- Los productos seleccionados se agregarán aquí -->
 
                         <!-- si la funcion es editar preguntamos si existe la variable $detalle_venta -->
                         @if (isset($detalle_venta))
@@ -49,6 +50,16 @@
                                     @if(property_exists($value, 'id_detalle_venta'))
                                         {!! Form::hidden('id_det_venta[]', $value->id_detalle_venta) !!}
                                     @endif
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge badge-info" style="font-size: 13px;">
+                                        @if(isset($value->tax_porcentaje))
+                                            {{ number_format($value->tax_porcentaje, 0) }}%
+                                        @else
+                                            0%
+                                        @endif
+                                    </span>
                                 </td>
 
                                 <td class="text-center">

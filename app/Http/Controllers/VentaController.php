@@ -576,9 +576,10 @@ class VentaController extends AppBaseController
 
         // obtener los detalles de ventas
         $detalle_venta = DB::select(
-            "SELECT dv.*, p.descripcion
+            "SELECT dv.*, p.descripcion, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
             FROM detalle_ventas dv
                 JOIN productos p ON dv.id_producto = p.id_producto
+                LEFT JOIN taxes t ON dv.id_tax = t.id_tax
             WHERE dv.id_venta = ?",
             [$id]
         );
@@ -641,18 +642,76 @@ class VentaController extends AppBaseController
             ]);
 
             $codigos = array_map('intval', $input['codigo'] ?? []);
-            $productosControl = !empty($codigos)
-                ? DB::table('productos')
-                    ->whereIn('id_producto', $codigos)
-                    ->pluck('controlar_stock', 'id_producto')
-                    ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
-                    ->toArray()
-                : [];
+
+            // Obtener información de productos incluyendo tax
+            $productosInfo = [];
+            if (!empty($codigos)) {
+                $productosData = DB::select(
+                    'SELECT p.id_producto, p.controlar_stock, p.id_tax, t.porcentaje
+                    FROM productos p
+                    LEFT JOIN taxes t ON p.id_tax = t.id_tax
+                    WHERE p.id_producto = ANY(?)',
+                    ['{' . implode(',', $codigos) . '}']
+                );
+                foreach ($productosData as $prod) {
+                    $productosInfo[(int)$prod->id_producto] = $prod;
+                }
+            }
+
+            $productosControl = [];
+            foreach ($productosInfo as $prodId => $prodData) {
+                $productosControl[$prodId] = (bool)$prodData->controlar_stock;
+            }
+
+            // Variables para acumular totales de impuestos
+            $total_exento = 0;
+            $total_gravado_5 = 0;
+            $total_gravado_10 = 0;
+            $total_iva_5 = 0;
+            $total_iva_10 = 0;
+            $total_general = 0;
 
             // Actualizar los detalles de venta
             foreach ($input['codigo'] as $key => $codigo) {
                 // quitar separador de miles
-                $monto = str_replace('.', '', $input['precio'][$key]);
+                $precio_con_iva = str_replace('.', '', $input['precio'][$key]);
+                $cantidad = $input['cantidad'][$key];
+
+                // Validar que el producto tenga impuesto asignado
+                $productoInfo = $productosInfo[(int) $codigo] ?? null;
+
+                if (!$productoInfo || !$productoInfo->id_tax) {
+                    DB::rollback();
+                    Alert::toast('Error: El producto con ID ' . $codigo . ' no tiene un impuesto asignado.', 'error');
+                    return redirect()->back()->withInput($request->all());
+                }
+
+                $porcentaje_impuesto = $productoInfo->porcentaje ?? 0;
+                $id_tax = $productoInfo->id_tax;
+
+                // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
+                $precio_sin_impuesto = $porcentaje_impuesto > 0
+                    ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                    : $precio_con_iva;
+
+                $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                // Calcular subtotal del item
+                $subtotal_item = $precio_con_iva * $cantidad;
+
+                // Acumular según tipo de impuesto
+                if ($porcentaje_impuesto == 0) {
+                    $total_exento += $subtotal_item;
+                } elseif ($porcentaje_impuesto == 5) {
+                    $total_gravado_5 += $subtotal_item;
+                    $total_iva_5 += $monto_impuesto * $cantidad;
+                } elseif ($porcentaje_impuesto == 10) {
+                    $total_gravado_10 += $subtotal_item;
+                    $total_iva_10 += $monto_impuesto * $cantidad;
+                }
+
+                $total_general += $subtotal_item;
+
                 // obtener detalle de venta si existe segun producto recibido
                 $detalle = DB::selectOne('SELECT * FROM detalle_ventas WHERE id_venta = ? AND id_producto = ?', [$id, $codigo]);
 
@@ -661,16 +720,19 @@ class VentaController extends AppBaseController
                 if (!empty($detalle)) {
                     // actualizar en detalle_ventas
                     DB::update(
-                        'UPDATE detalle_ventas SET cantidad = ?, precio = ? WHERE id_venta = ? AND id_producto = ?',
+                        'UPDATE detalle_ventas SET cantidad = ?, precio = ?, id_tax = ?, precio_sin_impuesto = ?, monto_impuesto = ? WHERE id_venta = ? AND id_producto = ?',
                         [
-                            $input['cantidad'][$key],
-                            $monto,
+                            $cantidad,
+                            $precio_con_iva,
+                            $id_tax,
+                            $precio_sin_impuesto,
+                            $monto_impuesto,
                             $id,
                             $codigo
                         ]
                     );
                     // calcular diferencia de cantidad para disminucion de stock
-                    $diferencia = $input['cantidad'][$key] - $detalle->cantidad;
+                    $diferencia = $cantidad - $detalle->cantidad;
                     // actualizar stocks segun producto y sucursal
                     if ($diferencia != 0 && $controlarStock) {
                         DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
@@ -682,25 +744,37 @@ class VentaController extends AppBaseController
                 } else {
                     // Si no existe insertar nuevo detalle
                     DB::insert(
-                        'INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio) VALUES (?, ?, ?, ?)',
+                        'INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio, id_tax, precio_sin_impuesto, monto_impuesto) VALUES (?, ?, ?, ?, ?, ?, ?)',
                         [
                             $id,
                             $codigo,
-                            $input['cantidad'][$key],
-                            $monto
+                            $cantidad,
+                            $precio_con_iva,
+                            $id_tax,
+                            $precio_sin_impuesto,
+                            $monto_impuesto
                         ]
                     );
 
                     // Disminuir stock
                     if ($controlarStock) {
                         DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                            $input['cantidad'][$key],
+                            $cantidad,
                             $codigo,
                             $ventas->id_sucursal
                         ]);
                     }
                 }
             }
+
+            // Calcular total de IVA
+            $total_iva = $total_iva_5 + $total_iva_10;
+
+            // Actualizar los totales de impuestos en la venta
+            DB::update(
+                'UPDATE ventas SET total = ?, total_exento = ?, total_gravado_5 = ?, total_gravado_10 = ?, total_iva_5 = ?, total_iva_10 = ?, total_iva = ? WHERE id_venta = ?',
+                [$total_general, $total_exento, $total_gravado_5, $total_gravado_10, $total_iva_5, $total_iva_10, $total_iva, $id]
+            );
             // Si todo esta bien realiza el envio e inserta la venta y detalle
             DB::commit();
         } catch (\Exception $e) {
@@ -780,10 +854,12 @@ class VentaController extends AppBaseController
         ## Si query es vacio mostrar todo los productos utilizando un limitador
         if ($query) {
             $productos = DB::select(
-                "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
+                "SELECT productos.*, stocks.cantidad, stocks.id_sucursal,
+                        t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
                     FROM productos
                         LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
+                        LEFT JOIN taxes t ON productos.id_tax = t.id_tax
                     WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
                     LIMIT 20",
                 [
@@ -795,10 +871,12 @@ class VentaController extends AppBaseController
         } else {
             ## Cargar los primeros 20 productos si no hay búsqueda
             $productos = DB::select(
-                "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
+                "SELECT productos.*, stocks.cantidad, stocks.id_sucursal,
+                        t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
                     FROM productos
                         LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
+                        LEFT JOIN taxes t ON productos.id_tax = t.id_tax
                  LIMIT 20",
                 [$cod_suc]
             );
@@ -854,11 +932,12 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
-        // recuperar detalles de la venta
+        // recuperar detalles de la venta CON información de impuestos
         $detalle_venta = DB::select(
-            "SELECT dv.*, p.descripcion
+            "SELECT dv.*, p.descripcion, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
             FROM detalle_ventas dv
                 JOIN productos p ON dv.id_producto = p.id_producto
+                LEFT JOIN taxes t ON dv.id_tax = t.id_tax
             WHERE dv.id_venta = ?",
             [$id]
         );

@@ -165,9 +165,13 @@
             letter-spacing: 0.5px;
         }
 
-        .items-table thead th:nth-child(3),
+        .items-table thead th:nth-child(3) {
+            text-align: center;
+        }
+
         .items-table thead th:nth-child(4),
-        .items-table thead th:nth-child(5) {
+        .items-table thead th:nth-child(5),
+        .items-table thead th:nth-child(6) {
             text-align: right;
         }
 
@@ -185,9 +189,14 @@
             font-size: 13px;
         }
 
-        .items-table tbody td:nth-child(3),
+        .items-table tbody td:nth-child(3) {
+            text-align: center;
+            font-weight: 600;
+        }
+
         .items-table tbody td:nth-child(4),
-        .items-table tbody td:nth-child(5) {
+        .items-table tbody td:nth-child(5),
+        .items-table tbody td:nth-child(6) {
             text-align: right;
             font-weight: 500;
         }
@@ -379,6 +388,7 @@
                 <tr>
                     <th>Código</th>
                     <th>Descripción</th>
+                    <th>IVA</th>
                     <th>Cantidad</th>
                     <th>Precio Unit.</th>
                     <th>Subtotal</th>
@@ -390,6 +400,7 @@
                         <tr>
                             <td>{{ $value->id_producto }}</td>
                             <td>{{ $value->descripcion }}</td>
+                            <td>{{ number_format($value->tax_porcentaje ?? 0, 0) }}%</td>
                             <td>{{ $value->cantidad }}</td>
                             <td>Gs. {{ number_format($value->precio, 0, ',', '.') }}</td>
                             <td>Gs. {{ number_format($value->precio * $value->cantidad, 0, ',', '.') }}</td>
@@ -402,12 +413,36 @@
         <div class="total-section">
             <table>
                 <tr>
-                    <th>Total en letras:</th>
-                    <td colspan="2">{{ $numero_a_letras }}</td>
+                    <th>Exento (0%):</th>
+                    <td>Gs. {{ number_format($ventas->total_exento ?? 0, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
+                    <th>Gravado 5%:</th>
+                    <td>Gs. {{ number_format($ventas->total_gravado_5 ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <th>Gravado 10%:</th>
+                    <td>Gs. {{ number_format($ventas->total_gravado_10 ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr style="border-top: 1px solid #ddd;">
+                    <th>IVA 5%:</th>
+                    <td>Gs. {{ number_format($ventas->total_iva_5 ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <th>IVA 10%:</th>
+                    <td>Gs. {{ number_format($ventas->total_iva_10 ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <th>Total IVA:</th>
+                    <td>Gs. {{ number_format($ventas->total_iva ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr style="border-top: 2px solid #012442;">
                     <th>TOTAL:</th>
                     <td>Gs. {{ number_format($ventas->total, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <th>Total en letras:</th>
+                    <td colspan="2">{{ $numero_a_letras }}</td>
                 </tr>
             </table>
         </div>

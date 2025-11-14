@@ -3,7 +3,8 @@
         <tr>
             <th>Código de Producto</th>
             <th>Producto</th>
-            <th>Precio</th>
+            <th>IVA</th>
+            <th>Precio (IVA incl.)</th>
         </tr>
     </thead>
     <tbody>
@@ -11,11 +12,18 @@
             <tr onclick="seleccionarProducto('{{ $product->id_producto }}', '{{ $product->descripcion }}', '{{ $product->precio }}')">
                 <td>{{ $product->id_producto }}</td>
                 <td>{{ $product->descripcion }}</td>
-                <td>{{ number_format($product->precio, 0, ',', '.') }}</td>
+                <td>
+                    @if(isset($product->tax_nombre))
+                        {{ number_format($product->tax_porcentaje ?? 0, 0) }}%
+                    @else
+                        -
+                    @endif
+                </td>
+                <td>{{ number_format($product->precio, 0, ',', '.') }} Gs.</td>
             </tr>
         @empty
             <tr>
-                <td colspan="3">No se encontraron productos.</td>
+                <td colspan="4">No se encontraron productos.</td>
             </tr>
         @endforelse
     </tbody>
