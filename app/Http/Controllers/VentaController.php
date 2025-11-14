@@ -303,17 +303,6 @@ class VentaController extends AppBaseController
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
-        // validar que la nro de factura sea unica
-        if (!empty($input['factura_nro'])) {
-            // buscamos si ya existe la factura
-            $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ?', [$input['factura_nro']]);
-            // si existe mostramos error
-            if (!empty($factura_exist)) {
-                Alert::toast('El número de factura ya existe', 'error');
-                return redirect()->back()->withInput($input);
-            }
-        }
-
         // validar fecha de venta no sea mayor a la fecha actual
         if (Carbon::parse($input['fecha_venta'])->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
             Alert::toast('La fecha de venta no puede ser mayor a la fecha actual', 'error');
@@ -344,8 +333,24 @@ class VentaController extends AppBaseController
                 return redirect()->back()->withInput($input);
             }
 
+            // Verificar que el número de factura timbrado no exista
+            $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE numero_factura_timbrado = ?', [$numero_factura_timbrado]);
+            if (!empty($factura_exist)) {
+                Alert::toast('El número de factura timbrado ya existe. Por favor intente nuevamente.', 'error');
+                return redirect()->back()->withInput($input);
+            }
+
             // Usar el número de timbrado como número de factura principal
             $input['factura_nro'] = $numero_factura_timbrado;
+        } else {
+            // Si NO hay timbrado, validar que el número de factura manual sea único
+            if (!empty($input['factura_nro'])) {
+                $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ? AND id_timbrado IS NULL', [$input['factura_nro']]);
+                if (!empty($factura_exist)) {
+                    Alert::toast('El número de factura ya existe', 'error');
+                    return redirect()->back()->withInput($input);
+                }
+            }
         }
 
         // Si la validación pasa, continuar con el almacenamiento de la venta

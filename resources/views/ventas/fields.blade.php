@@ -43,14 +43,58 @@
             : null,
         ['class' => 'form-control', 'readonly' => 'readonly', 'id' => 'factura_nro'],
     ) !!}
+    {!! Form::hidden('factura_nro_original', isset($apertura_caja) ? ($apertura_caja->establecimiento . '-' . $apertura_caja->punto_expedicion . '-' . $apertura_caja->nro_factura) : null, ['id' => 'factura_nro_original']) !!}
     <small class="form-text text-muted" id="factura_help">
         @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
-            El número se generará automáticamente si selecciona un timbrado
+            <span id="help_sin_timbrado">Número de caja. Seleccione un timbrado para generar factura timbrada</span>
+            <span id="help_con_timbrado" style="display: none;" class="text-success"><i class="fas fa-check-circle"></i> Se generará automáticamente con el timbrado seleccionado</span>
         @else
             No hay timbrados vigentes disponibles
         @endif
     </small>
 </div>
+
+@push('page_scripts')
+<script>
+$(document).ready(function() {
+    // Comportamiento cuando se selecciona/deselecciona un timbrado
+    $('#id_timbrado').on('change', function() {
+        var timbradoId = $(this).val();
+        var facturaOriginal = $('#factura_nro_original').val();
+
+        if (timbradoId && timbradoId !== '') {
+            // Hay timbrado seleccionado
+            $('#factura_nro').val('Se generará automáticamente');
+            $('#factura_nro').addClass('bg-light text-muted font-italic');
+            $('#help_sin_timbrado').hide();
+            $('#help_con_timbrado').show();
+        } else {
+            // No hay timbrado seleccionado
+            $('#factura_nro').val(facturaOriginal);
+            $('#factura_nro').removeClass('bg-light text-muted font-italic');
+            $('#help_sin_timbrado').show();
+            $('#help_con_timbrado').hide();
+        }
+    });
+
+    // Antes de enviar el formulario, restaurar el valor original si hay timbrado
+    $('form').on('submit', function() {
+        var timbradoId = $('#id_timbrado').val();
+        var facturaOriginal = $('#factura_nro_original').val();
+
+        if (timbradoId && timbradoId !== '') {
+            // Restaurar el valor original para que el servidor lo procese
+            $('#factura_nro').val(facturaOriginal);
+        }
+    });
+
+    // Ejecutar al cargar si ya hay un timbrado seleccionado
+    if ($('#id_timbrado').length && $('#id_timbrado').val()) {
+        $('#id_timbrado').trigger('change');
+    }
+});
+</script>
+@endpush
 
 <!-- User Id Field -->
 <div class="form-group col-sm-4">
