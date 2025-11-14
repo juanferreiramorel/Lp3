@@ -18,73 +18,59 @@
 </div>
 
 <!-- Timbrado Field -->
-@if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
 <div class="form-group col-sm-4">
-    {!! Form::label('id_timbrado', 'Timbrado:') !!}
-    {!! Form::select('id_timbrado',
-        $timbrados_vigentes->pluck('numero_timbrado', 'id_timbrado')->prepend('Sin timbrado', ''),
-        null,
-        [
-            'class' => 'form-control',
-            'id' => 'id_timbrado',
-        ]
-    ) !!}
-    <small class="form-text text-muted">Seleccione un timbrado para generar factura timbrada</small>
+    {!! Form::label('id_timbrado', 'Timbrado: *') !!}
+    @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+        {!! Form::select('id_timbrado',
+            $timbrados_vigentes->pluck('numero_timbrado', 'id_timbrado')->prepend('Seleccione un timbrado', ''),
+            null,
+            [
+                'class' => 'form-control',
+                'id' => 'id_timbrado',
+                'required' => true,
+            ]
+        ) !!}
+        <small class="form-text text-muted">El número de factura se generará automáticamente del timbrado</small>
+    @else
+        <input type="text" class="form-control" value="No hay timbrados vigentes disponibles" disabled>
+        <small class="form-text text-danger">
+            <i class="fas fa-exclamation-triangle"></i> No puede crear ventas sin timbrados vigentes.
+            @can('timbrados create')
+                <a href="{{ route('timbrados.create') }}">Crear timbrado ahora</a>
+            @endcan
+        </small>
+    @endif
 </div>
-@endif
 
 <!-- Factura Nro Field -->
 <div class="form-group col-sm-4">
-    {!! Form::label('factura_nro', 'Factura Nro:') !!}
+    {!! Form::label('factura_nro_display', 'Número de Factura (Preview):') !!}
     {!! Form::text(
-        'factura_nro',
-        isset($apertura_caja)
-            ? ($apertura_caja->establecimiento . '-' . $apertura_caja->punto_expedicion . '-' . $apertura_caja->nro_factura)
-            : null,
-        ['class' => 'form-control', 'readonly' => 'readonly', 'id' => 'factura_nro'],
+        'factura_nro_display',
+        null,
+        ['class' => 'form-control bg-light', 'readonly' => 'readonly', 'id' => 'factura_nro_display', 'placeholder' => 'Seleccione un timbrado primero'],
     ) !!}
-    {!! Form::hidden('factura_nro_original', isset($apertura_caja) ? ($apertura_caja->establecimiento . '-' . $apertura_caja->punto_expedicion . '-' . $apertura_caja->nro_factura) : null, ['id' => 'factura_nro_original']) !!}
-    <small class="form-text text-muted" id="factura_help">
-        @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
-            <span id="help_sin_timbrado">Número de caja. Seleccione un timbrado para generar factura timbrada</span>
-            <span id="help_con_timbrado" style="display: none;" class="text-success"><i class="fas fa-check-circle"></i> Se generará automáticamente con el timbrado seleccionado</span>
-        @else
-            No hay timbrados vigentes disponibles
-        @endif
+    <small class="form-text text-success">
+        <i class="fas fa-info-circle"></i> El número se generará automáticamente del timbrado seleccionado
     </small>
 </div>
 
 @push('page_scripts')
 <script>
 $(document).ready(function() {
-    // Comportamiento cuando se selecciona/deselecciona un timbrado
+    // Actualizar preview cuando se selecciona un timbrado
     $('#id_timbrado').on('change', function() {
         var timbradoId = $(this).val();
-        var facturaOriginal = $('#factura_nro_original').val();
+        var timbradoText = $('#id_timbrado option:selected').text();
 
         if (timbradoId && timbradoId !== '') {
-            // Hay timbrado seleccionado
-            $('#factura_nro').val('Se generará automáticamente');
-            $('#factura_nro').addClass('bg-light text-muted font-italic');
-            $('#help_sin_timbrado').hide();
-            $('#help_con_timbrado').show();
+            // Mostrar preview del timbrado seleccionado
+            $('#factura_nro_display').val('Se generará del timbrado: ' + timbradoText);
+            $('#factura_nro_display').removeClass('text-danger').addClass('text-success font-italic');
         } else {
-            // No hay timbrado seleccionado
-            $('#factura_nro').val(facturaOriginal);
-            $('#factura_nro').removeClass('bg-light text-muted font-italic');
-            $('#help_sin_timbrado').show();
-            $('#help_con_timbrado').hide();
-        }
-    });
-
-    // Antes de enviar el formulario, restaurar el valor original si hay timbrado
-    $('form').on('submit', function() {
-        var timbradoId = $('#id_timbrado').val();
-        var facturaOriginal = $('#factura_nro_original').val();
-
-        if (timbradoId && timbradoId !== '') {
-            // Restaurar el valor original para que el servidor lo procese
-            $('#factura_nro').val(facturaOriginal);
+            // Sin selección
+            $('#factura_nro_display').val('Seleccione un timbrado primero');
+            $('#factura_nro_display').removeClass('text-success').addClass('text-danger');
         }
     });
 

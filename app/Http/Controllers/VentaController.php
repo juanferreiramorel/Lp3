@@ -275,8 +275,7 @@ class VentaController extends AppBaseController
                 'user_id' => 'required|exists:users,id',
                 'id_apertura' => 'required|exists:apertura_cierre_cajas,id_apertura',
                 'id_sucursal' => 'required|exists:sucursales,id_sucursal',
-                'factura_nro' => 'nullable|string|max:15',
-                'id_timbrado' => 'nullable|exists:timbrados,id_timbrado',
+                'id_timbrado' => 'required|exists:timbrados,id_timbrado',
             ],
             [
                 'id_cliente.required' => 'El campo cliente es obligatorio.',
@@ -295,7 +294,8 @@ class VentaController extends AppBaseController
                 'id_apertura.exists' => 'La apertura seleccionada no es válida.',
                 'id_sucursal.required' => 'El campo sucursal es obligatorio.',
                 'id_sucursal.exists' => 'La sucursal seleccionada no es válida.',
-                'factura_nro.max' => 'El número de factura no debe exceder los 15 caracteres.',
+                'id_timbrado.required' => 'Debe seleccionar un timbrado vigente.',
+                'id_timbrado.exists' => 'El timbrado seleccionado no es válido.',
             ]
         );
 
@@ -309,48 +309,32 @@ class VentaController extends AppBaseController
             return redirect()->back()->withInput($input);
         }
 
-        // Manejar timbrado si está presente
-        $numero_factura_timbrado = null;
-        $timbrado = null;
-        if (!empty($input['id_timbrado'])) {
-            $timbrado = Timbrado::find($input['id_timbrado']);
+        // Validar y procesar el timbrado (OBLIGATORIO)
+        $timbrado = Timbrado::find($input['id_timbrado']);
 
-            if (!$timbrado) {
-                Alert::toast('Timbrado no encontrado', 'error');
-                return redirect()->back()->withInput($input);
-            }
+        if (!$timbrado) {
+            Alert::toast('Timbrado no encontrado', 'error');
+            return redirect()->back()->withInput($input);
+        }
 
-            if (!$timbrado->estaVigente()) {
-                Alert::toast('El timbrado seleccionado no está vigente', 'error');
-                return redirect()->back()->withInput($input);
-            }
+        if (!$timbrado->estaVigente()) {
+            Alert::toast('El timbrado seleccionado no está vigente. Por favor seleccione otro timbrado.', 'error');
+            return redirect()->back()->withInput($input);
+        }
 
-            // Generar número de factura con timbrado
-            $numero_factura_timbrado = $timbrado->generarNumeroFactura();
+        // Generar número de factura con timbrado
+        $numero_factura_timbrado = $timbrado->generarNumeroFactura();
 
-            if (!$numero_factura_timbrado) {
-                Alert::toast('No se pudo generar el número de factura. Timbrado agotado o vencido', 'error');
-                return redirect()->back()->withInput($input);
-            }
+        if (!$numero_factura_timbrado) {
+            Alert::toast('No se pudo generar el número de factura. El timbrado está agotado o vencido.', 'error');
+            return redirect()->back()->withInput($input);
+        }
 
-            // Verificar que el número de factura timbrado no exista
-            $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE numero_factura_timbrado = ?', [$numero_factura_timbrado]);
-            if (!empty($factura_exist)) {
-                Alert::toast('El número de factura timbrado ya existe. Por favor intente nuevamente.', 'error');
-                return redirect()->back()->withInput($input);
-            }
-
-            // Usar el número de timbrado como número de factura principal
-            $input['factura_nro'] = $numero_factura_timbrado;
-        } else {
-            // Si NO hay timbrado, validar que el número de factura manual sea único
-            if (!empty($input['factura_nro'])) {
-                $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ? AND id_timbrado IS NULL', [$input['factura_nro']]);
-                if (!empty($factura_exist)) {
-                    Alert::toast('El número de factura ya existe', 'error');
-                    return redirect()->back()->withInput($input);
-                }
-            }
+        // Verificar que el número de factura timbrado no exista
+        $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE numero_factura_timbrado = ?', [$numero_factura_timbrado]);
+        if (!empty($factura_exist)) {
+            Alert::toast('El número de factura timbrado ya existe. Por favor intente nuevamente.', 'error');
+            return redirect()->back()->withInput($input);
         }
 
         // Si la validación pasa, continuar con el almacenamiento de la venta
@@ -370,9 +354,9 @@ class VentaController extends AppBaseController
                 'intervalo' => $input['intervalo'] ?? 0,
                 'cantidad_cuota' => $input['cantidad_cuota'] ?? 0,
                 'fecha_venta' => $input['fecha_venta'],
-                'factura_nro' => $input['factura_nro'] ?? '0',
+                'factura_nro' => $numero_factura_timbrado,
                 'numero_factura_timbrado' => $numero_factura_timbrado,
-                'id_timbrado' => !empty($input['id_timbrado']) ? $input['id_timbrado'] : null,
+                'id_timbrado' => $input['id_timbrado'],
                 'user_id' => $user_id,
                 'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
@@ -415,23 +399,19 @@ class VentaController extends AppBaseController
                 ]);
             }
 
-            // Incrementar uso del timbrado si se utilizó
-            if ($timbrado) {
-                $timbrado->incrementarUso();
-            }
+            // Incrementar uso del timbrado
+            $timbrado->incrementarUso();
 
-            // actualizar la ultima factura impresa en cajas si es que se envio un nro de factura
-            if (!empty($input['factura_nro'])) {
-                // extraer el nro de factura utilizando explode en la posicion 2
-                // 001-002-0000001
-                $factura_nro = explode('-', $input['factura_nro'])[2];
-                // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
-                DB::update('UPDATE cajas SET ultima_factura_impresa = ?
-                WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
-                    (int) $factura_nro, // convertir a entero para quitar ceros a la izquierda
-                    $input['id_apertura']
-                ]);
-            }
+            // actualizar la ultima factura impresa en cajas
+            // extraer el nro de factura utilizando explode en la posicion 2
+            // 001-002-0000001
+            $factura_nro = explode('-', $numero_factura_timbrado)[2];
+            // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
+            DB::update('UPDATE cajas SET ultima_factura_impresa = ?
+            WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
+                (int) $factura_nro, // convertir a entero para quitar ceros a la izquierda
+                $input['id_apertura']
+            ]);
 
             // Si la venta se creó desde un pedido, actualizar el estado del pedido a PROCESADO
             if (!empty($input['id_pedido'])) {
