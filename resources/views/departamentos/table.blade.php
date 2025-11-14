@@ -26,8 +26,8 @@
                                 @can('departamentos destroy')
                                     {!! Form::button('<i class="far fa-trash-alt"></i>', [
                                         'type' => 'submit',
-                                        'class' => 'btn btn-danger btn-xs',
-                                        'onclick' => "return confirm('Desea dar de baja el departamento?')",
+                                        'class' => 'btn btn-danger btn-xs alert-delete',
+                                        'data-mensaje' => 'el departamento',
                                     ]) !!}
                                 @endcan
                             </div>

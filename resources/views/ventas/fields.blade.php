@@ -225,10 +225,22 @@
 
             // Eliminar fila
             $(document).on('click', '.remove-item', function() {
-                if(confirm('¿Está seguro de eliminar este item?')) {
-                    $(this).closest('tr').remove();
-                    calcularTotal();
-                }
+                const row = $(this).closest('tr');
+                Swal.fire({
+                    title: '¿Está seguro?',
+                    text: '¿Está seguro de eliminar este item?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        row.remove();
+                        calcularTotal();
+                    }
+                });
             });
 
             // Función para calcular el total general
