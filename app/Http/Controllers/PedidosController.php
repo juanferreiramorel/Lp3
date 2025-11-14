@@ -97,6 +97,11 @@ class PedidosController extends AppBaseController
         // Construir WHERE
         $where = "WHERE 1=1" . $sql_filtros;
 
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        if (!empty($idsPermitidos)) {
+            $where .= ' AND p.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
         // Query base
         $queryBase = "FROM pedidos p
                       JOIN clientes c ON p.id_cliente = c.id_cliente
@@ -142,8 +147,7 @@ class PedidosController extends AppBaseController
         $clientes = DB::table('clientes')
             ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
             ->pluck('cliente', 'id_cliente');
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $estados = [
             'PENDIENTE' => 'Pendiente',
             'PROCESADO' => 'Procesado',
@@ -162,7 +166,7 @@ class PedidosController extends AppBaseController
             ->pluck('cliente', 'id_cliente');
 
         // Sucursales (si existe la tabla)
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         // Usuario en sesión (solo para mostrar en la vista, el ID se guardará en store())
         $usuario = auth()->user()->name ?? '';
@@ -309,7 +313,7 @@ class PedidosController extends AppBaseController
             ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
             ->pluck('cliente', 'id_cliente');
 
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         $usuario = auth()->user()->name ?? '';
 

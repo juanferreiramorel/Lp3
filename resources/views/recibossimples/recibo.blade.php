@@ -8,6 +8,8 @@
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -27,7 +29,7 @@
             background: white;
             padding: 20mm;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            min-height: 297mm;
+            min-height: auto;
             position: relative;
         }
 
@@ -613,6 +615,9 @@
         </div>
 
         <div class="action-buttons">
+            <button onclick="descargarPDF();" class="btn btn-success">
+                <i class="fa fa-download"></i> Descargar PDF
+            </button>
             <button onclick="window.print();" class="btn btn-primary">
                 <i class="fa fa-print"></i> Imprimir
             </button>
@@ -623,6 +628,135 @@
     </div>
 
     <script>
+        async function descargarPDF() {
+            const actionButtons = document.querySelector('.action-buttons');
+            const originalDisplay = actionButtons.style.display;
+            const element = document.querySelector('.invoice-container');
+            const body = document.body;
+
+            // Guardar estilos originales
+            const originalWidth = element.style.width;
+            const originalMaxWidth = element.style.maxWidth;
+            const originalPadding = element.style.padding;
+            const originalBodyPadding = body.style.padding;
+            const originalMinHeight = element.style.minHeight;
+            const originalMargin = element.style.margin;
+            const originalBoxShadow = element.style.boxShadow;
+
+            try {
+                // Ocultar botones
+                actionButtons.style.display = 'none';
+
+                // Mostrar indicador de carga
+                const loadingMsg = document.createElement('div');
+                loadingMsg.innerHTML = '<div style="text-align: center; padding: 20px; color: #007bff; font-weight: bold; font-size: 16px;">Generando PDF, por favor espere...</div>';
+                loadingMsg.className = 'loading-indicator';
+                element.appendChild(loadingMsg);
+
+                // Forzar layout de escritorio para la captura
+                body.style.padding = '0';
+                element.style.width = '210mm';
+                element.style.maxWidth = '210mm';
+                element.style.padding = '20mm';
+                element.style.minHeight = 'auto';
+                element.style.margin = '0 auto';
+                element.style.boxShadow = 'none';
+
+                // Esperar a que se apliquen los cambios
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Remover el indicador de carga antes de capturar
+                const loadingIndicator = document.querySelector('.loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+
+                // Capturar el elemento como imagen con el ancho fijo
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight,
+                    windowWidth: 794, // 210mm en pixels a 96dpi
+                    windowHeight: element.scrollHeight
+                });
+
+                // Crear PDF
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+                // Si el contenido cabe en una página, solo agregar una página
+                if (imgHeight <= pageHeight) {
+                    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                } else {
+                    // Si necesita múltiples páginas
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Primera página
+                    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    // Páginas adicionales solo si realmente hay más contenido
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                }
+
+                // Guardar el PDF
+                const filename = 'Recibo_{{ str_pad($recibo->id_recibo, 8, "0", STR_PAD_LEFT) }}.pdf';
+                pdf.save(filename);
+
+                // Restaurar estilos originales
+                body.style.padding = originalBodyPadding;
+                element.style.width = originalWidth;
+                element.style.maxWidth = originalMaxWidth;
+                element.style.padding = originalPadding;
+                element.style.minHeight = originalMinHeight;
+                element.style.margin = originalMargin;
+                element.style.boxShadow = originalBoxShadow;
+                actionButtons.style.display = originalDisplay || 'block';
+
+            } catch (error) {
+                console.error('Error al generar PDF:', error);
+
+                // Restaurar estilos en caso de error
+                body.style.padding = originalBodyPadding;
+                element.style.width = originalWidth;
+                element.style.maxWidth = originalMaxWidth;
+                element.style.padding = originalPadding;
+                element.style.minHeight = originalMinHeight;
+                element.style.margin = originalMargin;
+                element.style.boxShadow = originalBoxShadow;
+                actionButtons.style.display = originalDisplay || 'block';
+
+                // Remover indicador si quedó
+                const loadingIndicator = document.querySelector('.loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+
+                alert('Hubo un error al generar el PDF. Por favor, intente nuevamente o use el botón Imprimir.');
+            }
+        }
+
         // Auto-print option (uncomment if needed)
         // window.onload = function() { window.print(); }
     </script>

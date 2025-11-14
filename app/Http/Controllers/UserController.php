@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -111,9 +112,12 @@ class UserController extends AppBaseController
     public function create()
     {
         $roles = DB::table('roles')->pluck('name', 'id');
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->buildSucursalesDisponibles([], true);
 
-        return view('users.create')->with('roles', $roles)->with('sucursales', $sucursales);
+        return view('users.create')
+            ->with('roles', $roles)
+            ->with('sucursales', $sucursales)
+            ->with('sucursalesAsignadas', []);
     }
 
     public function store(Request $request)
@@ -167,6 +171,19 @@ class UserController extends AppBaseController
         // Asignar el rol al usuario
         $usuario->roles()->sync($input['role_id']);
 
+        $sucursalesPermitidas = collect($input['sucursales_permitidas'] ?? [])
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (!in_array((int) $usuario->id_sucursal, $sucursalesPermitidas, true)) {
+            $sucursalesPermitidas[] = (int) $usuario->id_sucursal;
+        }
+
+        $usuario->sucursalesPermitidas()->sync($sucursalesPermitidas);
+
         // DB::insert('INSERT INTO users (name, email, password, ci, direccion, telefono, fecha_ingreso) 
         // VALUES (?, ?, ?, ?, ?, ?, ?)', [
         //     $input['name'],
@@ -183,7 +200,7 @@ class UserController extends AppBaseController
         return redirect(route('users.index'));
     }
 
-    public function edit($id) 
+    public function edit($id)
     {
         // Obtener los datos del usuario
         $users = DB::selectOne('SELECT * FROM users WHERE id = ?', [$id]);
@@ -194,9 +211,23 @@ class UserController extends AppBaseController
         }
 
         $roles = DB::table('roles')->pluck('name', 'id');
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursalesAsignadas = DB::table('sucursal_user')
+            ->where('user_id', $id)
+            ->pluck('id_sucursal')
+            ->map(fn ($sucursal) => (int) $sucursal)
+            ->toArray();
 
-        return view('users.edit')->with('users', $users)->with('roles', $roles)->with('sucursales', $sucursales);
+        if (!in_array((int) $users->id_sucursal, $sucursalesAsignadas, true)) {
+            $sucursalesAsignadas[] = (int) $users->id_sucursal;
+        }
+
+        $sucursales = $this->buildSucursalesDisponibles($sucursalesAsignadas, true);
+
+        return view('users.edit')
+            ->with('users', $users)
+            ->with('roles', $roles)
+            ->with('sucursales', $sucursales)
+            ->with('sucursalesAsignadas', $sucursalesAsignadas);
     }
 
     public function update(Request $request, $id) 
@@ -261,9 +292,70 @@ class UserController extends AppBaseController
         // Asignar el rol al usuario
         $usuario->roles()->sync($input['role_id']);
 
+        $sucursalesPermitidas = collect($input['sucursales_permitidas'] ?? [])
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (!in_array((int) $usuario->id_sucursal, $sucursalesPermitidas, true)) {
+            $sucursalesPermitidas[] = (int) $usuario->id_sucursal;
+        }
+
+        $usuario->sucursalesPermitidas()->sync($sucursalesPermitidas);
+
         Alert::toast('Usuario actualizado correctamente', 'success');
 
         return redirect(route('users.index'));
+    }
+
+    /**
+     * Construye el listado de sucursales disponibles para el usuario autenticado,
+     * garantizando que los IDs adicionales proporcionados también estén presentes.
+     *
+     * @param  array<int,int>  $idsExtra
+     * @param  bool  $listarTodas  Forzar listado completo (ignora restricciones)
+     * @return \Illuminate\Support\Collection
+     */
+    protected function buildSucursalesDisponibles(array $idsExtra = [], bool $listarTodas = false)
+    {
+        if ($listarTodas) {
+            $sucursales = DB::table('sucursales')
+                ->orderBy('descripcion')
+                ->pluck('descripcion', 'id_sucursal');
+        } else {
+            $sucursales = $this->getSucursalesPermitidas();
+
+            if ($sucursales->isEmpty()) {
+                $sucursales = DB::table('sucursales')
+                    ->orderBy('descripcion')
+                    ->pluck('descripcion', 'id_sucursal');
+            }
+        }
+
+        $idsExtra = collect($idsExtra)
+            ->filter(fn ($id) => $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($idsExtra->isNotEmpty()) {
+            $idsActuales = $sucursales->keys()
+                ->map(fn ($id) => (int) $id);
+
+            $faltantes = $idsExtra->diff($idsActuales);
+
+            if ($faltantes->isNotEmpty()) {
+                $sucursalesExtra = DB::table('sucursales')
+                    ->whereIn('id_sucursal', $faltantes->all())
+                    ->pluck('descripcion', 'id_sucursal');
+
+                $sucursales = $sucursales->merge($sucursalesExtra);
+            }
+        }
+
+        return $sucursales->sortBy(fn ($descripcion) => Str::lower($descripcion));
     }
 
     public function destroy($id) 

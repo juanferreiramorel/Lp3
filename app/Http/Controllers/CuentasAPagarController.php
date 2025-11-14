@@ -146,7 +146,7 @@ class CuentasAPagarController extends AppBaseController
 
         // Obtener datos para los filtros
         $proveedores = DB::table('proveedores')->pluck('descripcion', 'id_proveedor');
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $estados_cuota = [
             'PENDIENTE' => 'PENDIENTE',
             'VENCIDO' => 'VENCIDO',

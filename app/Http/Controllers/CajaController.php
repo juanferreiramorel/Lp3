@@ -94,7 +94,7 @@ class CajaController extends AppBaseController
     public function create()
     {
         //Obtener sucursales
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         return view('cajas.create')->with('sucursales', $sucursales);
     }
     public function store(Request $request)
@@ -153,7 +153,7 @@ class CajaController extends AppBaseController
             return redirect()->route('cajas.index');
         }
         //Obtener sucursales
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         return view('cajas.edit')->with('cajas', $cajas)->with('sucursales', $sucursales)->with(
             'cajas',
             $cajas

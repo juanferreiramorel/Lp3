@@ -137,8 +137,7 @@ class AuditoriaController extends AppBaseController
         // Obtener datos para los filtros
         $usuarios = DB::table('users')
             ->pluck('name', 'id');
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $operaciones = [
             'AGREGA' => 'AGREGA',
             'MODIFICA' => 'MODIFICA',

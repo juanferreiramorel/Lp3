@@ -97,6 +97,11 @@ class ReciboSimpleController extends AppBaseController
         // Agregar filtros a la búsqueda
         $sql_busqueda .= $sql_filtros;
 
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        if (!empty($idsPermitidos)) {
+            $sql_busqueda .= ' AND r.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
         $perPage = 20;
         $page = $request->get('page', 1);
 
@@ -143,8 +148,7 @@ class ReciboSimpleController extends AppBaseController
             ->orderBy('clie_nombre')
             ->pluck('cliente', 'id_cliente');
 
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         $estados = [
             'ACTIVO' => 'ACTIVO',

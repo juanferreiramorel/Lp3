@@ -50,6 +50,11 @@ class StockController extends AppBaseController
             // concatenar los filtros y siempre dejar un espacio en blanco al comienzo del string " "
             $filtro_productos = " AND p.id_producto = " . $input['productos'];
         }
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        $filtroSucursalesPermitidas = '';
+        if (!empty($idsPermitidos)) {
+            $filtroSucursalesPermitidas = ' AND sc.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
         
         // Consulta para obtener los productos con la marca asociada y si posee filtros
         $stock = DB::select(
@@ -60,7 +65,7 @@ class StockController extends AppBaseController
              JOIN productos p USING(id_producto) 
              JOIN marcas m USING(id_marca)
              WHERE 1=1
-             ' . $sql . ' ' . $filtro_sucursales . ' ' . $filtro_productos . '
+             ' . $sql . ' ' . $filtro_sucursales . ' ' . $filtro_productos . ' ' . $filtroSucursalesPermitidas . '
              ORDER BY p.id_producto desc'
         );
 
@@ -85,7 +90,7 @@ class StockController extends AppBaseController
         );
 
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $productos = DB::table('productos')->pluck('descripcion', 'id_producto');
 
          // Verificamos si la petición es AJAX

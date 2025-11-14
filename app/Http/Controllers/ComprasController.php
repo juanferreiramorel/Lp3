@@ -95,6 +95,12 @@ class ComprasController extends AppBaseController
             }
         }
 
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        $sqlSucursalesPermitidas = '';
+        if (!empty($idsPermitidos)) {
+            $sqlSucursalesPermitidas = ' AND c.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
         $compras = DB::select(
             "SELECT c.*,
                     p.descripcion AS proveedor,
@@ -104,7 +110,7 @@ class ComprasController extends AppBaseController
           LEFT JOIN proveedores p ON c.id_proveedor = p.id_proveedor
           LEFT JOIN users u       ON c.user_id = u.id
           LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
-               {$sql_busqueda} {$sql_filtros}
+               {$sql_busqueda} {$sql_filtros} {$sqlSucursalesPermitidas}
                ORDER BY c.fecha_compra DESC, c.id_compra DESC"
         );
 
@@ -135,7 +141,7 @@ class ComprasController extends AppBaseController
 
         // Obtener datos para los filtros
         $proveedores = DB::table('proveedores')->selectRaw("id_proveedor, descripcion")->pluck('descripcion', 'id_proveedor');
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $condiciones_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
 
         return view('compras.index', compact('compras', 'proveedores', 'sucursales', 'condiciones_compra'));
@@ -146,7 +152,7 @@ class ComprasController extends AppBaseController
         $proveedores = $this->kvProveedores(); // [id_proveedor => descripcion]
         $usuario     = auth()->user()->name ?? '';
         $user_id     = auth()->id();
-        $sucursales  = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales  = $this->getSucursalesPermitidas();
 
         // Campos de crédito
         $condicion_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
@@ -353,7 +359,7 @@ class ComprasController extends AppBaseController
         ];
 
         // Enviar datos de sucursales
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         $detalles = DB::select(
             "SELECT d.*, pr.descripcion
@@ -659,7 +665,7 @@ class ComprasController extends AppBaseController
             $proveedores = $this->kvProveedores();
             $usuario = auth()->user()->name ?? '';
             $user_id = auth()->id();
-            $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+            $sucursales = $this->getSucursalesPermitidas();
 
             $condicion_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
             $intervalo = [
