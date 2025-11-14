@@ -46,10 +46,14 @@
                                 @if ($compra->estado != 'ANULADO')
                                     <a href="{{ route('compras.edit', $compra->id_compra) }}"
                                         class="btn btn-info btn-xs" title="Editar"><i class="far fa-edit"></i></a>
-                                    <button type="button" class="btn btn-danger btn-xs alert-delete"
-                                        data-mensaje="{{ $compra->id_compra }}" title="Anular">
-                                        <i class="far fa-trash-alt"></i>
-                                    </button>
+                                    {!! Form::open(['route' => ['compras.destroy', $compra->id_compra], 'method' => 'delete', 'class' => 'd-inline']) !!}
+                                        {!! Form::button('<i class="far fa-trash-alt"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-danger btn-xs alert-delete',
+                                            'data-mensaje' => $compra->id_compra,
+                                            'title' => 'Anular',
+                                        ]) !!}
+                                    {!! Form::close() !!}
                                 @endif
                             </div>
                         </td>

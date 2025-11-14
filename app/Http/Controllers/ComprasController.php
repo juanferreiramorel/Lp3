@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -202,7 +203,14 @@ class ComprasController extends AppBaseController
             'user_id'             => 'required|exists:users,id',
             'id_sucursal'         => 'required|exists:sucursales,id_sucursal',
 
-            'factura'             => 'nullable|string|max:20',
+            'factura'             => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('compras', 'factura')->where(function ($query) use ($input) {
+                    return $query->where('id_proveedor', $input['id_proveedor'] ?? null);
+                }),
+            ],
 
             'condicion_compra'    => 'required|in:CONTADO,CREDITO',
             'intervalo'           => 'nullable|required_if:condicion_compra,CREDITO|in:7,15,30',
@@ -232,7 +240,8 @@ class ComprasController extends AppBaseController
             'cantidad_cuotas.integer'      => 'La cantidad de cuotas debe ser un número entero.',
             'cantidad_cuotas.min'          => 'La cantidad de cuotas debe ser al menos 1 cuando es crédito.', // CORREGIDO
             'cantidad_cuotas.max'          => 'La cantidad de cuotas no debe superar 36.',
-            'codigo.required'              => 'Debe agregar al menos un producto.'
+            'codigo.required'              => 'Debe agregar al menos un producto.',
+            'factura.unique'               => 'Ya existe una compra con esta factura para el proveedor seleccionado.',
         ]);
 
         if ($validator->fails()) {
@@ -388,7 +397,16 @@ class ComprasController extends AppBaseController
             'user_id'             => 'required|exists:users,id',
             'id_sucursal'         => 'required|exists:sucursales,id_sucursal',
 
-            'factura'             => 'nullable|string|max:20',
+            'factura'             => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::unique('compras', 'factura')
+                    ->where(function ($query) use ($input) {
+                        return $query->where('id_proveedor', $input['id_proveedor'] ?? null);
+                    })
+                    ->ignore($id, 'id_compra'),
+            ],
 
             'condicion_compra'    => 'required|in:CONTADO,CREDITO',
             'intervalo'           => 'nullable|required_if:condicion_compra,CREDITO|in:7,15,30',
@@ -417,7 +435,8 @@ class ComprasController extends AppBaseController
             'cantidad_cuotas.integer'      => 'La cantidad de cuotas debe ser un número entero.',
             'cantidad_cuotas.min'          => 'La cantidad de cuotas debe ser al menos 1 cuando es crédito.', // CORREGIDO
             'cantidad_cuotas.max'          => 'La cantidad de cuotas no debe superar 36.',
-            'codigo.required'              => 'Debe agregar al menos un producto.'
+            'codigo.required'              => 'Debe agregar al menos un producto.',
+            'factura.unique'               => 'Ya existe una compra con esta factura para el proveedor seleccionado.',
         ]);
 
         if ($validator->fails()) {
