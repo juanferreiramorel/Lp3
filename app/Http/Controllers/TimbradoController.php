@@ -276,4 +276,47 @@ class TimbradoController extends Controller
 
         return response()->json($timbrados);
     }
+
+    /**
+     * Obtener preview del siguiente número de factura de un timbrado (AJAX)
+     */
+    public function previewSiguienteNumero(Request $request)
+    {
+        $idTimbrado = $request->id_timbrado;
+
+        if (!$idTimbrado) {
+            return response()->json(['error' => 'ID de timbrado requerido'], 400);
+        }
+
+        $timbrado = Timbrado::find($idTimbrado);
+
+        if (!$timbrado) {
+            return response()->json(['error' => 'Timbrado no encontrado'], 404);
+        }
+
+        if (!$timbrado->estaVigente()) {
+            return response()->json([
+                'error' => 'Timbrado no vigente',
+                'mensaje' => 'El timbrado seleccionado no está vigente',
+                'estado' => $timbrado->estado
+            ], 400);
+        }
+
+        $siguienteNumero = $timbrado->generarNumeroFactura();
+
+        if (!$siguienteNumero) {
+            return response()->json([
+                'error' => 'No disponible',
+                'mensaje' => 'No se puede generar número. Timbrado agotado o vencido.'
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'numero_factura' => $siguienteNumero,
+            'timbrado' => $timbrado->numero_timbrado,
+            'facturas_disponibles' => $timbrado->facturas_disponibles,
+            'porcentaje_uso' => round($timbrado->porcentaje_uso, 1),
+        ]);
+    }
 }

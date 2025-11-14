@@ -61,16 +61,45 @@ $(document).ready(function() {
     // Actualizar preview cuando se selecciona un timbrado
     $('#id_timbrado').on('change', function() {
         var timbradoId = $(this).val();
-        var timbradoText = $('#id_timbrado option:selected').text();
+        var $display = $('#factura_nro_display');
 
         if (timbradoId && timbradoId !== '') {
-            // Mostrar preview del timbrado seleccionado
-            $('#factura_nro_display').val('Se generará del timbrado: ' + timbradoText);
-            $('#factura_nro_display').removeClass('text-danger').addClass('text-success font-italic');
+            // Mostrar "Cargando..."
+            $display.val('⏳ Obteniendo próximo número...');
+            $display.removeClass('text-danger text-success').addClass('text-muted font-italic');
+
+            // Hacer llamada AJAX para obtener el preview
+            $.ajax({
+                url: '{{ route("timbrados.previewSiguienteNumero") }}',
+                type: 'GET',
+                data: { id_timbrado: timbradoId },
+                success: function(response) {
+                    if (response.success) {
+                        // Mostrar el número exacto que se generará
+                        $display.val('📄 Próximo número: ' + response.numero_factura);
+                        $display.removeClass('text-danger text-muted').addClass('text-success font-weight-bold');
+
+                        // Opcional: mostrar info adicional en consola
+                        console.log('Timbrado:', response.timbrado);
+                        console.log('Disponibles:', response.facturas_disponibles);
+                        console.log('Uso:', response.porcentaje_uso + '%');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Error al obtener el número';
+
+                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                        errorMsg = xhr.responseJSON.mensaje;
+                    }
+
+                    $display.val('⚠️ ' + errorMsg);
+                    $display.removeClass('text-success text-muted').addClass('text-danger');
+                }
+            });
         } else {
             // Sin selección
-            $('#factura_nro_display').val('Seleccione un timbrado primero');
-            $('#factura_nro_display').removeClass('text-success').addClass('text-danger');
+            $display.val('Seleccione un timbrado primero');
+            $display.removeClass('text-success').addClass('text-danger');
         }
     });
 

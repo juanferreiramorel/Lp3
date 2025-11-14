@@ -47,6 +47,7 @@ Route::resource('empresas', App\Http\Controllers\EmpresaController::class);
 
 // Rutas específicas de timbrados (ANTES del resource)
 Route::get('timbrados/vigentes-empresa', [App\Http\Controllers\TimbradoController::class, 'vigentesEmpresa'])->name('timbrados.vigentesEmpresa');
+Route::get('timbrados/preview-siguiente-numero', [App\Http\Controllers\TimbradoController::class, 'previewSiguienteNumero'])->name('timbrados.previewSiguienteNumero');
 Route::post('timbrados/{id}/cancelar', [App\Http\Controllers\TimbradoController::class, 'cancelar'])->name('timbrados.cancelar');
 Route::resource('timbrados', App\Http\Controllers\TimbradoController::class);
 
