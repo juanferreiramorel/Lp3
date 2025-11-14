@@ -75,27 +75,32 @@
     @endif
 </div>
 
-<!-- Impuesto Field (Single select) -->
+<!-- Impuesto Field (Single select - OBLIGATORIO) -->
 <div class="form-group col-sm-6">
     {!! Form::label('id_tax', 'Impuesto:') !!}
+    <span class="text-danger">*</span>
     @if(isset($taxes) && count($taxes) > 0)
         @php
-            $taxOptions = ['' => 'Sin impuesto'];
+            $taxOptions = [];
             foreach($taxes as $tax) {
                 $taxOptions[$tax->id_tax] = $tax->nombre . ' (' . number_format($tax->porcentaje, 2) . '%)';
             }
         @endphp
         {!! Form::select('id_tax', $taxOptions, null, [
             'class' => 'form-control',
+            'required' => true,
+            'placeholder' => 'Seleccione un impuesto'
         ]) !!}
-        <small class="form-text text-muted">
-            Seleccione el impuesto que aplica a este producto (opcional)
+        <small class="form-text text-danger">
+            <strong>OBLIGATORIO:</strong> Todos los productos deben tener un impuesto asignado para poder facturar.
         </small>
     @else
-        <p class="text-muted">
-            No hay impuestos disponibles.
-            <a href="{{ route('taxes.create') }}" target="_blank">Crear impuesto</a>
-        </p>
+        <div class="alert alert-warning">
+            No hay impuestos disponibles. Debe crear al menos un impuesto para poder agregar productos.
+            <a href="{{ route('taxes.create') }}" class="btn btn-sm btn-primary ml-2" target="_blank">
+                <i class="fas fa-plus"></i> Crear impuesto
+            </a>
+        </div>
     @endif
 </div>
 @once

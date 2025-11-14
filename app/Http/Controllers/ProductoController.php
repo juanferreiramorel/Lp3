@@ -131,7 +131,7 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
-            'id_tax' => 'nullable|exists:taxes,id_tax',
+            'id_tax' => 'required|exists:taxes,id_tax',
             'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048' // Validación para la imagen (opcional)
         ], [
@@ -139,6 +139,7 @@ class ProductoController extends AppBaseController
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
+            'id_tax.required' => 'El impuesto es obligatorio. Todos los productos deben tener un impuesto asignado.',
             'id_tax.exists' => 'El impuesto seleccionado no existe.',
             'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
             'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
@@ -185,9 +186,6 @@ class ProductoController extends AppBaseController
         $controlarStock = $controlarStock ? 1 : 0;
         $input['controlar_stock'] = $controlarStock;
 
-        // Manejar id_tax: si está vacío o es '', convertir a null
-        $idTax = !empty($input['id_tax']) ? $input['id_tax'] : null;
-
         // Insertar el nuevo producto en la base de datos
         DB::selectOne(
             'INSERT INTO productos (descripcion, precio, id_marca, id_tax, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?, ?) RETURNING id_producto',
@@ -195,7 +193,7 @@ class ProductoController extends AppBaseController
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
-                $idTax,
+                $input['id_tax'],
                 $controlarStock,
                 $input['imagen_producto']
             ]
@@ -247,7 +245,7 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
-            'id_tax' => 'nullable|exists:taxes,id_tax',
+            'id_tax' => 'required|exists:taxes,id_tax',
             'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048', // Validación para la imagen (opcional)
         ], [
@@ -255,6 +253,7 @@ class ProductoController extends AppBaseController
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
+            'id_tax.required' => 'El impuesto es obligatorio. Todos los productos deben tener un impuesto asignado.',
             'id_tax.exists' => 'El impuesto seleccionado no existe.',
             'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
             'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
@@ -307,9 +306,6 @@ class ProductoController extends AppBaseController
         $controlarStock = $controlarStock ? 1 : 0;
         $input['controlar_stock'] = $controlarStock;
 
-        // Manejar id_tax: si está vacío o es '', convertir a null
-        $idTax = !empty($input['id_tax']) ? $input['id_tax'] : null;
-
         // Actualizar el producto en la base de datos
         DB::update(
             'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, id_tax = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
@@ -317,7 +313,7 @@ class ProductoController extends AppBaseController
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
-                $idTax,
+                $input['id_tax'],
                 $controlarStock,
                 $input['imagen_producto'],
                 $id
