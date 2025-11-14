@@ -70,9 +70,8 @@
             // Se cambia el tipo de dato de number a tipo text para que no dé problemas en el separador de miles
             row.innerHTML = `
                 <td class="text-center"><input type="text" name="codigo[]" class="form-control text-center" value="${codigo}" readonly></td>
-                <td><input type="text" name="producto[]" class="form-control" value="${producto}" readonly></td>
-                <td class="text-center">
-                    <span class="badge badge-info" style="font-size: 13px;">${tax_porcentaje}%</span>
+                <td>
+                    <input type="text" name="producto[]" class="form-control" value="${producto}" readonly>
                     <input type="hidden" name="tax_porcentaje[]" value="${tax_porcentaje}">
                 </td>
                 <td class="text-center"><input type="number" name="cantidad[]" class="text-center form-control cantidad-input" value="${cantidad}" min="1" oninput="calcularSubtotal(this)"></td>
@@ -115,8 +114,8 @@
                 total += parseFloat(subtotal.value.replace(/\./g, ''));
             });
 
-            /** actualizar mi elemento total y dentro del campo imprimimos el valor calculado */
-            document.getElementById('total').value = formatMoney(total);
+            /** actualizar campo hidden con valor numérico sin formato */
+            document.getElementById('total').value = total;
 
             // Calcular totales de impuestos
             if (typeof calcularTotalesImpuestos === 'function') {

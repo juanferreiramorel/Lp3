@@ -24,12 +24,11 @@
                     <thead>
                         <tr>
                             <th style="width:10%;">#</th>
-                            <th style="width:30%;min-width:200px;">Producto</th>
-                            <th class="text-center" style="width:10%;">IVA</th>
+                            <th style="width:40%;min-width:200px;">Producto</th>
                             <th class="text-center" style="width:12%;">Cantidad</th>
-                            <th class="text-center" style="width:15%;">Precio Unit</th>
-                            <th class="text-center" style="width:15%;">Subtotal</th>
-                            <th></th>
+                            <th class="text-center" style="width:18%;">Precio Unit</th>
+                            <th class="text-center" style="width:18%;">Subtotal</th>
+                            <th style="width:2%;"></th>
                         </tr>
                     </thead>
                     <tbody id="selectedProducts">
@@ -47,20 +46,10 @@
                                     <input type="text" class="form-control" name="producto[]" readonly
                                         placeholder="Buscar productos" value="{!! $value->descripcion !!}">
                                     {!! Form::hidden('id_producto[]', $value->id_producto) !!}
+                                    {!! Form::hidden('tax_porcentaje[]', $value->tax_porcentaje ?? 0) !!}
                                     @if(property_exists($value, 'id_detalle_venta'))
                                         {!! Form::hidden('id_det_venta[]', $value->id_detalle_venta) !!}
                                     @endif
-                                </td>
-
-                                <td class="text-center">
-                                    <span class="badge badge-info" style="font-size: 13px;">
-                                        @if(isset($value->tax_porcentaje))
-                                            {{ number_format($value->tax_porcentaje, 0) }}%
-                                        @else
-                                            0%
-                                        @endif
-                                    </span>
-                                    <input type="hidden" name="tax_porcentaje[]" value="{{ $value->tax_porcentaje ?? 0 }}">
                                 </td>
 
                                 <td class="text-center">
@@ -68,7 +57,7 @@
                                         style="text-align: center" value="{!! $value->cantidad !!}">
                                 </td>
 
-                                <td class="text-center" style="width: 20%">
+                                <td class="text-center">
                                     <input class="text-center form-control precio-input" type="text" name="precio[]"
                                         style="text-align: center" value="{!! number_format($value->precio, 0, ',', '.') !!}">
                                 </td>

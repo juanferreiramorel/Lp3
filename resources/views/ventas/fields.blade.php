@@ -236,53 +236,32 @@ $(document).ready(function() {
 </div>
 
 
-<!-- Total Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('total', 'Total:') !!}
-    {!! Form::text('total', isset($venta) ? number_format($venta->total, 0, ',', '.') : (isset($ventas) ? number_format($ventas->total, 0, ',', '.') : null), [
-        'class' => 'form-control',
-        'id' => 'total',
-        'readonly',
-    ]) !!}
-</div>
+<!-- Total Field (Hidden - se calcula automáticamente) -->
+{!! Form::hidden('total', isset($venta) ? $venta->total : (isset($ventas) ? $ventas->total : 0), ['id' => 'total']) !!}
 
-<!-- Desglose de Impuestos (IVA) -->
+<!-- Desglose de Impuestos (Estilo Odoo) -->
 <div class="col-sm-12 mt-3">
-    <div class="card">
-        <div class="card-header bg-info">
-            <h5 class="mb-0">Desglose de Impuestos (IVA)</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <table class="table table-sm">
+    <div class="row">
+        <div class="col-md-8"></div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <table class="table table-sm table-borderless mb-0">
                         <tr>
-                            <td><strong>Total Exento (0%):</strong></td>
-                            <td class="text-right" id="total_exento_display">0 Gs.</td>
+                            <td><strong>Subtotal:</strong></td>
+                            <td class="text-right" id="subtotal_sin_impuestos_display">0 Gs.</td>
                         </tr>
-                        <tr>
-                            <td><strong>Total Gravado 5%:</strong></td>
-                            <td class="text-right" id="total_gravado_5_display">0 Gs.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Total Gravado 10%:</strong></td>
-                            <td class="text-right" id="total_gravado_10_display">0 Gs.</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-sm">
-                        <tr>
-                            <td><strong>IVA 5%:</strong></td>
+                        <tr id="row_iva_5" style="display: none;">
+                            <td>IVA 5%:</td>
                             <td class="text-right" id="total_iva_5_display">0 Gs.</td>
                         </tr>
-                        <tr>
-                            <td><strong>IVA 10%:</strong></td>
+                        <tr id="row_iva_10" style="display: none;">
+                            <td>IVA 10%:</td>
                             <td class="text-right" id="total_iva_10_display">0 Gs.</td>
                         </tr>
-                        <tr class="table-active">
-                            <td><strong>Total IVA:</strong></td>
-                            <td class="text-right"><strong id="total_iva_display">0 Gs.</strong></td>
+                        <tr class="border-top">
+                            <td><strong style="font-size: 1.1em;">Total:</strong></td>
+                            <td class="text-right"><strong style="font-size: 1.1em;" id="total_con_impuestos_display">0 Gs.</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -438,63 +417,71 @@ $(document).ready(function() {
                 $('.subtotal-input').each(function() {
                     total += cleanNumber($(this).val());
                 });
-                $('#total').val(formatMoney(total));
+                // Actualizar campo hidden con valor numérico sin formato
+                $('#total').val(total);
                 calcularTotalesImpuestos();
             }
 
-            // Función para calcular los totales de impuestos
+            // Función para calcular los totales de impuestos (Estilo Odoo)
             function calcularTotalesImpuestos() {
-                let total_exento = 0;
-                let total_gravado_5 = 0;
-                let total_gravado_10 = 0;
+                let subtotal_sin_impuestos = 0;
                 let total_iva_5 = 0;
                 let total_iva_10 = 0;
+                let tiene_iva_5 = false;
+                let tiene_iva_10 = false;
 
                 // Recorrer cada fila de la tabla
                 $('.detalle-venta tbody tr').each(function() {
                     let row = $(this);
-                    let subtotal = cleanNumber(row.find('.subtotal-input').val());
+                    let subtotal_con_iva = cleanNumber(row.find('.subtotal-input').val());
                     let tax_porcentaje = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
-
-                    // Si no hay campo hidden de tax_porcentaje (modo edición), buscar en el badge
-                    if (!tax_porcentaje) {
-                        let badgeText = row.find('.badge').text().trim();
-                        tax_porcentaje = parseFloat(badgeText.replace('%', '')) || 0;
-                    }
 
                     // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
                     let precio_sin_impuesto = 0;
                     let monto_impuesto = 0;
 
                     if (tax_porcentaje > 0) {
-                        precio_sin_impuesto = subtotal / (1 + (tax_porcentaje / 100));
-                        monto_impuesto = subtotal - precio_sin_impuesto;
+                        precio_sin_impuesto = subtotal_con_iva / (1 + (tax_porcentaje / 100));
+                        monto_impuesto = subtotal_con_iva - precio_sin_impuesto;
                     } else {
-                        precio_sin_impuesto = subtotal;
+                        precio_sin_impuesto = subtotal_con_iva;
                         monto_impuesto = 0;
                     }
 
-                    // Acumular según tipo de impuesto
-                    if (tax_porcentaje == 0) {
-                        total_exento += subtotal;
-                    } else if (tax_porcentaje == 5) {
-                        total_gravado_5 += subtotal;
+                    // Acumular subtotal sin impuestos
+                    subtotal_sin_impuestos += precio_sin_impuesto;
+
+                    // Acumular impuestos según tipo
+                    if (tax_porcentaje == 5) {
                         total_iva_5 += monto_impuesto;
+                        tiene_iva_5 = true;
                     } else if (tax_porcentaje == 10) {
-                        total_gravado_10 += subtotal;
                         total_iva_10 += monto_impuesto;
+                        tiene_iva_10 = true;
                     }
                 });
 
-                let total_iva = total_iva_5 + total_iva_10;
+                // Calcular total con impuestos
+                let total_con_impuestos = subtotal_sin_impuestos + total_iva_5 + total_iva_10;
 
-                // Actualizar los displays
-                $('#total_exento_display').text(formatMoney(Math.round(total_exento)) + ' Gs.');
-                $('#total_gravado_5_display').text(formatMoney(Math.round(total_gravado_5)) + ' Gs.');
-                $('#total_gravado_10_display').text(formatMoney(Math.round(total_gravado_10)) + ' Gs.');
+                // Actualizar displays
+                $('#subtotal_sin_impuestos_display').text(formatMoney(Math.round(subtotal_sin_impuestos)) + ' Gs.');
                 $('#total_iva_5_display').text(formatMoney(Math.round(total_iva_5)) + ' Gs.');
                 $('#total_iva_10_display').text(formatMoney(Math.round(total_iva_10)) + ' Gs.');
-                $('#total_iva_display').text(formatMoney(Math.round(total_iva)) + ' Gs.');
+                $('#total_con_impuestos_display').text(formatMoney(Math.round(total_con_impuestos)) + ' Gs.');
+
+                // Mostrar/ocultar filas de IVA dinámicamente
+                if (tiene_iva_5) {
+                    $('#row_iva_5').show();
+                } else {
+                    $('#row_iva_5').hide();
+                }
+
+                if (tiene_iva_10) {
+                    $('#row_iva_10').show();
+                } else {
+                    $('#row_iva_10').hide();
+                }
             }
 
             // Calcular totales de impuestos al cargar la página (para modo edición)
