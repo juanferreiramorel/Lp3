@@ -49,8 +49,8 @@
                 });
         });
 
-        // se agrega parametro cantidad con valor por defecto 1, subtotal igual a precio
-        function seleccionarProducto(codigo, producto, precio, subtotal = precio, cantidad = 1) {
+        // se agrega parametro cantidad con valor por defecto 1, subtotal igual a precio, tax_porcentaje
+        function seleccionarProducto(codigo, producto, precio, subtotal = precio, cantidad = 1, tax_porcentaje = 0) {
             // Obtener todas las filas de la tabla que fue seleccionado
             let filas = document.getElementById('selectedProducts').getElementsByTagName('tr');
 
@@ -69,12 +69,16 @@
             // Agregar los inputs a la fila con los valores obtenidos de la función seleccionarProducto
             // Se cambia el tipo de dato de number a tipo text para que no dé problemas en el separador de miles
             row.innerHTML = `
-                <td><input type="text" name="codigo[]" class="form-control" value="${codigo}" readonly></td>
+                <td class="text-center"><input type="text" name="codigo[]" class="form-control text-center" value="${codigo}" readonly></td>
                 <td><input type="text" name="producto[]" class="form-control" value="${producto}" readonly></td>
-                <td><input type="number" name="cantidad[]" class="text-center form-control" value="${cantidad}" min="1" oninput="calcularSubtotal(this)"></td>
-                <td><input type="text" name="precio[]" class="text-center form-control" value="${formatMoney(precio, 0)}" readonly></td>
-                <td><input type="text" name="subtotal[]" class="text-center form-control" value="${formatMoney(subtotal, 0)}" readonly></td>
-                <td><button type="button" class="btn btn-danger" onclick="borrar(this)"><i class="far fa-trash-alt"></i></button></td>
+                <td class="text-center">
+                    <span class="badge badge-info" style="font-size: 13px;">${tax_porcentaje}%</span>
+                    <input type="hidden" name="tax_porcentaje[]" value="${tax_porcentaje}">
+                </td>
+                <td class="text-center"><input type="number" name="cantidad[]" class="text-center form-control cantidad-input" value="${cantidad}" min="1" oninput="calcularSubtotal(this)"></td>
+                <td class="text-center"><input type="text" name="precio[]" class="text-center form-control precio-input" value="${formatMoney(precio, 0)}" readonly></td>
+                <td class="text-center"><input type="text" name="subtotal[]" class="text-center form-control subtotal-input" value="${formatMoney(subtotal, 0)}" readonly></td>
+                <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-item" onclick="borrar(this)"><i class="far fa-trash-alt"></i></button></td>
             `;
 
             // Agregar la fila a la tabla de productos seleccionados
@@ -113,6 +117,11 @@
 
             /** actualizar mi elemento total y dentro del campo imprimimos el valor calculado */
             document.getElementById('total').value = formatMoney(total);
+
+            // Calcular totales de impuestos
+            if (typeof calcularTotalesImpuestos === 'function') {
+                calcularTotalesImpuestos();
+            }
         }
 
         function borrar(button) {

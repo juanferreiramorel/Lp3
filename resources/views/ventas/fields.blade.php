@@ -246,6 +246,51 @@ $(document).ready(function() {
     ]) !!}
 </div>
 
+<!-- Desglose de Impuestos (IVA) -->
+<div class="col-sm-12 mt-3">
+    <div class="card">
+        <div class="card-header bg-info">
+            <h5 class="mb-0">Desglose de Impuestos (IVA)</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Total Exento (0%):</strong></td>
+                            <td class="text-right" id="total_exento_display">0 Gs.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Gravado 5%:</strong></td>
+                            <td class="text-right" id="total_gravado_5_display">0 Gs.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Gravado 10%:</strong></td>
+                            <td class="text-right" id="total_gravado_10_display">0 Gs.</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>IVA 5%:</strong></td>
+                            <td class="text-right" id="total_iva_5_display">0 Gs.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IVA 10%:</strong></td>
+                            <td class="text-right" id="total_iva_10_display">0 Gs.</td>
+                        </tr>
+                        <tr class="table-active">
+                            <td><strong>Total IVA:</strong></td>
+                            <td class="text-right"><strong id="total_iva_display">0 Gs.</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @includeIf('ventas.modal_producto')
 
 <!-- definir un campo oculto para almacenar el detalle enviado -->
@@ -394,6 +439,67 @@ $(document).ready(function() {
                     total += cleanNumber($(this).val());
                 });
                 $('#total').val(formatMoney(total));
+                calcularTotalesImpuestos();
+            }
+
+            // Función para calcular los totales de impuestos
+            function calcularTotalesImpuestos() {
+                let total_exento = 0;
+                let total_gravado_5 = 0;
+                let total_gravado_10 = 0;
+                let total_iva_5 = 0;
+                let total_iva_10 = 0;
+
+                // Recorrer cada fila de la tabla
+                $('.detalle-venta tbody tr').each(function() {
+                    let row = $(this);
+                    let subtotal = cleanNumber(row.find('.subtotal-input').val());
+                    let tax_porcentaje = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
+
+                    // Si no hay campo hidden de tax_porcentaje (modo edición), buscar en el badge
+                    if (!tax_porcentaje) {
+                        let badgeText = row.find('.badge').text().trim();
+                        tax_porcentaje = parseFloat(badgeText.replace('%', '')) || 0;
+                    }
+
+                    // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
+                    let precio_sin_impuesto = 0;
+                    let monto_impuesto = 0;
+
+                    if (tax_porcentaje > 0) {
+                        precio_sin_impuesto = subtotal / (1 + (tax_porcentaje / 100));
+                        monto_impuesto = subtotal - precio_sin_impuesto;
+                    } else {
+                        precio_sin_impuesto = subtotal;
+                        monto_impuesto = 0;
+                    }
+
+                    // Acumular según tipo de impuesto
+                    if (tax_porcentaje == 0) {
+                        total_exento += subtotal;
+                    } else if (tax_porcentaje == 5) {
+                        total_gravado_5 += subtotal;
+                        total_iva_5 += monto_impuesto;
+                    } else if (tax_porcentaje == 10) {
+                        total_gravado_10 += subtotal;
+                        total_iva_10 += monto_impuesto;
+                    }
+                });
+
+                let total_iva = total_iva_5 + total_iva_10;
+
+                // Actualizar los displays
+                $('#total_exento_display').text(formatMoney(Math.round(total_exento)) + ' Gs.');
+                $('#total_gravado_5_display').text(formatMoney(Math.round(total_gravado_5)) + ' Gs.');
+                $('#total_gravado_10_display').text(formatMoney(Math.round(total_gravado_10)) + ' Gs.');
+                $('#total_iva_5_display').text(formatMoney(Math.round(total_iva_5)) + ' Gs.');
+                $('#total_iva_10_display').text(formatMoney(Math.round(total_iva_10)) + ' Gs.');
+                $('#total_iva_display').text(formatMoney(Math.round(total_iva)) + ' Gs.');
+            }
+
+            // Calcular totales de impuestos al cargar la página (para modo edición)
+            if ($('.detalle-venta tbody tr').length > 0) {
+                calcularTotalesImpuestos();
             }
         });
     </script>

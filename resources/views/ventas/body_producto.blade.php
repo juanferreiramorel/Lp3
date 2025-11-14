@@ -9,14 +9,14 @@
     </thead>
     <tbody>
         @forelse($productos as $product)
-            <tr onclick="seleccionarProducto('{{ $product->id_producto }}', '{{ $product->descripcion }}', '{{ $product->precio }}')">
+            <tr onclick="seleccionarProducto('{{ $product->id_producto }}', '{{ $product->descripcion }}', '{{ $product->precio }}', '{{ $product->precio }}', 1, {{ $product->tax_porcentaje ?? 0 }})">
                 <td>{{ $product->id_producto }}</td>
                 <td>{{ $product->descripcion }}</td>
                 <td>
                     @if(isset($product->tax_nombre))
                         {{ number_format($product->tax_porcentaje ?? 0, 0) }}%
                     @else
-                        -
+                        0%
                     @endif
                 </td>
                 <td>{{ number_format($product->precio, 0, ',', '.') }} Gs.</td>

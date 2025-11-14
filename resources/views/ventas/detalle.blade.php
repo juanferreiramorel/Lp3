@@ -60,6 +60,7 @@
                                             0%
                                         @endif
                                     </span>
+                                    <input type="hidden" name="tax_porcentaje[]" value="{{ $value->tax_porcentaje ?? 0 }}">
                                 </td>
 
                                 <td class="text-center">
