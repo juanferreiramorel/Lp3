@@ -100,27 +100,14 @@
             // Asignar el calculo al campo subtotal al nuestro detalle del producto
             row.querySelector('input[name="subtotal[]"]').value = formatMoney(subtotal);
 
-            // Calcular el total general segun el detalle cargado al momento de aumentar la cantidad
-            total();
+            // Calcular el total general usando la función global
+            calcularTotal();
         }
 
-        // Funcion total para sumar todo los subtotales de lo que agrega el cliente
+        // Funcion total para sumar todo los subtotales (llama a la función global)
         function total() {
-            let total = 0;
-            let subtotals = document.querySelectorAll('input[name="subtotal[]"]');
-
-            subtotals.forEach(function(subtotal) {
-                // Convertir el subtotal a número y sumarlo al total general
-                total += parseFloat(subtotal.value.replace(/\./g, ''));
-            });
-
-            /** actualizar campo hidden con valor numérico sin formato */
-            document.getElementById('total').value = total;
-
-            // Calcular totales de impuestos
-            if (typeof calcularTotalesImpuestos === 'function') {
-                calcularTotalesImpuestos();
-            }
+            // Llamar a la función global calcularTotal() que está en fields.blade.php
+            calcularTotal();
         }
 
         function borrar(button) {
@@ -129,22 +116,8 @@
             row.remove();
 
             // Recalcular el total general después de eliminar un producto
-            calcularSubtotal(button);
+            calcularTotal();
         }
 
-        /** esta funcion nos ayudara a dar el formato a nuestros precios en javacript y colocar el separador de miles correspondientes */
-        function formatMoney (n, c, d, t) {
-            let s, i, j;
-            c = isNaN(c = Math.abs(c)) ? 0 : c;
-            d = d === undefined ? "," : d;
-            t = t === undefined ? "." : t;
-            s = n < 0 ? "-" : "";
-            i = String(parseInt(n = Math.abs(Number(n) || 0).toFixed(c)));
-            j = (j = i.length) > 3 ? j % 3 : 0;
-            return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) +
-                (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
-        }
-
-       
 </script>
 @endpush
