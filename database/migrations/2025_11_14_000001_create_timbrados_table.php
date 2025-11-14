@@ -37,7 +37,6 @@ return new class extends Migration
         // Agregar columna id_timbrado a la tabla ventas
         Schema::table('ventas', function (Blueprint $table) {
             $table->unsignedBigInteger('id_timbrado')->nullable()->after('id_sucursal');
-            $table->string('numero_factura_timbrado', 50)->nullable()->after('factura_nro');
 
             $table->foreign('id_timbrado')->references('id_timbrado')->on('timbrados')->onDelete('set null');
             $table->index('id_timbrado');
@@ -51,7 +50,7 @@ return new class extends Migration
     {
         Schema::table('ventas', function (Blueprint $table) {
             $table->dropForeign(['id_timbrado']);
-            $table->dropColumn(['id_timbrado', 'numero_factura_timbrado']);
+            $table->dropColumn('id_timbrado');
         });
 
         Schema::dropIfExists('timbrados');

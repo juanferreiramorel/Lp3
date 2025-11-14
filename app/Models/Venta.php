@@ -14,7 +14,6 @@ class Venta extends Model
 
     protected $fillable = [
         'factura_nro',
-        'numero_factura_timbrado',
         'id_apertura',
         'id_cliente',
         'id_sucursal',
@@ -72,6 +71,6 @@ class Venta extends Model
      */
     public function getNumeroFacturaDisplayAttribute()
     {
-        return $this->numero_factura_timbrado ?? $this->factura_nro;
+        return $this->factura_nro;
     }
 }

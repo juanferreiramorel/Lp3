@@ -323,17 +323,17 @@ class VentaController extends AppBaseController
         }
 
         // Generar número de factura con timbrado
-        $numero_factura_timbrado = $timbrado->generarNumeroFactura();
+        $numero_factura = $timbrado->generarNumeroFactura();
 
-        if (!$numero_factura_timbrado) {
+        if (!$numero_factura) {
             Alert::toast('No se pudo generar el número de factura. El timbrado está agotado o vencido.', 'error');
             return redirect()->back()->withInput($input);
         }
 
-        // Verificar que el número de factura timbrado no exista
-        $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE numero_factura_timbrado = ?', [$numero_factura_timbrado]);
+        // Verificar que el número de factura no exista
+        $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ?', [$numero_factura]);
         if (!empty($factura_exist)) {
-            Alert::toast('El número de factura timbrado ya existe. Por favor intente nuevamente.', 'error');
+            Alert::toast('El número de factura ya existe. Por favor intente nuevamente.', 'error');
             return redirect()->back()->withInput($input);
         }
 
@@ -354,8 +354,7 @@ class VentaController extends AppBaseController
                 'intervalo' => $input['intervalo'] ?? 0,
                 'cantidad_cuota' => $input['cantidad_cuota'] ?? 0,
                 'fecha_venta' => $input['fecha_venta'],
-                'factura_nro' => $numero_factura_timbrado,
-                'numero_factura_timbrado' => $numero_factura_timbrado,
+                'factura_nro' => $numero_factura,
                 'id_timbrado' => $input['id_timbrado'],
                 'user_id' => $user_id,
                 'total' => $total,
@@ -405,7 +404,7 @@ class VentaController extends AppBaseController
             // actualizar la ultima factura impresa en cajas
             // extraer el nro de factura utilizando explode en la posicion 2
             // 001-002-0000001
-            $factura_nro = explode('-', $numero_factura_timbrado)[2];
+            $factura_nro = explode('-', $numero_factura)[2];
             // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
             DB::update('UPDATE cajas SET ultima_factura_impresa = ?
             WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
@@ -766,8 +765,8 @@ class VentaController extends AppBaseController
         $formateo = new NumeroALetras();
         $numero_a_letras = $formateo->toWords($ventas->total);// recuperar total de la venta y convertir a letras
 
-        // Determinar el número de factura a mostrar (priorizar timbrado)
-        $numero_factura_display = $ventas->numero_factura_timbrado ?? $ventas->factura_nro;
+        // El número de factura siempre viene del timbrado en factura_nro
+        $numero_factura_display = $ventas->factura_nro;
 
         return view('ventas.factura')->with('ventas', $ventas)
             ->with('detalle_venta', $detalle_venta)

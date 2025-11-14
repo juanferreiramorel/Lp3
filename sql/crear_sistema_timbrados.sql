@@ -70,15 +70,6 @@ BEGIN
         CREATE INDEX idx_ventas_timbrado
             ON ventas(id_timbrado);
     END IF;
-
-    -- Agregar numero_factura_timbrado si no existe
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'ventas' AND column_name = 'numero_factura_timbrado'
-    ) THEN
-        ALTER TABLE ventas
-        ADD COLUMN numero_factura_timbrado VARCHAR(50);
-    END IF;
 END $$;
 
 -- 4. Registrar la migración en la tabla migrations
@@ -127,7 +118,7 @@ SELECT
     is_nullable
 FROM information_schema.columns
 WHERE table_name = 'ventas'
-    AND column_name IN ('id_timbrado', 'numero_factura_timbrado')
+    AND column_name = 'id_timbrado'
 ORDER BY column_name;
 
 -- Verificar permisos creados
