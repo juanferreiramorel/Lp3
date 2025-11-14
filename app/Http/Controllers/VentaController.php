@@ -102,13 +102,19 @@ class VentaController extends AppBaseController
             }
         }
 
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        $sqlSucursales = '';
+        if (!empty($idsPermitidos)) {
+            $sqlSucursales = ' AND v.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
         $ventas = DB::select(
             "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
-            {$sql_busqueda} {$sql_filtros}
+            {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
             ORDER BY v.fecha_venta DESC"
         );
 
@@ -155,7 +161,7 @@ class VentaController extends AppBaseController
             ->selectRaw("id_cliente, concat(clie_nombre,' ', clie_apellido) as cliente")
             ->pluck('cliente', 'id_cliente');
 
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         $condiciones_venta = [
             'CONTADO' => 'CONTADO',
@@ -177,9 +183,6 @@ class VentaController extends AppBaseController
             ->selectRaw("id_cliente, concat(clie_nombre,' ', clie_apellido) as cliente")
             ->pluck('cliente', 'id_cliente');
 
-        // Compartir el usuario en session para el formulario ventas utilizando auth()
-        $usuario = auth()->user()->name;
-
         // Condicion de venta opciones: CONTADO O CREDITO
         $condicion_venta = [
             'CONTADO' => 'CONTADO',
@@ -194,8 +197,12 @@ class VentaController extends AppBaseController
         ];
 
         // Enviar datos de sucursales segun sucursal del usuario
-        $sucursales = DB::table('sucursales')->where('id_sucursal', auth()->user()->id_sucursal)
+        $usuarioActual = auth()->user();
+        $sucursalesPermitidasIds = $this->getSucursalesPermitidasIds($usuarioActual);
+        $sucursales = DB::table('sucursales')
+            ->whereIn('id_sucursal', $sucursalesPermitidasIds)
             ->pluck('descripcion', 'id_sucursal');
+        $usuario = $usuarioActual->name;
 
         // enviar datos de apertura de caja a ventas 
         $apertura_caja = DB::selectOne(
@@ -755,7 +762,7 @@ class VentaController extends AppBaseController
                 ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
                 ->pluck('cliente', 'id_cliente');
 
-            $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+            $sucursales = $this->getSucursalesPermitidas();
 
             $usuario = auth()->user()->name ?? '';
 

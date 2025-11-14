@@ -71,6 +71,11 @@ class OrdenCompraController extends AppBaseController
         $where = "WHERE 1=1" . $sql_filtros;
         $params = [];
 
+        $idsPermitidos = $this->getSucursalesPermitidasIds();
+        if (!empty($idsPermitidos)) {
+            $where .= ' AND oc.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
@@ -128,8 +133,7 @@ class OrdenCompraController extends AppBaseController
         // Obtener datos para los filtros
         $proveedores = DB::table('proveedores')
             ->pluck('descripcion', 'id_proveedor');
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $estados = [
             'PENDIENTE' => 'Pendiente',
             'APROBADA' => 'Aprobada',
@@ -150,8 +154,7 @@ class OrdenCompraController extends AppBaseController
             ->pluck('descripcion', 'id_proveedor');
 
         // Cargar sucursales
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         // Usuario autenticado
         $usuario = auth()->user()->name;

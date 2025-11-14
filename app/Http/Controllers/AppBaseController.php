@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use InfyOm\Generator\Utils\ResponseUtil;
 
 /**
@@ -15,6 +16,54 @@ use InfyOm\Generator\Utils\ResponseUtil;
  */
 class AppBaseController extends Controller
 {
+    /**
+     * Obtiene los IDs de sucursales permitidos para el usuario autenticado.
+     *
+     * @param  \App\Models\User|null  $user
+     * @return array<int, int>
+     */
+    protected function getSucursalesPermitidasIds($user = null)
+    {
+        $user = $user ?: auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
+        $ids = DB::table('sucursal_user')
+            ->where('user_id', $user->id)
+            ->pluck('id_sucursal')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (!empty($user->id_sucursal)) {
+            $ids[] = (int) $user->id_sucursal;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de las sucursales permitidas para el usuario autenticado.
+     * Si el usuario no tiene restricciones retorna todas las sucursales.
+     *
+     * @param  \App\Models\User|null  $user
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getSucursalesPermitidas($user = null)
+    {
+        $ids = $this->getSucursalesPermitidasIds($user);
+
+        $query = DB::table('sucursales')
+            ->orderBy('descripcion');
+
+        if (!empty($ids)) {
+            $query->whereIn('id_sucursal', $ids);
+        }
+
+        return $query->pluck('descripcion', 'id_sucursal');
+    }
+
     public function sendResponse($result, $message)
     {
         return response()->json(ResponseUtil::makeResponse($message, $result));

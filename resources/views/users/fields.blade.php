@@ -73,3 +73,20 @@
         'required',
     ]) !!}
 </div>
+
+<!-- Sucursales Permitidas Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('sucursales_permitidas', 'Sucursales que podrá ver:') !!}
+    {!! Form::select(
+        'sucursales_permitidas[]',
+        $sucursales,
+        old('sucursales_permitidas', $sucursalesAsignadas ?? []),
+        [
+            'class' => 'form-control select2',
+            'id' => 'sucursales_permitidas',
+            'multiple' => 'multiple',
+            'data-placeholder' => 'Seleccione una o varias sucursales',
+        ]
+    ) !!}
+    <small class="form-text text-muted">Siempre tendrá acceso a su sucursal principal.</small>
+</div>

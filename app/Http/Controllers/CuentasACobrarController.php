@@ -147,7 +147,7 @@ class CuentasACobrarController extends AppBaseController
 
         // Obtener datos para los filtros
         $clientes = DB::table('clientes')->selectRaw("id_cliente, CONCAT(clie_nombre, ' ', clie_apellido) as cliente")->pluck('cliente', 'id_cliente');
-        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $estados_cuota = [
             'PENDIENTE' => 'PENDIENTE',
             'VENCIDO' => 'VENCIDO',
