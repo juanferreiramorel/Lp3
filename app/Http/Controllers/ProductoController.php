@@ -119,7 +119,13 @@ class ProductoController extends AppBaseController
         // Obtener las marcas para cargar el select
         $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
 
-        return view('productos.create')->with('tipo_iva', $tipo_iva)->with('marcas', $marcas);
+        // Obtener los impuestos activos
+        $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
+
+        return view('productos.create')
+            ->with('tipo_iva', $tipo_iva)
+            ->with('marcas', $marcas)
+            ->with('taxes', $taxes);
     }
 
     public function store(Request $request)
@@ -179,8 +185,8 @@ class ProductoController extends AppBaseController
         $precio = str_replace('.', '', $input['precio']);
 
         // Insertar el nuevo producto en la base de datos
-        DB::insert(
-            'INSERT INTO productos (descripcion, precio, id_marca, tipo_iva, imagen_producto) VALUES (?, ?, ?, ?, ?)',
+        $idProducto = DB::selectOne(
+            'INSERT INTO productos (descripcion, precio, id_marca, tipo_iva, imagen_producto) VALUES (?, ?, ?, ?, ?) RETURNING id_producto',
             [
                 $input['descripcion'],
                 $precio,
@@ -189,6 +195,16 @@ class ProductoController extends AppBaseController
                 $input['imagen_producto']
             ]
         );
+
+        // Sincronizar impuestos si se seleccionaron
+        if (isset($input['taxes']) && is_array($input['taxes'])) {
+            foreach ($input['taxes'] as $taxId) {
+                DB::insert(
+                    'INSERT INTO product_tax (id_producto, id_tax, created_at, updated_at) VALUES (?, ?, NOW(), NOW())',
+                    [$idProducto->id_producto, $taxId]
+                );
+            }
+        }
 
         // Redirigir a la lista de productos con un mensaje de éxito
         Flash::success('Producto creado correctamente.');
@@ -216,7 +232,22 @@ class ProductoController extends AppBaseController
         // Obtener las marcas para cargar el select
         $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
 
-        return view('productos.edit')->with('productos', $productos)->with('tipo_iva', $tipo_iva)->with('marcas', $marcas);
+        // Obtener los impuestos activos
+        $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
+
+        // Obtener los impuestos seleccionados para este producto
+        $selectedTaxes = DB::select(
+            'SELECT id_tax FROM product_tax WHERE id_producto = ?',
+            [$id]
+        );
+        $selectedTaxes = array_column($selectedTaxes, 'id_tax');
+
+        return view('productos.edit')
+            ->with('productos', $productos)
+            ->with('tipo_iva', $tipo_iva)
+            ->with('marcas', $marcas)
+            ->with('taxes', $taxes)
+            ->with('selectedTaxes', $selectedTaxes);
     }
 
     public function update(Request $request, $id) 
@@ -302,6 +333,20 @@ class ProductoController extends AppBaseController
                 $id
             ]
         );
+
+        // Sincronizar impuestos
+        // Primero eliminar todas las relaciones existentes
+        DB::delete('DELETE FROM product_tax WHERE id_producto = ?', [$id]);
+
+        // Luego agregar las nuevas relaciones si se seleccionaron
+        if (isset($input['taxes']) && is_array($input['taxes'])) {
+            foreach ($input['taxes'] as $taxId) {
+                DB::insert(
+                    'INSERT INTO product_tax (id_producto, id_tax, created_at, updated_at) VALUES (?, ?, NOW(), NOW())',
+                    [$id, $taxId]
+                );
+            }
+        }
 
         // Redirigir a la lista de productos con un mensaje de éxito
         Flash::success('Producto actualizado correctamente.');

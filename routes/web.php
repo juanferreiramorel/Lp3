@@ -46,6 +46,7 @@ Route::resource('sucursales', App\Http\Controllers\SucursalController::class);
 Route::resource('empresas', App\Http\Controllers\EmpresaController::class);
 Route::resource('marcas', App\Http\Controllers\MarcaController::class);
 Route::resource('productos', App\Http\Controllers\ProductoController::class);
+Route::resource('taxes', App\Http\Controllers\TaxController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);
 Route::post('clientes/store-ajax', [App\Http\Controllers\ClienteController::class, 'storeAjax'])->name('clientes.store.ajax');
 Route::resource('clientes', App\Http\Controllers\ClienteController::class);

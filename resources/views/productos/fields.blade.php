@@ -19,14 +19,14 @@
     ]) !!}
 </div>
 
-<!-- Tipo Iva Field -->
+<!-- Tipo Iva Field (Legacy - mantener por compatibilidad) -->
 <div class="form-group col-sm-6">
-    {!! Form::label('tipo_iva', 'Tipo Iva:') !!}
+    {!! Form::label('tipo_iva', 'Tipo Iva (Legado):') !!}
     {!! Form::select('tipo_iva', $tipo_iva, null, [
         'class' => 'form-control',
-        'required',
         'placeholder' => 'Seleccione el tipo de IVA',
     ]) !!}
+    <small class="form-text text-muted">Este campo se mantiene por compatibilidad. Use el selector de impuestos abajo.</small>
 </div>
 
 <!-- Id Marca Field -->
@@ -51,4 +51,33 @@
                 style="width: 150px; height: 80px; display: block; margin: auto;">
         </div>
     @endif
+</div>
+
+<!-- Impuestos Field (Multi-select) -->
+<div class="form-group col-sm-12">
+    {!! Form::label('taxes', 'Impuestos:') !!}
+    <div class="card">
+        <div class="card-body">
+            @if(isset($taxes) && count($taxes) > 0)
+                <div class="row">
+                    @foreach($taxes as $tax)
+                        <div class="col-sm-6 col-md-4 col-lg-3">
+                            <div class="form-check">
+                                {!! Form::checkbox('taxes[]', $tax->id_tax,
+                                    isset($productos) && isset($selectedTaxes) ? in_array($tax->id_tax, $selectedTaxes) : false,
+                                    ['class' => 'form-check-input', 'id' => 'tax_' . $tax->id_tax]
+                                ) !!}
+                                {!! Form::label('tax_' . $tax->id_tax, $tax->nombre . ' (' . number_format($tax->porcentaje, 2) . '%)', ['class' => 'form-check-label']) !!}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-muted">
+                    No hay impuestos disponibles.
+                    <a href="{{ route('taxes.create') }}" target="_blank">Crear impuesto</a>
+                </p>
+            @endif
+        </div>
+    </div>
 </div>
