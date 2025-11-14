@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Laracasts\Flash\Flash;
 use Illuminate\Pagination\LengthAwarePaginator;// libreria a importar para paginacion manual
 
@@ -160,16 +161,18 @@ class ProductoController extends AppBaseController
         }
 
         // Validar con hasFile que exista ese dato
+        $imagenPath = null;
         if ($request->hasFile('imagen_producto')) {
-            // obtener nombre del archivo de imagen con getClientOriginalName
-            $imagen = $request->file('imagen_producto')->getClientOriginalName();
+            // Generar nombre único para evitar conflictos
+            $extension = $request->file('imagen_producto')->getClientOriginalExtension();
+            $nombreUnico = time() . '_' . uniqid() . '.' . $extension;
 
-            // mover el archivo imagen al path definido
-            $request->file('imagen_producto')->move($this->path, $imagen);
+            // Guardar en public/img/productos con nombre único
+            $request->file('imagen_producto')->move($this->path, $nombreUnico);
+            $imagenPath = $nombreUnico;
         }
         // sobre escribir el atributo imagen_producto de la variable $input
-        // validar con isset() para verificar que exista la variable $imagen
-        $input['imagen_producto'] = isset($imagen) ? $imagen : null;
+        $input['imagen_producto'] = $imagenPath;
 
 
         // Sacar separador de miles y cambiar  por vacio en el precio
@@ -263,16 +266,25 @@ class ProductoController extends AppBaseController
             return back()->withErrors(['descripcion' => 'Ya existe un producto con esta descripción.'])->withInput();
         }
 
-        // validar con hasFile que exista eese dato
-        if ($request->hasFile('imagen_producto')) {
-            // obtener nombre del archivo de imagen con getClientOriginalName
-            $imagen = $request->file('imagen_producto')->getClientOriginalName();
+        // validar con hasFile que exista ese dato
+        $imagenPath = $productos->imagen_producto; // Mantener imagen anterior por defecto
 
-            // mover el archivo imagen al path definido
-            $request->file('imagen_producto')->move($this->path, $imagen);
+        if ($request->hasFile('imagen_producto')) {
+            // Generar nombre único para evitar conflictos
+            $extension = $request->file('imagen_producto')->getClientOriginalExtension();
+            $nombreUnico = time() . '_' . uniqid() . '.' . $extension;
+
+            // Eliminar imagen anterior si existe
+            if ($productos->imagen_producto && file_exists($this->path . $productos->imagen_producto)) {
+                unlink($this->path . $productos->imagen_producto);
+            }
+
+            // Guardar nueva imagen con nombre único
+            $request->file('imagen_producto')->move($this->path, $nombreUnico);
+            $imagenPath = $nombreUnico;
         }
         // sobre escribir el atributo imagen_producto de la variable $input
-        $input['imagen_producto'] = isset($imagen) ? $imagen : $productos->imagen_producto;
+        $input['imagen_producto'] = $imagenPath;
 
 
         // Sacar separador de miles y cambiar  por vacio en el precio
@@ -308,6 +320,11 @@ class ProductoController extends AppBaseController
         }
 
         try {
+            // Eliminar imagen del producto si existe
+            if ($producto->imagen_producto && file_exists($this->path . $producto->imagen_producto)) {
+                unlink($this->path . $producto->imagen_producto);
+            }
+
             // Eliminar el producto de la base de datos
             DB::delete('DELETE FROM productos WHERE id_producto = ?', [$id]);
             Flash::success('Producto eliminado correctamente.');

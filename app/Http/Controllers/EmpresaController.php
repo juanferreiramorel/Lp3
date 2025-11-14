@@ -102,7 +102,13 @@ class EmpresaController extends AppBaseController
             $logoPath = null;
             if ($request->hasFile('logo')) {
                 Log::info('Subiendo logo');
-                $logoPath = $request->file('logo')->store('logos', 'public');
+
+                // Generar nombre único para evitar conflictos
+                $extension = $request->file('logo')->getClientOriginalExtension();
+                $nombreUnico = time() . '_' . uniqid() . '.' . $extension;
+
+                // Guardar con nombre único
+                $logoPath = $request->file('logo')->storeAs('logos', $nombreUnico, 'public');
                 Log::info('Logo subido exitosamente', ['path' => $logoPath]);
             }
 
@@ -222,13 +228,19 @@ class EmpresaController extends AppBaseController
 
             if ($request->hasFile('logo')) {
                 Log::info('Actualizando logo');
+
+                // Generar nombre único para evitar conflictos
+                $extension = $request->file('logo')->getClientOriginalExtension();
+                $nombreUnico = time() . '_' . uniqid() . '.' . $extension;
+
                 // Eliminar el logo anterior si existe
                 if ($empresa->logo && Storage::disk('public')->exists($empresa->logo)) {
                     Storage::disk('public')->delete($empresa->logo);
                     Log::info('Logo anterior eliminado', ['path' => $empresa->logo]);
                 }
-                // Guardar el nuevo logo
-                $logoPath = $request->file('logo')->store('logos', 'public');
+
+                // Guardar el nuevo logo con nombre único
+                $logoPath = $request->file('logo')->storeAs('logos', $nombreUnico, 'public');
                 Log::info('Nuevo logo subido', ['path' => $logoPath]);
             }
 
