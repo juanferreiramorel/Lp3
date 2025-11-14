@@ -177,6 +177,8 @@
                 background-color: white;
                 padding: 0;
                 margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .recibo-container {
@@ -185,6 +187,17 @@
                 margin: 0;
                 max-width: 100%;
                 min-height: auto;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .header,
+            .comprobante-numero,
+            .info-section h3,
+            .monto-total,
+            .estado-anulado {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .print-button {
