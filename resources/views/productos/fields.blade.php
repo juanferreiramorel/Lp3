@@ -19,16 +19,6 @@
     ]) !!}
 </div>
 
-<!-- Tipo Iva Field (Legacy - mantener por compatibilidad) -->
-<div class="form-group col-sm-6">
-    {!! Form::label('tipo_iva', 'Tipo Iva (Legado):') !!}
-    {!! Form::select('tipo_iva', $tipo_iva, null, [
-        'class' => 'form-control',
-        'placeholder' => 'Seleccione el tipo de IVA',
-    ]) !!}
-    <small class="form-text text-muted">Este campo se mantiene por compatibilidad. Use el selector de impuestos abajo.</small>
-</div>
-
 <!-- Id Marca Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('id_marca', 'Marca:') !!}

@@ -62,9 +62,8 @@ class ProductoController extends AppBaseController
                      OR cast(p.id_producto as text) ILIKE ?
                      OR cast(p.precio as text) ILIKE ?
                      OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
-                     OR cast(p.tipo_iva as text) ILIKE ?
                      ORDER BY p.id_producto DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%']
                 );
             }
         } else {
@@ -109,13 +108,6 @@ class ProductoController extends AppBaseController
 
     public function create()
     {
-        // Cargar los tipos de IVA para el select
-        $tipo_iva = array(
-            '0' => 'Exento',
-            '5' => 'Gravada 5%',
-            '10' => 'Gravada 10%',
-        );
-
         // Obtener las marcas para cargar el select
         $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
 
@@ -123,7 +115,6 @@ class ProductoController extends AppBaseController
         $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
 
         return view('productos.create')
-            ->with('tipo_iva', $tipo_iva)
             ->with('marcas', $marcas)
             ->with('taxes', $taxes);
     }
@@ -137,15 +128,12 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
-            'tipo_iva' => 'required|numeric',
             'imagen_producto' => 'nullable|image|max:2048' // Validación para la imagen (opcional)
         ], [
             'descripcion.required' => 'La descripción es obligatoria.',
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
-            'tipo_iva.required' => 'El tipo de IVA es obligatorio.',
-            'tipo_iva.numeric' => 'El tipo de IVA debe ser un número válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
             'imagen_producto.max' => 'La imagen no debe superar los 2MB.',
         ]);
@@ -186,12 +174,11 @@ class ProductoController extends AppBaseController
 
         // Insertar el nuevo producto en la base de datos
         $idProducto = DB::selectOne(
-            'INSERT INTO productos (descripcion, precio, id_marca, tipo_iva, imagen_producto) VALUES (?, ?, ?, ?, ?) RETURNING id_producto',
+            'INSERT INTO productos (descripcion, precio, id_marca, imagen_producto) VALUES (?, ?, ?, ?) RETURNING id_producto',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
-                $input['tipo_iva'],
                 $input['imagen_producto']
             ]
         );
@@ -222,13 +209,6 @@ class ProductoController extends AppBaseController
             return redirect(route('productos.index'));
         }
 
-        // Cargar los tipos de IVA para el select
-        $tipo_iva = array(
-            '0' => 'Exento',
-            '5' => 'Gravada 5%',
-            '10' => 'Gravada 10%',
-        );
-
         // Obtener las marcas para cargar el select
         $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
 
@@ -244,7 +224,6 @@ class ProductoController extends AppBaseController
 
         return view('productos.edit')
             ->with('productos', $productos)
-            ->with('tipo_iva', $tipo_iva)
             ->with('marcas', $marcas)
             ->with('taxes', $taxes)
             ->with('selectedTaxes', $selectedTaxes);
@@ -268,15 +247,12 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
-            'tipo_iva' => 'required|numeric',
             'imagen_producto' => 'nullable|image|max:2048', // Validación para la imagen (opcional)
         ], [
             'descripcion.required' => 'La descripción es obligatoria.',
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
-            'tipo_iva.required' => 'El tipo de IVA es obligatorio.',
-            'tipo_iva.numeric' => 'El tipo de IVA debe ser un número válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
             'imagen_producto.max' => 'La imagen no debe superar los 2MB.',
         ]);
@@ -323,12 +299,11 @@ class ProductoController extends AppBaseController
 
         // Actualizar el producto en la base de datos
         DB::update(
-            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, tipo_iva = ?, imagen_producto = ? WHERE id_producto = ?',
+            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, imagen_producto = ? WHERE id_producto = ?',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
-                $input['tipo_iva'],
                 $input['imagen_producto'],
                 $id
             ]

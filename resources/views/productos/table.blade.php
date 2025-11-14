@@ -7,7 +7,6 @@
                         <th>Imagen</th>
                         <th>Descripción</th>
                         <th>Precio</th>
-                        <th>Tipo Iva</th>
                         <th>Marca</th>
                         <th colspan="3">Action</th>
                     </tr>
@@ -26,7 +25,6 @@
                             </td>
                             <td>{{ $producto->descripcion }}</td>
                             <td>{{ number_format($producto->precio, 0, ',', '.') }}</td>
-                            <td>{{ $producto->tipo_iva }}</td>
                             <td>{{ $producto->marcas }}</td>
                             <td style="width: 120px">
                                 {!! Form::open(['route' => ['productos.destroy', $producto->id_producto], 'method' => 'delete']) !!}

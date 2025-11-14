@@ -8,6 +8,7 @@
         || Request::is('sucursales*')
         || Request::is('empresas*')
         || Request::is('marcas*')
+        || Request::is('taxes*')
         || Request::is('permissions*')
         || Request::is('cajas*')
         || Request::is('roles*')
@@ -191,6 +192,7 @@
     auth()->user()->can('cajas index') ||
     auth()->user()->can('cargos index') ||
     auth()->user()->can('marcas index') ||
+    auth()->user()->can('taxes index') ||
     auth()->user()->can('proveedores index') ||
     auth()->user()->can('users index') ||
     auth()->user()->can('permissions index') ||
@@ -272,6 +274,16 @@
             </a>
         </li>
         @endcan
+
+        @can('taxes index')
+        <li class="nav-item">
+            <a href="{{ route('taxes.index') }}" class="nav-link {{ Request::is('taxes*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-percentage"></i>
+                <p>Impuestos</p>
+            </a>
+        </li>
+        @endcan
+
         @can('proveedores index')
         <li class="nav-item">
             <a href="{{ route('proveedores.index') }}" class="nav-link {{ Request::is('proveedores*') ? 'active' : '' }}">

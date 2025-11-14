@@ -15,14 +15,12 @@ class Product extends Model
     protected $fillable = [
         'descripcion',
         'precio',
-        'tipo_iva',
         'id_marca',
         'imagen_producto'
     ];
 
     protected $casts = [
-        'precio' => 'decimal:2',
-        'tipo_iva' => 'integer'
+        'precio' => 'decimal:2'
     ];
 
     /**
