@@ -3,7 +3,7 @@
 -- Este script verifica si la tabla empresas existe y la crea si es necesario
 -- =====================================================
 
--- 1. Verificar si la tabla empresas existe
+-- 1. Crear tabla empresas si no existe
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'empresas') THEN
@@ -28,6 +28,22 @@ BEGIN
         RAISE NOTICE 'Tabla empresas creada exitosamente';
     ELSE
         RAISE NOTICE 'La tabla empresas ya existe';
+    END IF;
+END $$;
+
+-- 1b. Agregar columnas faltantes si la tabla ya existía
+DO $$
+BEGIN
+    -- Agregar created_at si no existe
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'empresas' AND column_name = 'created_at') THEN
+        ALTER TABLE empresas ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        RAISE NOTICE 'Columna created_at agregada';
+    END IF;
+
+    -- Agregar updated_at si no existe
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'empresas' AND column_name = 'updated_at') THEN
+        ALTER TABLE empresas ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        RAISE NOTICE 'Columna updated_at agregada';
     END IF;
 END $$;
 
