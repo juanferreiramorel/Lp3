@@ -262,8 +262,8 @@
                     width: '100%' // Ancho del select
                 });
 
-                //sweetalert para confirmacion de borrado
-                $('.alert-delete').click(function(event) {
+                //sweetalert para confirmacion de borrado - usa delegación de eventos para AJAX
+                $(document).on('click', '.alert-delete', function(event) {
                     var form = $(this).closest("form");
                     event.preventDefault();
                     let valor = $(this).data("mensaje") ||
