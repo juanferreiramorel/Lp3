@@ -58,6 +58,63 @@
 @push('page_scripts')
 <script>
 $(document).ready(function() {
+    // Cargar timbrados cuando cambia la sucursal
+    $('#id_sucursal').on('change', function() {
+        var sucursalId = $(this).val();
+        var $timbradoSelect = $('#id_timbrado');
+        var $display = $('#factura_nro_display');
+
+        if (sucursalId && sucursalId !== '') {
+            // Limpiar select de timbrado y preview
+            $timbradoSelect.html('<option value="">⏳ Cargando timbrados...</option>');
+            $timbradoSelect.prop('disabled', true);
+            $display.val('Seleccione primero una sucursal y timbrado');
+
+            // Hacer llamada AJAX para obtener timbrados de la empresa de la sucursal
+            $.ajax({
+                url: '{{ route("timbrados.vigentesEmpresaPorSucursal") }}',
+                type: 'GET',
+                data: { id_sucursal: sucursalId },
+                success: function(response) {
+                    if (response.success && response.timbrados) {
+                        // Limpiar y repoblar el select
+                        $timbradoSelect.html('<option value="">Seleccione un timbrado</option>');
+
+                        if (response.timbrados.length > 0) {
+                            $.each(response.timbrados, function(index, timbrado) {
+                                $timbradoSelect.append(
+                                    $('<option></option>')
+                                        .attr('value', timbrado.id_timbrado)
+                                        .text(timbrado.numero_timbrado + ' (Vence: ' + timbrado.fecha_vencimiento + ', Disponibles: ' + timbrado.facturas_disponibles + ')')
+                                );
+                            });
+                            $timbradoSelect.prop('disabled', false);
+                        } else {
+                            $timbradoSelect.html('<option value="">No hay timbrados vigentes disponibles</option>');
+                            $display.val('⚠️ No hay timbrados vigentes para esta sucursal');
+                            $display.removeClass('text-success').addClass('text-danger');
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Error al cargar timbrados';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+
+                    $timbradoSelect.html('<option value="">Error al cargar timbrados</option>');
+                    $display.val('⚠️ ' + errorMsg);
+                    $display.removeClass('text-success').addClass('text-danger');
+                }
+            });
+        } else {
+            // Sin selección de sucursal
+            $timbradoSelect.html('<option value="">Seleccione primero una sucursal</option>');
+            $timbradoSelect.prop('disabled', true);
+            $display.val('Seleccione primero una sucursal');
+        }
+    });
+
     // Actualizar preview cuando se selecciona un timbrado
     $('#id_timbrado').on('change', function() {
         var timbradoId = $(this).val();
@@ -106,6 +163,11 @@ $(document).ready(function() {
     // Ejecutar al cargar si ya hay un timbrado seleccionado
     if ($('#id_timbrado').length && $('#id_timbrado').val()) {
         $('#id_timbrado').trigger('change');
+    }
+
+    // Ejecutar al cargar si ya hay una sucursal seleccionada
+    if ($('#id_sucursal').length && $('#id_sucursal').val()) {
+        $('#id_sucursal').trigger('change');
     }
 });
 </script>

@@ -278,6 +278,46 @@ class TimbradoController extends Controller
     }
 
     /**
+     * Obtener timbrados vigentes por sucursal (AJAX)
+     * Busca la empresa de la sucursal y retorna sus timbrados vigentes
+     */
+    public function vigentesEmpresaPorSucursal(Request $request)
+    {
+        $idSucursal = $request->id_sucursal;
+
+        if (!$idSucursal) {
+            return response()->json(['error' => 'ID de sucursal requerido'], 400);
+        }
+
+        // Obtener la empresa de la sucursal
+        $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [$idSucursal]);
+
+        if (!$sucursal || !$sucursal->id_empresa) {
+            return response()->json(['error' => 'Sucursal no encontrada o sin empresa asignada'], 404);
+        }
+
+        // Obtener timbrados vigentes de la empresa
+        $timbrados = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                            ->vigentes()
+                            ->orderBy('fecha_vencimiento', 'asc')
+                            ->get()
+                            ->map(function($t) {
+                                return [
+                                    'id_timbrado' => $t->id_timbrado,
+                                    'numero_timbrado' => $t->numero_timbrado,
+                                    'fecha_vencimiento' => $t->fecha_vencimiento->format('d/m/Y'),
+                                    'facturas_disponibles' => $t->facturas_disponibles,
+                                ];
+                            });
+
+        return response()->json([
+            'success' => true,
+            'timbrados' => $timbrados,
+            'id_empresa' => $sucursal->id_empresa
+        ]);
+    }
+
+    /**
      * Obtener preview del siguiente número de factura de un timbrado (AJAX)
      */
     public function previewSiguienteNumero(Request $request)
