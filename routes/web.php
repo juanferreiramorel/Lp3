@@ -44,6 +44,14 @@ Route::resource('proveedores', App\Http\Controllers\ProveedorController::class);
 Route::resource('ciudades', App\Http\Controllers\CiudadController::class);
 Route::resource('sucursales', App\Http\Controllers\SucursalController::class);
 Route::resource('empresas', App\Http\Controllers\EmpresaController::class);
+
+// Rutas específicas de timbrados (ANTES del resource)
+Route::get('timbrados/vigentes-empresa', [App\Http\Controllers\TimbradoController::class, 'vigentesEmpresa'])->name('timbrados.vigentesEmpresa');
+Route::get('timbrados/vigentes-por-sucursal', [App\Http\Controllers\TimbradoController::class, 'vigentesEmpresaPorSucursal'])->name('timbrados.vigentesEmpresaPorSucursal');
+Route::get('timbrados/preview-siguiente-numero', [App\Http\Controllers\TimbradoController::class, 'previewSiguienteNumero'])->name('timbrados.previewSiguienteNumero');
+Route::post('timbrados/{id}/cancelar', [App\Http\Controllers\TimbradoController::class, 'cancelar'])->name('timbrados.cancelar');
+Route::resource('timbrados', App\Http\Controllers\TimbradoController::class);
+
 Route::resource('marcas', App\Http\Controllers\MarcaController::class);
 Route::resource('productos', App\Http\Controllers\ProductoController::class);
 Route::resource('taxes', App\Http\Controllers\TaxController::class);

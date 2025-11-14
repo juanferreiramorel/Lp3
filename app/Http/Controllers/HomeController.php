@@ -62,9 +62,11 @@ class HomeController extends Controller
 
         // 3. Total de productos en stock
         $totalStock = DB::selectOne("
-            SELECT COALESCE(SUM(cantidad), 0) as total_stock,
-                   COALESCE(COUNT(DISTINCT id_producto), 0) as productos_diferentes
-            FROM stocks
+            SELECT COALESCE(SUM(s.cantidad), 0) as total_stock,
+                   COALESCE(COUNT(DISTINCT s.id_producto), 0) as productos_diferentes
+            FROM stocks s
+            JOIN productos p ON p.id_producto = s.id_producto
+            WHERE p.controlar_stock = true
         ");
 
         // 4. Ventas por día del mes actual (para el gráfico)
@@ -82,11 +84,12 @@ class HomeController extends Controller
 
         // 5. Productos con bajo stock (menos de 10 unidades)
         $productosBajoStock = DB::select("
-            SELECT 
+            SELECT
                 p.descripcion as producto,
                 COALESCE(SUM(s.cantidad), 0) as stock_total
             FROM productos p
             JOIN stocks s ON p.id_producto = s.id_producto
+            WHERE p.controlar_stock = true
             GROUP BY p.id_producto, p.descripcion
             HAVING COALESCE(SUM(s.cantidad), 0) < 10
             ORDER BY stock_total ASC

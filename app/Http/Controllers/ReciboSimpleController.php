@@ -338,22 +338,22 @@ class ReciboSimpleController extends AppBaseController
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
-                        JOIN stocks ON productos.id_producto = stocks.id_producto
-                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
+                        LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
+                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
                     LIMIT 20",
                 [
+                    $cod_suc,
                     '%' . $query . '%',
-                    '%' . $query . '%',
-                    $cod_suc
+                    '%' . $query . '%'
                 ]
             );
         } else {
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                 FROM productos
-                    JOIN stocks ON productos.id_producto = stocks.id_producto
-                WHERE stocks.id_sucursal = ?
+                    LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
+                    AND stocks.id_sucursal = ?
                 LIMIT 20",
                 [$cod_suc]
             );

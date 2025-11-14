@@ -499,9 +499,9 @@ class PedidosController extends AppBaseController
             $productos = DB::select(
                 "SELECT p.*, s.cantidad, s.id_sucursal
                    FROM productos p
-                   JOIN stocks s ON p.id_producto = s.id_producto
-                  WHERE s.id_sucursal = ?
-                    AND (LOWER(p.descripcion) LIKE ? OR CAST(p.id_producto AS TEXT) LIKE ?)
+                   LEFT JOIN stocks s ON p.id_producto = s.id_producto
+                   AND s.id_sucursal = ?
+                  WHERE (LOWER(p.descripcion) LIKE ? OR CAST(p.id_producto AS TEXT) LIKE ?)
                   LIMIT 50",
                 [$cod_suc, "%{$buscar}%", "%{$buscar}%"]
             );
@@ -510,8 +510,8 @@ class PedidosController extends AppBaseController
             $productos = DB::select(
                 "SELECT p.*, s.cantidad, s.id_sucursal
                    FROM productos p
-                   JOIN stocks s ON p.id_producto = s.id_producto
-                  WHERE s.id_sucursal = ?
+                   LEFT JOIN stocks s ON p.id_producto = s.id_producto
+                   AND s.id_sucursal = ?
                   LIMIT 20",
                 [$cod_suc]
             );

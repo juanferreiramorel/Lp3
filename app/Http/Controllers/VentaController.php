@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Luecano\NumeroALetras\NumeroALetras;
+use App\Models\Timbrado;
+use App\Models\Empresa;
 
 use function Laravel\Prompts\error;
 
@@ -233,12 +235,26 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
+        // Obtener timbrados vigentes de la empresa de la sucursal del usuario
+        $timbrados_vigentes = [];
+        if (!empty($apertura_caja)) {
+            // Obtener la empresa de la sucursal del usuario
+            $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [auth()->user()->id_sucursal]);
+            if ($sucursal && $sucursal->id_empresa) {
+                $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                    ->vigentes()
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->get();
+            }
+        }
+
         return view('ventas.create')->with('clientes', $clientes)
             ->with('usuario', $usuario)
             ->with('condicion_venta', $condicion_venta)
             ->with('intervalo_vencimiento', $intervalo_vencimiento)
             ->with('sucursales', $sucursales)
-            ->with('apertura_caja', $apertura_caja);
+            ->with('apertura_caja', $apertura_caja)
+            ->with('timbrados_vigentes', $timbrados_vigentes);
     }
 
     public function store(Request $request)
@@ -259,7 +275,7 @@ class VentaController extends AppBaseController
                 'user_id' => 'required|exists:users,id',
                 'id_apertura' => 'required|exists:apertura_cierre_cajas,id_apertura',
                 'id_sucursal' => 'required|exists:sucursales,id_sucursal',
-                'factura_nro' => 'nullable|string|max:15',
+                'id_timbrado' => 'required|exists:timbrados,id_timbrado',
             ],
             [
                 'id_cliente.required' => 'El campo cliente es obligatorio.',
@@ -278,7 +294,8 @@ class VentaController extends AppBaseController
                 'id_apertura.exists' => 'La apertura seleccionada no es válida.',
                 'id_sucursal.required' => 'El campo sucursal es obligatorio.',
                 'id_sucursal.exists' => 'La sucursal seleccionada no es válida.',
-                'factura_nro.max' => 'El número de factura no debe exceder los 15 caracteres.',
+                'id_timbrado.required' => 'Debe seleccionar un timbrado vigente.',
+                'id_timbrado.exists' => 'El timbrado seleccionado no es válido.',
             ]
         );
 
@@ -286,20 +303,37 @@ class VentaController extends AppBaseController
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
-        // validar que la nro de factura sea unica
-        if (!empty($input['factura_nro'])) {
-            // buscamos si ya existe la factura
-            $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ?', [$input['factura_nro']]);
-            // si existe mostramos error
-            if (!empty($factura_exist)) {
-                Alert::toast('El número de factura ya existe', 'error');
-                return redirect()->back()->withInput($input);
-            }
-        }
-
         // validar fecha de venta no sea mayor a la fecha actual
         if (Carbon::parse($input['fecha_venta'])->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
             Alert::toast('La fecha de venta no puede ser mayor a la fecha actual', 'error');
+            return redirect()->back()->withInput($input);
+        }
+
+        // Validar y procesar el timbrado (OBLIGATORIO)
+        $timbrado = Timbrado::find($input['id_timbrado']);
+
+        if (!$timbrado) {
+            Alert::toast('Timbrado no encontrado', 'error');
+            return redirect()->back()->withInput($input);
+        }
+
+        if (!$timbrado->estaVigente()) {
+            Alert::toast('El timbrado seleccionado no está vigente. Por favor seleccione otro timbrado.', 'error');
+            return redirect()->back()->withInput($input);
+        }
+
+        // Generar número de factura con timbrado
+        $numero_factura = $timbrado->generarNumeroFactura();
+
+        if (!$numero_factura) {
+            Alert::toast('No se pudo generar el número de factura. El timbrado está agotado o vencido.', 'error');
+            return redirect()->back()->withInput($input);
+        }
+
+        // Verificar que el número de factura no exista
+        $factura_exist = DB::selectOne('SELECT * FROM ventas WHERE factura_nro = ?', [$numero_factura]);
+        if (!empty($factura_exist)) {
+            Alert::toast('El número de factura ya existe. Por favor intente nuevamente.', 'error');
             return redirect()->back()->withInput($input);
         }
 
@@ -320,7 +354,8 @@ class VentaController extends AppBaseController
                 'intervalo' => $input['intervalo'] ?? 0,
                 'cantidad_cuota' => $input['cantidad_cuota'] ?? 0,
                 'fecha_venta' => $input['fecha_venta'],
-                'factura_nro' => $input['factura_nro'] ?? '0',
+                'factura_nro' => $numero_factura,
+                'id_timbrado' => $input['id_timbrado'],
                 'user_id' => $user_id,
                 'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
@@ -333,6 +368,15 @@ class VentaController extends AppBaseController
             $subtotal = 0;
             // validar que existea $input['codigo'] de productos
             if ($request->has('codigo')) {
+                $codigos = array_map('intval', $input['codigo'] ?? []);
+                $productosControl = !empty($codigos)
+                    ? DB::table('productos')
+                        ->whereIn('id_producto', $codigos)
+                        ->pluck('controlar_stock', 'id_producto')
+                        ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                        ->toArray()
+                    : [];
+
                 foreach ($input['codigo'] as $key => $codigo) {
                     // quitar separador de miles
                     $monto = str_replace('.', '', $input['precio'][$key]);
@@ -350,11 +394,14 @@ class VentaController extends AppBaseController
                     );
 
                     // disminuir stocks segun producto y sucursal
-                    DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                        $input['cantidad'][$key],
-                        $codigo,
-                        $input['id_sucursal']
-                    ]);
+                    $controlarStock = $productosControl[(int) $codigo] ?? true;
+                    if ($controlarStock) {
+                        DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
+                            $input['cantidad'][$key],
+                            $codigo,
+                            $input['id_sucursal']
+                        ]);
+                    }
                 }
                 // actualizar el total en la tabla ventas valor total
                 DB::update('UPDATE ventas SET total = ? WHERE id_venta = ?', [
@@ -363,18 +410,19 @@ class VentaController extends AppBaseController
                 ]);
             }
 
-            // actualizar la ultima factura impresa en cajas si es que se envio un nro de factura
-            if (!empty($input['factura_nro'])) {
-                // extraer el nro de factura utilizando explode en la posicion 2
-                // 001-002-0000001
-                $factura_nro = explode('-', $input['factura_nro'])[2];
-                // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
-                DB::update('UPDATE cajas SET ultima_factura_impresa = ?
-                WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
-                    (int) $factura_nro, // convertir a entero para quitar ceros a la izquierda
-                    $input['id_apertura']
-                ]);
-            }
+            // Incrementar uso del timbrado
+            $timbrado->incrementarUso();
+
+            // actualizar la ultima factura impresa en cajas
+            // extraer el nro de factura utilizando explode en la posicion 2
+            // 001-002-0000001
+            $factura_nro = explode('-', $numero_factura)[2];
+            // update de cajas y recuperar segun la apertura de caja el codigo de id_caja utilizando subconsulta
+            DB::update('UPDATE cajas SET ultima_factura_impresa = ?
+            WHERE id_caja = (SELECT id_caja FROM apertura_cierre_cajas WHERE id_apertura = ?)', [
+                (int) $factura_nro, // convertir a entero para quitar ceros a la izquierda
+                $input['id_apertura']
+            ]);
 
             // Si la venta se creó desde un pedido, actualizar el estado del pedido a PROCESADO
             if (!empty($input['id_pedido'])) {
@@ -527,12 +575,23 @@ class VentaController extends AppBaseController
                 $id
             ]);
 
+            $codigos = array_map('intval', $input['codigo'] ?? []);
+            $productosControl = !empty($codigos)
+                ? DB::table('productos')
+                    ->whereIn('id_producto', $codigos)
+                    ->pluck('controlar_stock', 'id_producto')
+                    ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                    ->toArray()
+                : [];
+
             // Actualizar los detalles de venta
             foreach ($input['codigo'] as $key => $codigo) {
                 // quitar separador de miles
                 $monto = str_replace('.', '', $input['precio'][$key]);
                 // obtener detalle de venta si existe segun producto recibido
                 $detalle = DB::selectOne('SELECT * FROM detalle_ventas WHERE id_venta = ? AND id_producto = ?', [$id, $codigo]);
+
+                $controlarStock = $productosControl[(int) $codigo] ?? true;
 
                 if (!empty($detalle)) {
                     // actualizar en detalle_ventas
@@ -548,7 +607,7 @@ class VentaController extends AppBaseController
                     // calcular diferencia de cantidad para disminucion de stock
                     $diferencia = $input['cantidad'][$key] - $detalle->cantidad;
                     // actualizar stocks segun producto y sucursal
-                    if ($diferencia != 0) {
+                    if ($diferencia != 0 && $controlarStock) {
                         DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
                             $diferencia,
                             $codigo,
@@ -568,11 +627,13 @@ class VentaController extends AppBaseController
                     );
 
                     // Disminuir stock
-                    DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
-                        $input['cantidad'][$key],
-                        $codigo,
-                        $ventas->id_sucursal
-                    ]);
+                    if ($controlarStock) {
+                        DB::update('UPDATE stocks SET cantidad = cantidad - ? WHERE id_producto = ? AND id_sucursal = ?', [
+                            $input['cantidad'][$key],
+                            $codigo,
+                            $ventas->id_sucursal
+                        ]);
+                    }
                 }
             }
             // Si todo esta bien realiza el envio e inserta la venta y detalle
@@ -612,13 +673,25 @@ class VentaController extends AppBaseController
             // restaurar la cantidad de productos en stock para ello debemos consultar el detalle de venta para obtener datos del producto y cantidad
             $detalle_venta = DB::select('SELECT * FROM detalle_ventas WHERE id_venta = ?', [$id]);
 
+            $productosIds = array_unique(array_map(fn($item) => (int) $item->id_producto, $detalle_venta));
+            $productosControl = empty($productosIds)
+                ? []
+                : DB::table('productos')
+                    ->whereIn('id_producto', $productosIds)
+                    ->pluck('controlar_stock', 'id_producto')
+                    ->mapWithKeys(fn($value, $key) => [(int) $key => (bool) $value])
+                    ->toArray();
+
             foreach ($detalle_venta as $item) {
-                // actualizar las cantidades en stock segun la sucursal que obtendremos de la variable $ventas
-                DB::update('UPDATE stocks SET cantidad = cantidad + ? WHERE id_producto = ? AND id_sucursal = ?', [
-                    $item->cantidad,
-                    $item->id_producto,
-                    $ventas->id_sucursal
-                ]);
+                $controlarStock = $productosControl[(int) $item->id_producto] ?? true;
+                if ($controlarStock) {
+                    // actualizar las cantidades en stock segun la sucursal que obtendremos de la variable $ventas
+                    DB::update('UPDATE stocks SET cantidad = cantidad + ? WHERE id_producto = ? AND id_sucursal = ?', [
+                        $item->cantidad,
+                        $item->id_producto,
+                        $ventas->id_sucursal
+                    ]);
+                }
             }
             // Si todo esta bien realiza el envio e inserta la venta y detalle
             DB::commit();
@@ -644,14 +717,14 @@ class VentaController extends AppBaseController
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
-                        JOIN stocks ON productos.id_producto = stocks.id_producto 
-                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
+                        LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
+                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
                     LIMIT 20",
                 [
+                    $cod_suc,
                     '%' . $query . '%',
-                    '%' . $query . '%',
-                    $cod_suc
+                    '%' . $query . '%'
                 ]
             );
         } else {
@@ -659,8 +732,8 @@ class VentaController extends AppBaseController
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
-                        JOIN stocks ON productos.id_producto = stocks.id_producto
-                 WHERE stocks.id_sucursal = ?
+                        LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
+                        AND stocks.id_sucursal = ?
                  LIMIT 20",
                 [$cod_suc]
             );
@@ -679,7 +752,7 @@ class VentaController extends AppBaseController
 
     public function factura($id)
     {
-        // recuperar datos de la venta con información de la empresa
+        // recuperar datos de la venta con información de la empresa y timbrado
         $ventas = DB::selectOne(
             "SELECT v.*,
             concat(c.clie_nombre,' ', c.clie_apellido) as cliente,
@@ -694,7 +767,10 @@ class VentaController extends AppBaseController
             e.telefono as empresa_telefono,
             e.email as empresa_email,
             e.logo as empresa_logo,
-            s.descripcion as sucursal_nombre
+            s.descripcion as sucursal_nombre,
+            t.numero_timbrado,
+            t.fecha_inicio as timbrado_fecha_inicio,
+            t.fecha_vencimiento as timbrado_fecha_vencimiento
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
@@ -702,6 +778,7 @@ class VentaController extends AppBaseController
                 JOIN cajas cj ON acc.id_caja = cj.id_caja
                 JOIN sucursales s ON cj.id_sucursal = s.id_sucursal
                 LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
+                LEFT JOIN timbrados t ON v.id_timbrado = t.id_timbrado
             WHERE v.id_venta = ?",
             [$id]
         );
@@ -725,9 +802,13 @@ class VentaController extends AppBaseController
         $formateo = new NumeroALetras();
         $numero_a_letras = $formateo->toWords($ventas->total);// recuperar total de la venta y convertir a letras
 
+        // El número de factura siempre viene del timbrado en factura_nro
+        $numero_factura_display = $ventas->factura_nro;
+
         return view('ventas.factura')->with('ventas', $ventas)
             ->with('detalle_venta', $detalle_venta)
-            ->with('numero_a_letras', $numero_a_letras);
+            ->with('numero_a_letras', $numero_a_letras)
+            ->with('numero_factura_display', $numero_factura_display);
     }
 
     /** CREAR VENTA DESDE PEDIDO */

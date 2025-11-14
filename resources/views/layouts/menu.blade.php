@@ -7,6 +7,7 @@
         || Request::is('ciudades*')
         || Request::is('sucursales*')
         || Request::is('empresas*')
+        || Request::is('timbrados*')
         || Request::is('marcas*')
         || Request::is('taxes*')
         || Request::is('permissions*')
@@ -188,6 +189,7 @@
     auth()->user()->can('ciudades index') ||
     auth()->user()->can('sucursales index') ||
     auth()->user()->can('empresas index') ||
+    auth()->user()->can('timbrados index') ||
     auth()->user()->can('stock index') ||
     auth()->user()->can('cajas index') ||
     auth()->user()->can('cargos index') ||
@@ -236,6 +238,14 @@
             <a href="{{ route('empresas.index') }}" class="nav-link {{ Request::is('empresas*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-building"></i>
                 <p>Empresas</p>
+            </a>
+        </li>
+        @endcan
+        @can('timbrados index')
+        <li class="nav-item">
+            <a href="{{ route('timbrados.index') }}" class="nav-link {{ Request::is('timbrados*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-stamp"></i>
+                <p>Timbrados</p>
             </a>
         </li>
         @endcan

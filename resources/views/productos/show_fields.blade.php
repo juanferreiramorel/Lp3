@@ -16,6 +16,12 @@
     <p>{{ $productos->tipo_iva }}</p>
 </div>
 
+<!-- Controlar Stock Field -->
+<div class="col-sm-12">
+    {!! Form::label('controlar_stock', 'Controlar Stock:') !!}
+    <p>{{ $productos->controlar_stock ? 'Sí' : 'No' }}</p>
+</div>
+
 <!-- Id Marca Field -->
 <div class="col-sm-12">
     {!! Form::label('id_marca', 'Id Marca:') !!}
