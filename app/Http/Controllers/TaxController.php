@@ -231,7 +231,7 @@ class TaxController extends AppBaseController
         try {
             // Verificar si el impuesto está asociado a productos
             $productosAsociados = DB::selectOne(
-                'SELECT COUNT(*) as total FROM product_tax WHERE id_tax = ?',
+                'SELECT COUNT(*) as total FROM productos WHERE id_tax = ?',
                 [$id]
             );
 
@@ -263,9 +263,8 @@ class TaxController extends AppBaseController
         $productos = DB::select(
             'SELECT p.*, m.descripcion as marcas
              FROM productos p
-             JOIN product_tax pt ON p.id_producto = pt.id_producto
              JOIN marcas m ON p.id_marca = m.id_marca
-             WHERE pt.id_tax = ?
+             WHERE p.id_tax = ?
              ORDER BY p.descripcion',
             [$id]
         );
