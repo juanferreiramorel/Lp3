@@ -138,6 +138,7 @@ class ProductoController extends AppBaseController
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
             'tipo_iva' => 'required|numeric',
+            'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048' // Validación para la imagen (opcional)
         ], [
             'descripcion.required' => 'La descripción es obligatoria.',
@@ -146,6 +147,8 @@ class ProductoController extends AppBaseController
             'id_marca.exists' => 'La marca seleccionada no existe.',
             'tipo_iva.required' => 'El tipo de IVA es obligatorio.',
             'tipo_iva.numeric' => 'El tipo de IVA debe ser un número válido.',
+            'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
+            'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
             'imagen_producto.max' => 'La imagen no debe superar los 2MB.',
         ]);
@@ -184,14 +187,20 @@ class ProductoController extends AppBaseController
         // Sacar separador de miles y cambiar  por vacio en el precio
         $precio = str_replace('.', '', $input['precio']);
 
+        $controlarStock = filter_var($input['controlar_stock'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $controlarStock = $controlarStock === null ? (int) $input['controlar_stock'] : $controlarStock;
+        $controlarStock = $controlarStock ? 1 : 0;
+        $input['controlar_stock'] = $controlarStock;
+
         // Insertar el nuevo producto en la base de datos
-        $idProducto = DB::selectOne(
-            'INSERT INTO productos (descripcion, precio, id_marca, tipo_iva, imagen_producto) VALUES (?, ?, ?, ?, ?) RETURNING id_producto',
+        DB::insert(
+            'INSERT INTO productos (descripcion, precio, id_marca, tipo_iva, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?, ?)',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
                 $input['tipo_iva'],
+                $controlarStock,
                 $input['imagen_producto']
             ]
         );
@@ -269,6 +278,7 @@ class ProductoController extends AppBaseController
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
             'tipo_iva' => 'required|numeric',
+            'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048', // Validación para la imagen (opcional)
         ], [
             'descripcion.required' => 'La descripción es obligatoria.',
@@ -277,6 +287,8 @@ class ProductoController extends AppBaseController
             'id_marca.exists' => 'La marca seleccionada no existe.',
             'tipo_iva.required' => 'El tipo de IVA es obligatorio.',
             'tipo_iva.numeric' => 'El tipo de IVA debe ser un número válido.',
+            'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
+            'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
             'imagen_producto.max' => 'La imagen no debe superar los 2MB.',
         ]);
@@ -321,14 +333,20 @@ class ProductoController extends AppBaseController
         // Sacar separador de miles y cambiar  por vacio en el precio
         $precio = str_replace('.', '', $input['precio']);
 
+        $controlarStock = filter_var($input['controlar_stock'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $controlarStock = $controlarStock === null ? (int) $input['controlar_stock'] : $controlarStock;
+        $controlarStock = $controlarStock ? 1 : 0;
+        $input['controlar_stock'] = $controlarStock;
+
         // Actualizar el producto en la base de datos
         DB::update(
-            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, tipo_iva = ?, imagen_producto = ? WHERE id_producto = ?',
+            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, tipo_iva = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
                 $input['tipo_iva'],
+                $controlarStock,
                 $input['imagen_producto'],
                 $id
             ]

@@ -17,17 +17,161 @@
     ]) !!}
 </div>
 
+<!-- Timbrado Field -->
+<div class="form-group col-sm-4">
+    {!! Form::label('id_timbrado', 'Timbrado: *') !!}
+    @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+        {!! Form::select('id_timbrado',
+            $timbrados_vigentes->pluck('numero_timbrado', 'id_timbrado')->prepend('Seleccione un timbrado', ''),
+            null,
+            [
+                'class' => 'form-control',
+                'id' => 'id_timbrado',
+                'required' => true,
+            ]
+        ) !!}
+        <small class="form-text text-muted">El número de factura se generará automáticamente del timbrado</small>
+    @else
+        <input type="text" class="form-control" value="No hay timbrados vigentes disponibles" disabled>
+        <small class="form-text text-danger">
+            <i class="fas fa-exclamation-triangle"></i> No puede crear ventas sin timbrados vigentes.
+            @can('timbrados create')
+                <a href="{{ route('timbrados.create') }}">Crear timbrado ahora</a>
+            @endcan
+        </small>
+    @endif
+</div>
+
 <!-- Factura Nro Field -->
 <div class="form-group col-sm-4">
-    {!! Form::label('factura_nro', 'Factura Nro:') !!}
+    {!! Form::label('factura_nro_display', 'Número de Factura (Preview):') !!}
     {!! Form::text(
-        'factura_nro',
-        isset($apertura_caja)
-            ? ($apertura_caja->establecimiento . '-' . $apertura_caja->punto_expedicion . '-' . $apertura_caja->nro_factura)
-            : null,
-        ['class' => 'form-control', 'readonly' => 'readonly'],
+        'factura_nro_display',
+        null,
+        ['class' => 'form-control bg-light', 'readonly' => 'readonly', 'id' => 'factura_nro_display', 'placeholder' => 'Seleccione un timbrado primero'],
     ) !!}
+    <small class="form-text text-success">
+        <i class="fas fa-info-circle"></i> El número se generará automáticamente del timbrado seleccionado
+    </small>
 </div>
+
+@push('page_scripts')
+<script>
+$(document).ready(function() {
+    // Cargar timbrados cuando cambia la sucursal
+    $('#id_sucursal').on('change', function() {
+        var sucursalId = $(this).val();
+        var $timbradoSelect = $('#id_timbrado');
+        var $display = $('#factura_nro_display');
+
+        if (sucursalId && sucursalId !== '') {
+            // Limpiar select de timbrado y preview
+            $timbradoSelect.html('<option value="">⏳ Cargando timbrados...</option>');
+            $timbradoSelect.prop('disabled', true);
+            $display.val('Seleccione primero una sucursal y timbrado');
+
+            // Hacer llamada AJAX para obtener timbrados de la empresa de la sucursal
+            $.ajax({
+                url: '{{ route("timbrados.vigentesEmpresaPorSucursal") }}',
+                type: 'GET',
+                data: { id_sucursal: sucursalId },
+                success: function(response) {
+                    if (response.success && response.timbrados) {
+                        // Limpiar y repoblar el select
+                        $timbradoSelect.html('<option value="">Seleccione un timbrado</option>');
+
+                        if (response.timbrados.length > 0) {
+                            $.each(response.timbrados, function(index, timbrado) {
+                                $timbradoSelect.append(
+                                    $('<option></option>')
+                                        .attr('value', timbrado.id_timbrado)
+                                        .text(timbrado.numero_timbrado + ' (Vence: ' + timbrado.fecha_vencimiento + ', Disponibles: ' + timbrado.facturas_disponibles + ')')
+                                );
+                            });
+                            $timbradoSelect.prop('disabled', false);
+                        } else {
+                            $timbradoSelect.html('<option value="">No hay timbrados vigentes disponibles</option>');
+                            $display.val('⚠️ No hay timbrados vigentes para esta sucursal');
+                            $display.removeClass('text-success').addClass('text-danger');
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Error al cargar timbrados';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+
+                    $timbradoSelect.html('<option value="">Error al cargar timbrados</option>');
+                    $display.val('⚠️ ' + errorMsg);
+                    $display.removeClass('text-success').addClass('text-danger');
+                }
+            });
+        } else {
+            // Sin selección de sucursal
+            $timbradoSelect.html('<option value="">Seleccione primero una sucursal</option>');
+            $timbradoSelect.prop('disabled', true);
+            $display.val('Seleccione primero una sucursal');
+        }
+    });
+
+    // Actualizar preview cuando se selecciona un timbrado
+    $('#id_timbrado').on('change', function() {
+        var timbradoId = $(this).val();
+        var $display = $('#factura_nro_display');
+
+        if (timbradoId && timbradoId !== '') {
+            // Mostrar "Cargando..."
+            $display.val('⏳ Obteniendo próximo número...');
+            $display.removeClass('text-danger text-success').addClass('text-muted font-italic');
+
+            // Hacer llamada AJAX para obtener el preview
+            $.ajax({
+                url: '{{ route("timbrados.previewSiguienteNumero") }}',
+                type: 'GET',
+                data: { id_timbrado: timbradoId },
+                success: function(response) {
+                    if (response.success) {
+                        // Mostrar el número exacto que se generará
+                        $display.val('📄 Próximo número: ' + response.numero_factura);
+                        $display.removeClass('text-danger text-muted').addClass('text-success font-weight-bold');
+
+                        // Opcional: mostrar info adicional en consola
+                        console.log('Timbrado:', response.timbrado);
+                        console.log('Disponibles:', response.facturas_disponibles);
+                        console.log('Uso:', response.porcentaje_uso + '%');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Error al obtener el número';
+
+                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                        errorMsg = xhr.responseJSON.mensaje;
+                    }
+
+                    $display.val('⚠️ ' + errorMsg);
+                    $display.removeClass('text-success text-muted').addClass('text-danger');
+                }
+            });
+        } else {
+            // Sin selección
+            $display.val('Seleccione un timbrado primero');
+            $display.removeClass('text-success').addClass('text-danger');
+        }
+    });
+
+    // Ejecutar al cargar si ya hay un timbrado seleccionado
+    if ($('#id_timbrado').length && $('#id_timbrado').val()) {
+        $('#id_timbrado').trigger('change');
+    }
+
+    // Ejecutar al cargar si ya hay una sucursal seleccionada
+    if ($('#id_sucursal').length && $('#id_sucursal').val()) {
+        $('#id_sucursal').trigger('change');
+    }
+});
+</script>
+@endpush
 
 <!-- User Id Field -->
 <div class="form-group col-sm-4">

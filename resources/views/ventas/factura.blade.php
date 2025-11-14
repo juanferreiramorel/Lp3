@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
-    <title>Factura - {{ $ventas->factura_nro }}</title>
+    <title>Factura - {{ $numero_factura_display }}</title>
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
@@ -346,8 +346,18 @@
                 <table>
                     <tr>
                         <th>Factura Nº</th>
-                        <td>{{ $ventas->factura_nro }}</td>
+                        <td>{{ $numero_factura_display }}</td>
                     </tr>
+                    @if($ventas->numero_timbrado)
+                    <tr>
+                        <th>Timbrado Nº</th>
+                        <td>{{ $ventas->numero_timbrado }}</td>
+                    </tr>
+                    <tr>
+                        <th>Vigencia</th>
+                        <td>{{ \Carbon\Carbon::parse($ventas->timbrado_fecha_inicio)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($ventas->timbrado_fecha_vencimiento)->format('d/m/Y') }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <th>Condición</th>
                         <td>{{ $ventas->condicion_venta }}</td>
