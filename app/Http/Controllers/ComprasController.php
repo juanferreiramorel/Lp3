@@ -578,9 +578,22 @@ class ComprasController extends AppBaseController
     }
 
     /** Aumenta stock (global o por sucursal) */
+    private function shouldControlStock(int $idProducto): bool
+    {
+        static $cache = [];
+
+        if (!array_key_exists($idProducto, $cache)) {
+            $valor = DB::table('productos')->where('id_producto', $idProducto)->value('controlar_stock');
+            $cache[$idProducto] = $valor === null ? true : (bool) $valor;
+        }
+
+        return $cache[$idProducto];
+    }
+
     private function increaseStock(int $idProducto, int $cantidad, $idSucursal = null): void
     {
         if ($cantidad <= 0) return;
+        if (!$this->shouldControlStock($idProducto)) return;
         if (!DB::getSchemaBuilder()->hasTable('stocks')) return;
 
         $hasSucursal = DB::getSchemaBuilder()->hasColumn('stocks', 'id_sucursal');
@@ -621,6 +634,7 @@ class ComprasController extends AppBaseController
     private function decreaseStock(int $idProducto, int $cantidad, $idSucursal = null): void
     {
         if ($cantidad <= 0) return;
+        if (!$this->shouldControlStock($idProducto)) return;
         if (!DB::getSchemaBuilder()->hasTable('stocks')) return;
 
         $hasSucursal = DB::getSchemaBuilder()->hasColumn('stocks', 'id_sucursal');
