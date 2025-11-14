@@ -7,6 +7,7 @@
                         <th>Imagen</th>
                         <th>Descripción</th>
                         <th>Precio</th>
+                        <th>Impuesto</th>
                         <th>Controla Stock</th>
                         <th>Marca</th>
                         <th colspan="3">Action</th>
@@ -26,6 +27,13 @@
                             </td>
                             <td>{{ $producto->descripcion }}</td>
                             <td>{{ number_format($producto->precio, 0, ',', '.') }}</td>
+                            <td>
+                                @if($producto->tax_nombre)
+                                    {{ $producto->tax_nombre }} ({{ number_format($producto->tax_porcentaje, 2) }}%)
+                                @else
+                                    <span class="text-muted">Sin impuesto</span>
+                                @endif
+                            </td>
                             <td>{{ !empty($producto->controlar_stock) ? 'Sí' : 'No' }}</td>
                             <td>{{ $producto->marcas }}</td>
                             <td style="width: 120px">

@@ -25,16 +25,11 @@ class Tax extends Model
     ];
 
     /**
-     * Relación many-to-many con productos
+     * Relación con productos (un impuesto puede estar en múltiples productos)
      */
     public function products()
     {
-        return $this->belongsToMany(
-            Product::class,
-            'product_tax',
-            'id_tax',
-            'id_producto'
-        );
+        return $this->hasMany(Product::class, 'id_tax', 'id_tax');
     }
 
     /**
@@ -43,5 +38,13 @@ class Tax extends Model
     public function scopeActive($query)
     {
         return $query->where('activo', true);
+    }
+
+    /**
+     * Accessor para obtener el nombre con el porcentaje
+     */
+    public function getNombreConPorcentajeAttribute()
+    {
+        return $this->nombre . ' (' . number_format($this->porcentaje, 2) . '%)';
     }
 }

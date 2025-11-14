@@ -38,9 +38,10 @@ class ProductoController extends AppBaseController
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
                 $productos = DB::select(
-                    'SELECT p.*, m.descripcion as marcas
+                    'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
                      FROM productos p
                         JOIN marcas m ON p.id_marca = m.id_marca
+                        LEFT JOIN taxes t ON p.id_tax = t.id_tax
                      WHERE p.id_producto = ?
                      ORDER BY p.id_producto DESC',
                     [(int)$searchConfig['term']]
@@ -54,9 +55,10 @@ class ProductoController extends AppBaseController
 
                 // Consulta con parámetros preparados para seguridad
                 $productos = DB::select(
-                    'SELECT p.*, m.descripcion as marcas
+                    'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
                      FROM productos p
                         JOIN marcas m ON p.id_marca = m.id_marca
+                        LEFT JOIN taxes t ON p.id_tax = t.id_tax
                      WHERE p.descripcion ILIKE ?
                      OR m.descripcion ILIKE ?
                      OR cast(p.id_producto as text) ILIKE ?
@@ -69,9 +71,10 @@ class ProductoController extends AppBaseController
         } else {
             // Consulta para obtener los productos con la marca asociada
             $productos = DB::select(
-                'SELECT p.*, m.descripcion as marcas
+                'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
                  FROM productos p
                     JOIN marcas m ON p.id_marca = m.id_marca
+                    LEFT JOIN taxes t ON p.id_tax = t.id_tax
                  ORDER BY p.id_producto DESC'
             );
         }
@@ -128,6 +131,7 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
+            'id_tax' => 'nullable|exists:taxes,id_tax',
             'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048' // Validación para la imagen (opcional)
         ], [
@@ -135,6 +139,7 @@ class ProductoController extends AppBaseController
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
+            'id_tax.exists' => 'El impuesto seleccionado no existe.',
             'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
             'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
@@ -180,27 +185,21 @@ class ProductoController extends AppBaseController
         $controlarStock = $controlarStock ? 1 : 0;
         $input['controlar_stock'] = $controlarStock;
 
+        // Manejar id_tax: si está vacío o es '', convertir a null
+        $idTax = !empty($input['id_tax']) ? $input['id_tax'] : null;
+
         // Insertar el nuevo producto en la base de datos
-        $idProducto = DB::selectOne(
-            'INSERT INTO productos (descripcion, precio, id_marca, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?) RETURNING id_producto',
+        DB::selectOne(
+            'INSERT INTO productos (descripcion, precio, id_marca, id_tax, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?, ?) RETURNING id_producto',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
+                $idTax,
                 $controlarStock,
                 $input['imagen_producto']
             ]
         );
-
-        // Sincronizar impuestos si se seleccionaron
-        if (isset($input['taxes']) && is_array($input['taxes'])) {
-            foreach ($input['taxes'] as $taxId) {
-                DB::insert(
-                    'INSERT INTO product_tax (id_producto, id_tax, created_at, updated_at) VALUES (?, ?, NOW(), NOW())',
-                    [$idProducto->id_producto, $taxId]
-                );
-            }
-        }
 
         // Redirigir a la lista de productos con un mensaje de éxito
         Flash::success('Producto creado correctamente.');
@@ -224,18 +223,10 @@ class ProductoController extends AppBaseController
         // Obtener los impuestos activos
         $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
 
-        // Obtener los impuestos seleccionados para este producto
-        $selectedTaxes = DB::select(
-            'SELECT id_tax FROM product_tax WHERE id_producto = ?',
-            [$id]
-        );
-        $selectedTaxes = array_column($selectedTaxes, 'id_tax');
-
         return view('productos.edit')
             ->with('productos', $productos)
             ->with('marcas', $marcas)
-            ->with('taxes', $taxes)
-            ->with('selectedTaxes', $selectedTaxes);
+            ->with('taxes', $taxes);
     }
 
     public function update(Request $request, $id) 
@@ -256,6 +247,7 @@ class ProductoController extends AppBaseController
             'descripcion' => 'required',
             'precio' => 'required',
             'id_marca' => 'required|exists:marcas,id_marca',
+            'id_tax' => 'nullable|exists:taxes,id_tax',
             'controlar_stock' => 'required|boolean',
             'imagen_producto' => 'nullable|image|max:2048', // Validación para la imagen (opcional)
         ], [
@@ -263,6 +255,7 @@ class ProductoController extends AppBaseController
             'precio.required' => 'El precio es obligatorio.',
             'id_marca.required' => 'La marca es obligatoria.',
             'id_marca.exists' => 'La marca seleccionada no existe.',
+            'id_tax.exists' => 'El impuesto seleccionado no existe.',
             'controlar_stock.required' => 'Debe indicar si el producto controla stock.',
             'controlar_stock.boolean' => 'El valor de controlar stock no es válido.',
             'imagen_producto.image' => 'El archivo debe ser una imagen.',
@@ -314,32 +307,22 @@ class ProductoController extends AppBaseController
         $controlarStock = $controlarStock ? 1 : 0;
         $input['controlar_stock'] = $controlarStock;
 
+        // Manejar id_tax: si está vacío o es '', convertir a null
+        $idTax = !empty($input['id_tax']) ? $input['id_tax'] : null;
+
         // Actualizar el producto en la base de datos
         DB::update(
-            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
+            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, id_tax = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
             [
                 $input['descripcion'],
                 $precio,
                 $input['id_marca'],
+                $idTax,
                 $controlarStock,
                 $input['imagen_producto'],
                 $id
             ]
         );
-
-        // Sincronizar impuestos
-        // Primero eliminar todas las relaciones existentes
-        DB::delete('DELETE FROM product_tax WHERE id_producto = ?', [$id]);
-
-        // Luego agregar las nuevas relaciones si se seleccionaron
-        if (isset($input['taxes']) && is_array($input['taxes'])) {
-            foreach ($input['taxes'] as $taxId) {
-                DB::insert(
-                    'INSERT INTO product_tax (id_producto, id_tax, created_at, updated_at) VALUES (?, ?, NOW(), NOW())',
-                    [$id, $taxId]
-                );
-            }
-        }
 
         // Redirigir a la lista de productos con un mensaje de éxito
         Flash::success('Producto actualizado correctamente.');

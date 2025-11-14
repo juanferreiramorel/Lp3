@@ -16,24 +16,22 @@ class Product extends Model
         'descripcion',
         'precio',
         'id_marca',
-        'imagen_producto'
+        'id_tax',
+        'imagen_producto',
+        'controlar_stock'
     ];
 
     protected $casts = [
-        'precio' => 'decimal:2'
+        'precio' => 'decimal:2',
+        'controlar_stock' => 'boolean'
     ];
 
     /**
-     * Relación many-to-many con impuestos
+     * Relación con impuesto (un producto tiene un solo impuesto)
      */
-    public function taxes()
+    public function tax()
     {
-        return $this->belongsToMany(
-            Tax::class,
-            'product_tax',
-            'id_producto',
-            'id_tax'
-        );
+        return $this->belongsTo(Tax::class, 'id_tax', 'id_tax');
     }
 
     /**
@@ -42,5 +40,42 @@ class Product extends Model
     public function marca()
     {
         return $this->belongsTo(Marca::class, 'id_marca', 'id_marca');
+    }
+
+    /**
+     * Calcula el precio sin impuesto (precio base)
+     * El precio almacenado incluye IVA, según sistema paraguayo
+     * Fórmula: Precio sin IVA = Precio / (1 + porcentaje/100)
+     *
+     * @return float
+     */
+    public function getPrecioSinImpuesto()
+    {
+        if (!$this->tax || $this->tax->porcentaje == 0) {
+            return $this->precio;
+        }
+
+        return $this->precio / (1 + ($this->tax->porcentaje / 100));
+    }
+
+    /**
+     * Calcula el monto del impuesto
+     * Fórmula: Monto IVA = Precio - Precio sin IVA
+     *
+     * @return float
+     */
+    public function getMontoImpuesto()
+    {
+        return $this->precio - $this->getPrecioSinImpuesto();
+    }
+
+    /**
+     * Obtiene el nombre del impuesto aplicado
+     *
+     * @return string
+     */
+    public function getNombreImpuesto()
+    {
+        return $this->tax ? $this->tax->nombre : 'Sin impuesto';
     }
 }
