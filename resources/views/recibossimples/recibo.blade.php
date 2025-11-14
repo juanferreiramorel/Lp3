@@ -85,8 +85,8 @@
         }
 
         .company-logo img {
-            max-width: 120px;
-            max-height: 120px;
+            max-width: 200px;
+            max-height: 200px;
             object-fit: contain;
         }
 
@@ -494,9 +494,6 @@
             <div class="company-info">
                 <h1>RECIBO DE PAGO N° {{ str_pad($recibo->id_recibo, 8, '0', STR_PAD_LEFT) }}</h1>
                 <h4><strong>{{ $recibo->empresa_nombre ?? $recibo->empresa_razon_social ?? 'Empresa' }}</strong></h4>
-                @if($recibo->empresa_ruc)
-                <p><strong>RUC:</strong> {{ $recibo->empresa_ruc }}</p>
-                @endif
                 @if($recibo->empresa_direccion)
                 <p>{{ $recibo->empresa_direccion }}</p>
                 @endif

@@ -37,7 +37,7 @@
             align-items: flex-start;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #e40101;
+            border-bottom: 3px solid #012442;
         }
 
         .company-info {
@@ -45,7 +45,7 @@
         }
 
         .company-info h1 {
-            color: #e40101;
+            color: #012442;
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 10px;
@@ -88,13 +88,13 @@
             font-size: 16px;
             margin-bottom: 10px;
             font-weight: bold;
-            border-bottom: 2px solid #e40101;
+            border-bottom: 2px solid #012442;
             padding-bottom: 5px;
             display: inline-block;
         }
 
         .client-info h4 {
-            color: #e40101;
+            color: #012442;
             font-size: 18px;
             margin: 10px 0;
             font-weight: bold;
@@ -140,7 +140,7 @@
         .invoice-details tr:last-child td {
             border-bottom: none;
             font-weight: bold;
-            color: #e40101;
+            color: #012442;
             font-size: 16px;
         }
 
@@ -152,7 +152,7 @@
         }
 
         .items-table thead {
-            background: #e40101;
+            background: #012442;
             color: white;
         }
 
@@ -197,7 +197,7 @@
             background: #f9f9f9;
             padding: 20px;
             border-radius: 5px;
-            border: 2px solid #e40101;
+            border: 2px solid #012442;
             margin-bottom: 30px;
         }
 
@@ -230,7 +230,7 @@
         .total-section tr:last-child td {
             font-size: 18px;
             font-weight: bold;
-            color: #e40101;
+            color: #012442;
             padding-top: 15px;
         }
 
