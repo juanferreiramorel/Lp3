@@ -45,9 +45,9 @@
     {!! Form::label('logo', 'Logo:') !!}
     @if($empresa->logo)
         <div class="mt-2">
-            <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo {{ $empresa->nombre_comercial }}" style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
+            <img src="{{ asset('img/empresas/' . $empresa->logo) }}" alt="Logo {{ $empresa->nombre_comercial }}" style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
         </div>
-        <p class="text-muted mt-2"><small>Archivo: {{ basename($empresa->logo) }}</small></p>
+        <p class="text-muted mt-2"><small>Archivo: {{ $empresa->logo }}</small></p>
     @else
         <p>N/A</p>
     @endif

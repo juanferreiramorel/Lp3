@@ -36,8 +36,8 @@
 
     @if(isset($empresa) && $empresa->logo)
         <div class="mt-2">
-            <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo actual" style="max-width: 150px; max-height: 150px;">
-            <p class="text-muted"><small>Logo actual</small></p>
+            <p>Logo actual:</p>
+            <img src="{{ asset('img/empresas/' . $empresa->logo) }}" alt="Logo actual" style="max-width: 150px; max-height: 150px; display: block; margin: auto;">
         </div>
     @endif
 </div>
