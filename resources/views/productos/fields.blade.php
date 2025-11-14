@@ -79,9 +79,14 @@
 <div class="form-group col-sm-6">
     {!! Form::label('id_tax', 'Impuesto:') !!}
     @if(isset($taxes) && count($taxes) > 0)
-        {!! Form::select('id_tax', $taxes->pluck('nombre_con_porcentaje', 'id_tax')->prepend('Sin impuesto', ''), null, [
+        @php
+            $taxOptions = ['' => 'Sin impuesto'];
+            foreach($taxes as $tax) {
+                $taxOptions[$tax->id_tax] = $tax->nombre . ' (' . number_format($tax->porcentaje, 2) . '%)';
+            }
+        @endphp
+        {!! Form::select('id_tax', $taxOptions, null, [
             'class' => 'form-control',
-            'placeholder' => 'Seleccione un impuesto',
         ]) !!}
         <small class="form-text text-muted">
             Seleccione el impuesto que aplica a este producto (opcional)
