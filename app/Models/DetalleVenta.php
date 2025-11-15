@@ -62,10 +62,19 @@ class DetalleVenta extends Model
     }
 
     /**
-     * Calcula el subtotal sin impuesto (precio_sin_impuesto * cantidad)
+     * Calcula el subtotal sin impuesto (compatibilidad para registros antiguos y nuevos)
      */
     public function getSubtotalSinImpuestoAttribute()
     {
+        if (is_null($this->precio_sin_impuesto)) {
+            return 0;
+        }
+
+        // Desde la nueva logica se almacena la gravada total por detalle.
+        if ($this->cantidad > 1 && $this->precio_sin_impuesto > $this->precio) {
+            return $this->precio_sin_impuesto;
+        }
+
         return $this->precio_sin_impuesto * $this->cantidad;
     }
 

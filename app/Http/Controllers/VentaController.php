@@ -417,17 +417,19 @@ class VentaController extends AppBaseController
 
                     // Calcular subtotales por item
                     $subtotal_item = $precio_con_iva * $cantidad;
+                    $gravada_item = $precio_sin_impuesto * $cantidad;
+                    $impuesto_total_item = $monto_impuesto * $cantidad;
                     $subtotal += $subtotal_item;
 
                     // Acumular en los totales según tipo de impuesto
                     if ($porcentaje_impuesto == 0) {
-                        $total_exento += $subtotal_item;
+                        $total_exento += $gravada_item;
                     } elseif ($porcentaje_impuesto == 5) {
-                        $total_gravado_5 += $subtotal_item;
-                        $total_iva_5 += $monto_impuesto * $cantidad;
+                        $total_gravado_5 += $gravada_item;
+                        $total_iva_5 += $impuesto_total_item;
                     } elseif ($porcentaje_impuesto == 10) {
-                        $total_gravado_10 += $subtotal_item;
-                        $total_iva_10 += $monto_impuesto * $cantidad;
+                        $total_gravado_10 += $gravada_item;
+                        $total_iva_10 += $impuesto_total_item;
                     }
 
                     // insertar en detalle_ventas CON campos de impuesto
@@ -439,7 +441,7 @@ class VentaController extends AppBaseController
                             $cantidad,
                             $precio_con_iva,
                             $id_tax,
-                            $precio_sin_impuesto,
+                            $gravada_item,
                             $monto_impuesto
                         ]
                     );
@@ -698,16 +700,18 @@ class VentaController extends AppBaseController
 
                 // Calcular subtotal del item
                 $subtotal_item = $precio_con_iva * $cantidad;
+                $gravada_item = $precio_sin_impuesto * $cantidad;
+                $impuesto_total_item = $monto_impuesto * $cantidad;
 
                 // Acumular según tipo de impuesto
                 if ($porcentaje_impuesto == 0) {
-                    $total_exento += $subtotal_item;
+                    $total_exento += $gravada_item;
                 } elseif ($porcentaje_impuesto == 5) {
-                    $total_gravado_5 += $subtotal_item;
-                    $total_iva_5 += $monto_impuesto * $cantidad;
+                    $total_gravado_5 += $gravada_item;
+                    $total_iva_5 += $impuesto_total_item;
                 } elseif ($porcentaje_impuesto == 10) {
-                    $total_gravado_10 += $subtotal_item;
-                    $total_iva_10 += $monto_impuesto * $cantidad;
+                    $total_gravado_10 += $gravada_item;
+                    $total_iva_10 += $impuesto_total_item;
                 }
 
                 $total_general += $subtotal_item;
@@ -725,7 +729,7 @@ class VentaController extends AppBaseController
                             $cantidad,
                             $precio_con_iva,
                             $id_tax,
-                            $precio_sin_impuesto,
+                            $gravada_item,
                             $monto_impuesto,
                             $id,
                             $codigo
@@ -751,7 +755,7 @@ class VentaController extends AppBaseController
                             $cantidad,
                             $precio_con_iva,
                             $id_tax,
-                            $precio_sin_impuesto,
+                            $gravada_item,
                             $monto_impuesto
                         ]
                     );
