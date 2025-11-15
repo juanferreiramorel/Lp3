@@ -24,10 +24,8 @@ class AperturaCierreCajaController extends Controller
     {
         $input = $request->all();
 
-        // eliminar comas del monto apertura
-        $input['monto_apertura'] = str_replace(',', '', $input['monto_apertura']);
-        //validar si no posee monto apertura colocar 0
-        $input['monto_apertura'] = !empty($input['monto_apertura']) ? $input['monto_apertura'] : 0;
+        // normalizar monto de apertura quitando separadores de miles y usando punto como decimal
+        $input['monto_apertura'] = $this->normalizarMonto($input['monto_apertura']);
 
         // validar datos recibidos
         $validacion = Validator::make($input, [
@@ -69,10 +67,8 @@ class AperturaCierreCajaController extends Controller
     {
         $input = $request->all();
 
-        // eliminar comas del monto cierre
-        $input['monto_cierre'] = str_replace('.', '', $input['monto_cierre']);
-        //validar si no posee monto cierre colocar 0
-        $input['monto_cierre'] = !empty($input['monto_cierre']) ? $input['monto_cierre'] : 0;
+        // normalizar monto cierre eliminando separadores de miles y usando punto como decimal
+        $input['monto_cierre'] = $this->normalizarMonto($input['monto_cierre']);
 
         // validar que no exista montos sin cobrar en las ventas
         $ventas_sin_cobrar = DB::selectOne(
@@ -172,11 +168,48 @@ class AperturaCierreCajaController extends Controller
             ]
         );
 
+        // normalizar monto de apertura antes de enviarlo a la vista
+        $apertura->monto_apertura = $this->normalizarMonto($apertura->monto_apertura);
+
         // retornar datos en formato json
         return response()->json([
             'apertura' => $apertura,
             'total_ventas' => $total_ventas->total_cobro ?? 0,
             'success' => true
         ]);
+    }
+
+    /**
+     * Normaliza montos recibidos desde formularios con distintos formatos.
+     */
+    private function normalizarMonto($valor)
+    {
+        if (is_null($valor) || $valor === '') {
+            return 0;
+        }
+
+        if (is_numeric($valor)) {
+            return (float)$valor;
+        }
+
+        $valor = trim(str_replace(' ', '', $valor));
+
+        if (strpos($valor, ',') !== false) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+            return (float)$valor;
+        }
+
+        if (strpos($valor, '.') !== false) {
+            $decimales = strlen(substr(strrchr($valor, '.'), 1));
+
+            if ($decimales > 0 && $decimales <= 2) {
+                return (float)$valor;
+            }
+
+            return (float)str_replace('.', '', $valor);
+        }
+
+        return (float)$valor;
     }
 }

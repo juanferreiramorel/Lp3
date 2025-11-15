@@ -39,9 +39,114 @@
         }
 
         .contenido {
-            white-space: pre-wrap;
-            text-align: justify;
             margin-top: 20px;
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        .contenido h1 {
+            font-size: 28pt;
+            font-weight: bold;
+            margin-top: 16pt;
+            margin-bottom: 8pt;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        .contenido h2 {
+            font-size: 22pt;
+            font-weight: bold;
+            margin-top: 14pt;
+            margin-bottom: 7pt;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        .contenido h3 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        .contenido h4 {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-top: 10pt;
+            margin-bottom: 5pt;
+            color: #1a1a1a;
+        }
+
+        .contenido h5 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 8pt;
+            margin-bottom: 4pt;
+            color: #1a1a1a;
+        }
+
+        .contenido h6 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 6pt;
+            margin-bottom: 3pt;
+            color: #1a1a1a;
+        }
+
+        .contenido p {
+            margin-top: 0;
+            margin-bottom: 10pt;
+            text-align: justify;
+        }
+
+        .contenido ul,
+        .contenido ol {
+            padding-left: 1.5em;
+            margin-bottom: 10pt;
+        }
+
+        .contenido li {
+            margin-bottom: 5pt;
+        }
+
+        .contenido blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            margin: 16px 0;
+            font-style: italic;
+            color: #4b5563;
+        }
+
+        .contenido a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .contenido table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .contenido table,
+        .contenido th,
+        .contenido td {
+            border: 1px solid #000;
+        }
+
+        .contenido th,
+        .contenido td {
+            padding: 6px;
+            text-align: left;
+        }
+
+        .contenido img {
+            max-width: 100%;
+            height: auto;
         }
 
         .footer {
@@ -59,23 +164,8 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ $contrato->nombre_plantilla }}</h1>
-    </div>
 
-    <div class="info-contrato">
-        <p><strong>Cliente:</strong> {{ $contrato->clie_apellido }}, {{ $contrato->clie_nombre }}</p>
-        <p><strong>CI:</strong> {{ $contrato->clie_ci }}</p>
-        <p><strong>Fecha de Generación:</strong> {{ \Carbon\Carbon::parse($contrato->fecha_generacion)->format('d/m/Y H:i') }}</p>
-        @if ($contrato->observaciones)
-            <p><strong>Observaciones:</strong> {{ $contrato->observaciones }}</p>
-        @endif
-    </div>
+    <div class="contenido">{!! $contrato->contenido_generado !!}</div>
 
-    <div class="contenido">{{ $contrato->contenido_generado }}</div>
-
-    <div class="footer">
-        <p>Documento generado el {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
-    </div>
 </body>
 </html>

@@ -10,6 +10,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use RealRashid\SweetAlert\Facades\Alert;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -517,6 +519,47 @@ class PlantillaContratoController extends AppBaseController
         $nombreArchivo = 'Contrato_' . $contrato->clie_apellido . '_' . $contrato->clie_ci . '_' . date('YmdHis') . '.pdf';
 
         return $pdf->download($nombreArchivo);
+    }
+
+    /**
+     * Cargar archivos/imágenes desde CKEditor/CKFinder
+     */
+    public function subirArchivoEditor(Request $request)
+    {
+        if (!$request->hasFile('upload')) {
+            return response()->json([
+                'uploaded' => 0,
+                'error' => ['message' => 'No se ha enviado ningún archivo.']
+            ], 422);
+        }
+
+        $request->validate([
+            'upload' => 'required|image|mimes:jpg,jpeg,png,gif,webp,avif,svg|max:5120'
+        ]);
+
+        try {
+            $archivo = $request->file('upload');
+            $nombre = Str::uuid()->toString() . '.' . $archivo->getClientOriginalExtension();
+            $destino = public_path('uploads/ckeditor');
+
+            if (!File::exists($destino)) {
+                File::makeDirectory($destino, 0755, true);
+            }
+
+            $archivo->move($destino, $nombre);
+            $url = asset('uploads/ckeditor/' . $nombre);
+
+            return response()->json([
+                'uploaded' => 1,
+                'fileName' => $nombre,
+                'url' => $url
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'uploaded' => 0,
+                'error' => ['message' => 'No se pudo cargar el archivo: ' . $e->getMessage()]
+            ], 500);
+        }
     }
 
     /**

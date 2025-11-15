@@ -63,10 +63,11 @@
 <!-- Contenido Plantilla Field -->
 <div class="form-group col-sm-12">
     {!! Form::label('contenido_plantilla', 'Contenido de la Plantilla:') !!}
-    {!! Form::textarea('contenido_plantilla', null, ['class' => 'form-control', 'id' => 'contenido_plantilla', 'rows' => 20, 'required', 'placeholder' => 'Escriba aquí el contenido de la plantilla usando las palabras clave arriba...']) !!}
-    <small class="form-text text-muted">
+    {!! Form::textarea('contenido_plantilla', null, ['class' => 'form-control', 'id' => 'contenido_plantilla']) !!}
+
+    <small class="form-text text-muted mt-2">
         <i class="fas fa-question-circle"></i>
-        Use las palabras clave entre guiones dobles (ej: --nombre_cliente--) para que sean reemplazadas automáticamente.
+        Use las palabras clave haciendo clic en ellas para que sean reemplazadas automáticamente.
     </small>
 </div>
 
@@ -86,52 +87,84 @@
         transform: scale(1.05);
     }
 
-    #contenido_plantilla {
-        font-family: 'Courier New', monospace;
-        font-size: 14px;
+    .ck-editor__editable {
+        min-height: 400px;
+        max-height: 600px;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 12pt !important;
+        line-height: 1.6 !important;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
     }
 </style>
 
 <script>
+    let editorInstance;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!window.CKEDITOR_CONFIG || !window.CKEDITOR_CONTRATO) {
+            console.error('CKEditor no está disponible en window.CKEDITOR_CONFIG');
+            return;
+        }
+
+        const editorElement = document.querySelector('#contenido_plantilla');
+        if (!editorElement) {
+            return;
+        }
+
+        const { ClassicEditor } = window.CKEDITOR_CONFIG;
+
+        const editorConfig = window.CKEDITOR_CONTRATO.buildConfig({
+            simpleUpload: {
+                uploadUrl: "{{ route('plantillas_contratos.upload') }}",
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            }
+        });
+
+        ClassicEditor
+            .create(editorElement, editorConfig)
+            .then(editor => {
+                editorInstance = editor;
+                console.log('✅ CKEditor 5 local inicializado correctamente con carga de imágenes');
+                mostrarNotificacion('Editor profesional listo para usar');
+            })
+            .catch(error => {
+                console.error('❌ Error al inicializar CKEditor:', error);
+                alert('Error al cargar el editor: ' + error.message);
+            });
+    });
+
+    // Función para insertar palabras clave
     function insertarPalabra(palabra) {
-        const textarea = document.getElementById('contenido_plantilla');
-        const inicio = textarea.selectionStart;
-        const fin = textarea.selectionEnd;
-        const texto = textarea.value;
-
-        // Insertar la palabra en la posición del cursor
-        const nuevoTexto = texto.substring(0, inicio) + palabra + texto.substring(fin);
-        textarea.value = nuevoTexto;
-
-        // Posicionar el cursor después de la palabra insertada
-        const nuevaPosicion = inicio + palabra.length;
-        textarea.setSelectionRange(nuevaPosicion, nuevaPosicion);
-        textarea.focus();
-
-        // Feedback visual
-        const copiado = document.createElement('div');
-        copiado.className = 'alert alert-success position-fixed';
-        copiado.style.cssText = 'top: 20px; right: 20px; z-index: 9999; animation: fadeIn 0.3s;';
-        copiado.innerHTML = '<i class="fas fa-check"></i> Palabra clave insertada: <code>' + palabra + '</code>';
-        document.body.appendChild(copiado);
-
-        setTimeout(() => {
-            copiado.style.animation = 'fadeOut 0.3s';
-            setTimeout(() => copiado.remove(), 300);
-        }, 2000);
+        if (editorInstance) {
+            const viewFragment = editorInstance.data.processor.toView(palabra);
+            const modelFragment = editorInstance.data.toModel(viewFragment);
+            editorInstance.model.insertContent(modelFragment);
+            editorInstance.editing.view.focus();
+            mostrarNotificacion('Palabra clave insertada: ' + palabra);
+        }
     }
 
-    // Agregar animaciones CSS
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
-        }
-    `;
-    document.head.appendChild(style);
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje) {
+        const notificacion = document.createElement('div');
+        notificacion.className = 'alert alert-success position-fixed';
+        notificacion.style.cssText = 'top: 20px; right: 20px; z-index: 9999; animation: fadeIn 0.3s; max-width: 350px;';
+        notificacion.innerHTML = '<i class="fas fa-check"></i> ' + mensaje;
+        document.body.appendChild(notificacion);
+
+        setTimeout(() => {
+            notificacion.style.animation = 'fadeOut 0.3s';
+            setTimeout(() => notificacion.remove(), 300);
+        }, 2500);
+    }
 </script>

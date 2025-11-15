@@ -69,6 +69,7 @@ Route::get('plantillas-contratos/contrato/{id}/editar', [App\Http\Controllers\Pl
 Route::put('plantillas-contratos/contrato/{id}/actualizar', [App\Http\Controllers\PlantillaContratoController::class, 'actualizarContrato'])->name('plantillas_contratos.actualizar_contrato');
 Route::delete('plantillas-contratos/contrato/{id}/eliminar', [App\Http\Controllers\PlantillaContratoController::class, 'eliminarContrato'])->name('plantillas_contratos.eliminar_contrato');
 Route::get('plantillas-contratos/contrato/{id}/pdf', [App\Http\Controllers\PlantillaContratoController::class, 'descargarPdf'])->name('plantillas_contratos.descargar_pdf');
+Route::post('plantillas-contratos/ckeditor/upload', [App\Http\Controllers\PlantillaContratoController::class, 'subirArchivoEditor'])->name('plantillas_contratos.upload');
 Route::resource('plantillas-contratos', App\Http\Controllers\PlantillaContratoController::class)->names('plantillas_contratos');
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);

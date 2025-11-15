@@ -68,7 +68,15 @@
                 <h5 class="mb-3"><i class="fas fa-file-alt"></i> Contenido de la Plantilla</h5>
 
                 <div class="card bg-light">
-                    <div class="card-body" style="white-space: pre-wrap; font-family: 'Courier New', monospace;">{{ $plantilla->contenido_plantilla }}</div>
+                    <div class="card-body">
+                        <!-- Contenido oculto -->
+                        <textarea id="contenido_plantilla_vista" style="display:none;">{{ $plantilla->contenido_plantilla }}</textarea>
+
+                        <!-- Editor de solo lectura -->
+                        <div id="editor-vista-plantilla-wrapper" class="contrato-lectura">
+                            <div id="editor-vista-plantilla"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr>
@@ -93,4 +101,169 @@
             </div>
         </div>
     </div>
+
+        @push('page_css')
+        <style>
+            .contrato-lectura .ck.ck-editor {
+                background: white;
+                border-radius: 6px;
+                border: 1px solid #dee2e6;
+            }
+
+            .contrato-lectura .ck.ck-toolbar {
+                display: none !important;
+            }
+
+            .contrato-lectura .ck-editor__main > .ck-editor__editable {
+                border: none !important;
+                font-family: 'Times New Roman', Times, serif !important;
+                font-size: 12pt !important;
+                min-height: 400px !important;
+                max-height: 600px !important;
+                overflow-y: auto !important;
+                padding: 2cm 1.5cm !important;
+                line-height: 1.6 !important;
+                background: white !important;
+                color: #000000 !important;
+            }
+
+            .contrato-lectura .ck-content h1 {
+                font-size: 28pt !important;
+                font-weight: bold;
+                margin-top: 16pt;
+                margin-bottom: 8pt;
+                color: #1a1a1a;
+                line-height: 1.3;
+            }
+
+            .contrato-lectura .ck-content h2 {
+                font-size: 22pt !important;
+                font-weight: bold;
+                margin-top: 14pt;
+                margin-bottom: 7pt;
+                color: #1a1a1a;
+                line-height: 1.3;
+            }
+
+            .contrato-lectura .ck-content h3 {
+                font-size: 18pt !important;
+                font-weight: bold;
+                margin-top: 12pt;
+                margin-bottom: 6pt;
+                color: #1a1a1a;
+                line-height: 1.3;
+            }
+
+            .contrato-lectura .ck-content h4 {
+                font-size: 16pt !important;
+                font-weight: bold;
+                margin-top: 10pt;
+                margin-bottom: 5pt;
+                color: #1a1a1a;
+            }
+
+            .contrato-lectura .ck-content h5 {
+                font-size: 14pt !important;
+                font-weight: bold;
+                margin-top: 8pt;
+                margin-bottom: 4pt;
+                color: #1a1a1a;
+            }
+
+            .contrato-lectura .ck-content h6 {
+                font-size: 12pt !important;
+                font-weight: bold;
+                margin-top: 6pt;
+                margin-bottom: 3pt;
+                color: #1a1a1a;
+            }
+
+            .contrato-lectura .ck-content p {
+                margin-top: 0;
+                margin-bottom: 10pt;
+                text-align: justify;
+            }
+
+            .contrato-lectura .ck-content ul,
+            .contrato-lectura .ck-content ol {
+                padding-left: 1.5em;
+                margin-bottom: 10pt;
+            }
+
+            .contrato-lectura .ck-content li {
+                margin-bottom: 5pt;
+            }
+
+            .contrato-lectura .ck-content blockquote {
+                border-left: 4px solid #3b82f6;
+                padding-left: 16px;
+                margin: 16px 0;
+                font-style: italic;
+                color: #4b5563;
+            }
+
+            .contrato-lectura .ck-content a {
+                color: #2563eb;
+                text-decoration: underline;
+            }
+
+            .contrato-lectura .ck-content a:hover {
+                color: #1d4ed8;
+            }
+
+            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar {
+                width: 12px;
+            }
+
+            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+
+            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar-thumb {
+                background: #94a3b8;
+                border-radius: 6px;
+            }
+        </style>
+    @endpush
+
+        @push('page_scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!window.CKEDITOR_CONFIG || !window.CKEDITOR_CONTRATO) {
+                    console.error('CKEditor no está disponible en show');
+                    return;
+                }
+
+                const editorElement = document.getElementById('editor-vista-plantilla');
+                const contenidoField = document.getElementById('contenido_plantilla_vista');
+
+                if (!editorElement || !contenidoField) {
+                    return;
+                }
+
+                const { ClassicEditor } = window.CKEDITOR_CONFIG;
+
+                const editorConfig = window.CKEDITOR_CONTRATO.buildConfig({
+                    toolbar: {
+                        items: []
+                    }
+                });
+
+                editorConfig.readOnly = true;
+
+                ClassicEditor
+                    .create(editorElement, editorConfig)
+                    .then(editor => {
+                        editor.setData(contenidoField.value || '');
+                        editor.enableReadOnlyMode('plantilla-show');
+                        console.log('✅ CKEditor 5 (solo lectura) inicializado en show');
+                    })
+                    .catch(error => {
+                        console.error('❌ Error al inicializar CKEditor en show:', error);
+                    });
+            });
+        </script>
+    @endpush
 @endsection
+
+

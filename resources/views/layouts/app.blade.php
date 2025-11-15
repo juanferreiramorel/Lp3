@@ -1,11 +1,8 @@
 <x-laravel-ui-adminlte::adminlte-layout>
-    <head>
-        <title>LP@2</title>
+    @push('third_party_stylesheets')
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/x-icon" href="">
-        <!-- librerias css select2 -->
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-        <!-- personalizar estilos de select 2  -->
         <style>
             .select2-container .select2-selection--single {
                 box-sizing: border-box;
@@ -44,7 +41,7 @@
                 width: 20px;
             }
         </style>
-    </head>
+    @endpush
     
     <body class="hold-transition sidebar-mini layout-fixed text-sm">
         @php
