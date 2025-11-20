@@ -38,15 +38,15 @@
                     <div class="hero-badges">
                         <span class="pill pill-dark">
                             <i class="fas fa-filter mr-1"></i>
-                            <strong>{{ $activeFiltersCount }}</strong> filtros activos
+                            <strong class="mr-1">{{ $activeFiltersCount }}</strong> filtros activos
                         </span>
                         <span class="pill pill-light">
                             <i class="fas fa-list mr-1"></i>
-                            <strong>{{ $statsSummary['pagina'] }}</strong> en pantalla
+                            <strong class="mr-1">{{ $statsSummary['pagina'] }}</strong> en pantalla
                         </span>
                         <span class="pill pill-outline">
                             <i class="fas fa-chart-bar mr-1"></i>
-                            <strong>{{ $perPage }}</strong> por página
+                            <strong class="mr-1">{{ $perPage }}</strong> por página
                         </span>
                     </div>
                 </div>
