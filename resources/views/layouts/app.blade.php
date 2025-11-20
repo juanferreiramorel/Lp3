@@ -40,6 +40,47 @@
                 right: 1px;
                 width: 20px;
             }
+
+            /* Sidebar brand adjustments */
+            .brand-link-elevated {
+                padding: 14px 18px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                background: radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.12), transparent 60%);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            }
+            .brand-logo-wrapper {
+                width: 42px;
+                height: 42px;
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.12);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4px;
+                box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+            }
+            .brand-image-rounded {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+            }
+            .brand-text-wrapper {
+                line-height: 1.1;
+            }
+            .brand-title {
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                font-size: 1rem;
+            }
+            .brand-title-primary { color: #5cd0ff; }
+            .brand-title-accent { color: #1dd3a8; }
+            .brand-tagline {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
         </style>
     @endpush
     
@@ -207,11 +248,33 @@
                     $(this).dropdown();
                 });
 
-                // Inicializar PushMenu manualmente si es necesario
-                $('[data-widget="pushmenu"]').off('click').on('click', function(e) {
-                    e.preventDefault();
-                    $('body').toggleClass('sidebar-collapse sidebar-open');
-                });
+                // Fallback para PushMenu si AdminLTE no est� disponible
+                (function initPushMenuFallback() {
+                    const pluginAvailable = $.fn && typeof $.fn.PushMenu === 'function';
+                    if (pluginAvailable) {
+                        return; // AdminLTE ya maneja el toggle mediante data-widget
+                    }
+
+                    const $body = $('body');
+                    const $toggles = $('[data-widget="pushmenu"]');
+
+                    const handleSidebarToggle = () => {
+                        const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+
+                        if (isMobile) {
+                            $body.toggleClass('sidebar-open');
+                            $body.removeClass('sidebar-collapse');
+                        } else {
+                            $body.toggleClass('sidebar-collapse');
+                            $body.removeClass('sidebar-open');
+                        }
+                    };
+
+                    $toggles.off('click').on('click', function(e) {
+                        e.preventDefault();
+                        handleSidebarToggle();
+                    });
+                })();
 
                 // Asegurar que el dropdown del usuario funcione
                 $('.user-menu .dropdown-toggle').off('click').on('click', function(e) {
