@@ -92,10 +92,23 @@ class AuditoriaController extends AppBaseController
                       JOIN users u ON s.user_id = u.id
                       JOIN sucursales sc USING(id_sucursal)";
 
-        // Contar total de registros
-        $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
-        $totalResult = DB::select($totalQuery);
-        $total = $totalResult[0]->total;
+        // Totales por operación (consideran filtros activos)
+        $statsQuery = "SELECT
+                            COUNT(*) AS total,
+                            SUM(CASE WHEN s.operation = 'AGREGA' THEN 1 ELSE 0 END) AS agrega,
+                            SUM(CASE WHEN s.operation = 'MODIFICA' THEN 1 ELSE 0 END) AS modifica,
+                            SUM(CASE WHEN s.operation = 'ELIMINA' THEN 1 ELSE 0 END) AS elimina
+                       {$queryBase} {$where}";
+        $statsRow = DB::selectOne($statsQuery);
+        $statsTotals = [
+            'total' => (int) ($statsRow->total ?? 0),
+            'agrega' => (int) ($statsRow->agrega ?? 0),
+            'modifica' => (int) ($statsRow->modifica ?? 0),
+            'elimina' => (int) ($statsRow->elimina ?? 0),
+        ];
+
+        // Contar total (para la paginación) usando el resultado anterior
+        $total = $statsTotals['total'];
 
         // Paginación
         $page = $request->input('page', 1);
@@ -150,6 +163,6 @@ class AuditoriaController extends AppBaseController
             ->orderBy('table_name')
             ->pluck('table_name', 'table_name');
 
-        return view('auditoria.index', compact('auditoria', 'usuarios', 'sucursales', 'operaciones', 'tablas'));
+        return view('auditoria.index', compact('auditoria', 'usuarios', 'sucursales', 'operaciones', 'tablas', 'statsTotals'));
     }
 }
