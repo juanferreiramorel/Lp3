@@ -1,9 +1,17 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{{ route('home') }}" class="brand-link">
-        <img src="{{ asset('utils/logotaperp.png') }}"
-             alt="AdminLTE Logo"
-             class="brand-image img-circle elevation-3">
-        <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
+    <a href="{{ route('home') }}" class="brand-link brand-link-elevated d-flex align-items-center">
+        <span class="mr-2">
+            <img src="{{ asset('img/mintapererp.svg') }}"
+                 alt="{{ config('app.name') }} logo"
+                 class="brand-image brand-image-rounded">
+        </span>
+        <span class="brand-text-wrapper">
+            <span class="brand-title d-block">
+                <span class="brand-title-primary">TAP</span>
+                <span class="brand-title-accent">ERP</span>
+            </span>
+            <small class="brand-tagline">Gestión integrada</small>
+        </span>
     </a>
 
     <div class="sidebar">
