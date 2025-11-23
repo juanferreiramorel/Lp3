@@ -1,0 +1,151 @@
+/* ===== NAVBAR MODERNO - TEMA OSCURO ===== */
+/* Sobrescribe los estilos del navbar para que coincida con el sidebar */
+
+.main-header.navbar {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(92, 208, 255, 0.15), transparent 50%),
+        radial-gradient(circle at 85% 10%, rgba(29, 211, 168, 0.12), transparent 45%),
+        linear-gradient(180deg, #1a1d29 0%, #252a3d 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.main-header.navbar::after {
+    background: radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.06), transparent 60%) !important;
+    mix-blend-mode: overlay !important;
+}
+
+/* Botón hamburguesa */
+.main-header .nav-link[data-widget="pushmenu"] {
+    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
+    color: #0f172a !important;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 15px rgba(92, 208, 255, 0.3) !important;
+}
+
+/* Buscador */
+.form-control-navbar {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f4f7ff !important;
+}
+
+.form-control-navbar:focus {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-color: #5cd0ff !important;
+}
+
+.form-control-navbar::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.btn-navbar {
+    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
+    color: #0f172a !important;
+}
+
+/* Items del navbar derecho */
+.navbar-nav.ml-auto .nav-item .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar-nav.ml-auto .nav-item .nav-link:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #5cd0ff !important;
+    border-color: rgba(92, 208, 255, 0.3) !important;
+}
+
+/* Botón de ayuda */
+.navbar-nav .nav-item .btn-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar-nav .nav-item .btn-link:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #5cd0ff !important;
+}
+
+/* Texto del navbar */
+.navbar-text {
+    color: #f4f7ff !important;
+}
+
+/* Avatar de usuario - Moderno y lindo */
+.user-menu .nav-link {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+.user-menu .nav-link:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(92, 208, 255, 0.4) !important;
+}
+
+.user-avatar {
+    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(92, 208, 255, 0.3) !important;
+}
+
+.user-avatar-img {
+    background: linear-gradient(135deg, #1a1d29 0%, #252a3d 100%) !important;
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.user-status-badge {
+    background: #1dd3a8 !important;
+    border: 2px solid #1a1d29 !important;
+    box-shadow: 0 0 8px rgba(29, 211, 168, 0.6) !important;
+}
+
+/* Dropdown del usuario */
+.user-menu .dropdown-menu {
+    background: linear-gradient(180deg, #1a1d29 0%, #252a3d 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.user-menu .user-header {
+    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
+}
+
+.user-menu .user-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), transparent 60%);
+    pointer-events: none;
+}
+
+.user-avatar-img-lg {
+    background: linear-gradient(135deg, #1a1d29 0%, #252a3d 100%) !important;
+    border: 3px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.user-menu .user-header p {
+    color: #0f172a !important;
+}
+
+.user-menu .user-header small {
+    color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.user-menu .user-footer {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.user-menu .user-footer .btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+}
+
+.user-menu .user-footer .btn:hover {
+    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
+    color: #0f172a !important;
+}

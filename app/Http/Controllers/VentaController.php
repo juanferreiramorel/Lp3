@@ -643,17 +643,24 @@ class VentaController extends AppBaseController
                 $id
             ]);
 
+            $detallesExistentes = DB::select('SELECT * FROM detalle_ventas WHERE id_venta = ?', [$id]);
+            $detallesPorProducto = [];
+            foreach ($detallesExistentes as $detalle) {
+                $detallesPorProducto[(int)$detalle->id_producto] = $detalle;
+            }
+
             $codigos = array_map('intval', $input['codigo'] ?? []);
+            $productosIds = array_unique(array_merge(array_keys($detallesPorProducto), $codigos));
 
             // Obtener información de productos incluyendo tax
             $productosInfo = [];
-            if (!empty($codigos)) {
+            if (!empty($productosIds)) {
                 $productosData = DB::select(
                     'SELECT p.id_producto, p.controlar_stock, p.id_tax, t.porcentaje
                     FROM productos p
                     LEFT JOIN taxes t ON p.id_tax = t.id_tax
                     WHERE p.id_producto = ANY(?)',
-                    ['{' . implode(',', $codigos) . '}']
+                    ['{' . implode(',', $productosIds) . '}']
                 );
                 foreach ($productosData as $prod) {
                     $productosInfo[(int)$prod->id_producto] = $prod;
@@ -663,6 +670,26 @@ class VentaController extends AppBaseController
             $productosControl = [];
             foreach ($productosInfo as $prodId => $prodData) {
                 $productosControl[$prodId] = (bool)$prodData->controlar_stock;
+            }
+
+            // Eliminar detalles que ya no vienen en la solicitud y reponer stock
+            if (!empty($detallesPorProducto)) {
+                $codigosSet = array_flip($codigos);
+                foreach ($detallesPorProducto as $prodId => $detalle) {
+                    if (!array_key_exists($prodId, $codigosSet)) {
+                        $controlarStock = $productosControl[$prodId] ?? true;
+                        if ($controlarStock) {
+                            DB::update('UPDATE stocks SET cantidad = cantidad + ? WHERE id_producto = ? AND id_sucursal = ?', [
+                                $detalle->cantidad,
+                                $prodId,
+                                $ventas->id_sucursal
+                            ]);
+                        }
+
+                        DB::delete('DELETE FROM detalle_ventas WHERE id_venta = ? AND id_producto = ?', [$id, $prodId]);
+                        unset($detallesPorProducto[$prodId]);
+                    }
+                }
             }
 
             // Variables para acumular totales de impuestos
@@ -675,9 +702,10 @@ class VentaController extends AppBaseController
 
             // Actualizar los detalles de venta
             foreach ($input['codigo'] as $key => $codigo) {
-                // quitar separador de miles
+                // quitar separador de miles y normalizar decimales
                 $precio_con_iva = str_replace('.', '', $input['precio'][$key]);
-                $cantidad = $input['cantidad'][$key];
+                $precio_con_iva = (float) str_replace(',', '.', $precio_con_iva);
+                $cantidad = (float) str_replace(',', '.', $input['cantidad'][$key]);
 
                 // Validar que el producto tenga impuesto asignado
                 $productoInfo = $productosInfo[(int) $codigo] ?? null;
@@ -717,7 +745,7 @@ class VentaController extends AppBaseController
                 $total_general += $subtotal_item;
 
                 // obtener detalle de venta si existe segun producto recibido
-                $detalle = DB::selectOne('SELECT * FROM detalle_ventas WHERE id_venta = ? AND id_producto = ?', [$id, $codigo]);
+                $detalle = $detallesPorProducto[(int)$codigo] ?? null;
 
                 $controlarStock = $productosControl[(int) $codigo] ?? true;
 
@@ -745,6 +773,8 @@ class VentaController extends AppBaseController
                             $ventas->id_sucursal
                         ]);
                     }
+
+                    $detallesPorProducto[(int)$codigo]->cantidad = $cantidad;
                 } else {
                     // Si no existe insertar nuevo detalle
                     DB::insert(
@@ -768,6 +798,11 @@ class VentaController extends AppBaseController
                             $ventas->id_sucursal
                         ]);
                     }
+
+                    $nuevoDetalle = new \stdClass();
+                    $nuevoDetalle->id_producto = (int)$codigo;
+                    $nuevoDetalle->cantidad = $cantidad;
+                    $detallesPorProducto[(int)$codigo] = $nuevoDetalle;
                 }
             }
 

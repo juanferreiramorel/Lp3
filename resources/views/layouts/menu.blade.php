@@ -58,7 +58,7 @@
 {{-- Ordenes De Compra --}}
 @can('ordencompra index')
 <li class="nav-item">
-    <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordenesdecompra*') ? 'active' : '' }}">
+    <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordencompra*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-file-signature"></i>
         <p>Ordenes De Compra</p>
     </a>
