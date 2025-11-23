@@ -127,8 +127,6 @@
     </section>
 
     <div class="content px-3 auditoria-shell">
-        @include('sweetalert::alert')
-
         @includeIf('auditoria.filtros', [
             'usuarios' => $usuarios,
             'sucursales' => $sucursales,

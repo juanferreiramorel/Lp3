@@ -250,7 +250,7 @@ class OrdenCompraController extends AppBaseController
         );
 
         if (!$ordenCompra) {
-            Alert::error('Error', 'Orden de Compra no encontrada');
+            Alert::error('Error', 'Orden de Compra no encontrada.');
             return redirect()->route('ordencompra.index');
         }
 
@@ -276,7 +276,7 @@ class OrdenCompraController extends AppBaseController
         );
 
         if (!$ordenCompra) {
-            Alert::error('Error', 'Orden de Compra no encontrada');
+            Alert::error('Error', 'Orden de Compra no encontrada.');
             return redirect()->route('ordencompra.index');
         }
 
@@ -445,21 +445,21 @@ class OrdenCompraController extends AppBaseController
         );
 
         if (!$ordenCompra) {
-            Alert::error('Error', 'Orden de Compra no encontrada');
+            Alert::error('Error', 'Orden de Compra no encontrada.');
             return redirect()->route('ordencompra.index');
         }
 
         // Validar si puede ser anulada
         if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA'])) {
-            Alert::warning('Advertencia', 'No se puede anular una orden que está ' . $ordenCompra->estado);
+            Alert::error('Error', 'No se puede anular una orden que está ' . $ordenCompra->estado . '.');
             return redirect()->route('ordencompra.index');
         }
 
         try {
             DB::update('UPDATE ordenes_compra SET estado = ? WHERE id_orden_compra = ?', ['CANCELADA', $id]);
-            Alert::success('Éxito', 'Orden de Compra anulada correctamente');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'Error al anular la Orden de Compra: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect()->route('ordencompra.index');

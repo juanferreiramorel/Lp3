@@ -18,8 +18,6 @@
 
     <div class="content px-3">
 
-        @include('sweetalert::alert')
-
         <div class="row">
             <div class="col-md-8">
                 <div class="card">

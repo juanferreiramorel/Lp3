@@ -20,7 +20,6 @@
 
 
     <div class="content px-3">
-       @include('sweetalert::alert')
 
         @includeIf('ordencompra.filtros', [
             'proveedores' => $proveedores,

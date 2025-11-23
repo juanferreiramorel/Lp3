@@ -26,8 +26,6 @@
     </section>
 
     <div class="content px-3">
-        @include('sweetalert::alert')
-
         <div class="card">
             <div class="card-body">
                 <div class="row">

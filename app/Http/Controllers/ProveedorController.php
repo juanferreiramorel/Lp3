@@ -184,15 +184,15 @@ class ProveedorController extends AppBaseController
     {
         $proveedor = DB::selectOne('SELECT * FROM proveedores WHERE id_proveedor = ?', [$id]);
         if(empty($proveedor)){
-            Alert::toast('Proveedor no encontrado', 'error');
+            Alert::error('Error', 'Proveedor no encontrado.');
             return redirect()->route('proveedores.index');
         }
 
         try {
             DB::delete('DELETE FROM proveedores WHERE id_proveedor = ?', [$id]);
-            Alert::toast('El proveedor eliminado con exito', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar este proveedor porque está siendo utilizado en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect()->route('proveedores.index');

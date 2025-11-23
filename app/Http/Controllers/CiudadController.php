@@ -144,9 +144,7 @@ class CiudadController extends AppBaseController
             ]
         );
         // Redirigir a la lista de ciudades con un mensaje de éxito
-        // Flash::success('Ciudad creada con éxito.');
-        // Utilizar SweetAlert para mostrar el mensaje de éxito
-        Alert::alert('Exito', 'Ciudad creada con éxito.', 'success');
+        Alert::success('Éxito', 'Ciudad creada correctamente.');
 
         return redirect(route('ciudades.index'));
     }
@@ -157,9 +155,7 @@ class CiudadController extends AppBaseController
         $ciudad = DB::selectOne('SELECT * FROM ciudades WHERE id_ciudad = ?', [$id]);
 
         if(empty($ciudad)) {
-            // Flash::error('Ciudad no encontrada.');
-            // Utilizar SweetAlert para mostrar el mensaje de error
-            Alert::alert('Error', 'Ciudad no encontrada.', 'error');
+            Alert::error('Error', 'Ciudad no encontrada.');
             return redirect(route('ciudades.index'));
         }
 
@@ -178,9 +174,7 @@ class CiudadController extends AppBaseController
 
         // Si la ciudad no existe, redirigir con un mensaje de error
         if(empty($ciudad)) {
-            // Flash::error('Ciudad no encontrada.');
-            // Utilizar SweetAlert para mostrar el mensaje de error
-            Alert::alert('Error', 'Ciudad no encontrada.', 'error');
+            Alert::error('Error', 'Ciudad no encontrada.');
             return redirect(route('ciudades.index'));
         }
 
@@ -221,9 +215,7 @@ class CiudadController extends AppBaseController
             ]
         );
         // Redirigir a la lista de ciudades con un mensaje de éxito
-        // Flash::success('Ciudad actualizada con éxito.');
-        // Utilizar SweetAlert para mostrar el mensaje de éxito
-        Alert::alert('Exito', 'Ciudad actualizada con éxito.', 'success');
+        Alert::success('Éxito', 'Ciudad actualizada correctamente.');
 
         return redirect(route('ciudades.index'));
     }
@@ -235,15 +227,15 @@ class CiudadController extends AppBaseController
 
         // Si la ciudad no existe, redirigir con un mensaje de error
         if(empty($ciudad)) {
-            Alert::alert('Error', 'Ciudad no encontrada.', 'error');
+            Alert::error('Error', 'Ciudad no encontrada.');
             return redirect(route('ciudades.index'));
         }
 
         try {
             DB::delete('DELETE FROM ciudades WHERE id_ciudad = ?', [$id]);
-            Alert::toast('Ciudad eliminada con éxito.', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar esta ciudad porque está siendo utilizada en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('ciudades.index'));

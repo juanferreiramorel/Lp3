@@ -166,12 +166,12 @@ class PermissionController extends AppBaseController
         return redirect()->route('permissions.index');
     }
 
-    public function destroy($id) 
+    public function destroy($id)
     {
         $permisos = DB::selectOne('SELECT * FROM permissions WHERE id = ?', [$id]);
         // Verificar si se encontró el permiso
         if (empty($permisos)) {
-            Alert::toast('Permiso no encontrado', 'error');
+            Alert::error('Error', 'Permiso no encontrado.');
             return redirect()->route('permissions.index');
         }
 
@@ -179,15 +179,12 @@ class PermissionController extends AppBaseController
         try{
             // Eliminar el permiso de la base de datos
             DB::delete('DELETE FROM permissions WHERE id = ?', [$id]);
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         }catch(\Exception $e){
             // Manejar el error si el permiso está asignado a algún rol
-            Alert::toast('Error al eliminar el permiso: ' . $e->getMessage(), 'error');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
             return redirect()->route('permissions.index');
         }
-        
-
-        // Mostrar un mensaje de confirmación
-        Alert::toast('Permiso eliminado correctamente', 'success');
 
         // Redirigir al listado de permisos
         return redirect()->route('permissions.index');

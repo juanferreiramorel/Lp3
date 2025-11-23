@@ -21,7 +21,6 @@
 
     <div class="content px-3">
         @include('adminlte-templates::common.errors')
-        @include('sweetalert::alert')
 
         @includeIf('recibossimples.filtros', [
             'clientes' => $clientes,

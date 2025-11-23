@@ -311,6 +311,7 @@ class ComprasController extends AppBaseController
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Error en compras.store: ' . $e->getMessage());
+            Alert::error('Error Al Agregar Compras: '. $e->getMessage());
             return back()->withErrors(['db' => $e->getMessage()])->withInput();
         }
     }
@@ -517,6 +518,7 @@ class ComprasController extends AppBaseController
         } catch (\Throwable $e) {
             DB::RollBack();
             Log::error('Error en compras.update: ' . $e->getMessage());
+            Alert::error('Error', 'Error al actualizar compra: ' . $e->getMessage());
             return back()->withErrors(['db' => $e->getMessage()])->withInput();
         }
     }
@@ -549,6 +551,7 @@ class ComprasController extends AppBaseController
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Error en compras.destroy: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo anular la compra: ' . $e->getMessage());
             return back()->withErrors(['db' => $e->getMessage()]);
         }
 

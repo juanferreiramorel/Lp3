@@ -202,18 +202,18 @@ class RoleController extends AppBaseController
     {
         $role = DB::selectOne('SELECT * FROM roles WHERE id = ?', [$id]);
         if(empty($role)) {
-            Alert::toast('Rol no encontrado', 'error');
-            return redirect()->route('roles.index');            
+            Alert::error('Error', 'Rol no encontrado.');
+            return redirect()->route('roles.index');
         }
 
         try {
             DB::delete('DELETE FROM roles WHERE id = ?', [$id]);
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::toast('No se puede eliminar el rol porque tiene permisos asignados', 'error');
-            return redirect()->route('roles.index'); 
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            return redirect()->route('roles.index');
         }
 
-        Alert::toast('Rol eliminado correctamente', 'success');
         return redirect()->route('roles.index');
     }
 }

@@ -52,7 +52,7 @@ return [
     | you set alert/toast by using the facade/helper functions.
     */
 
-    'neverLoadJS' => env('SWEET_ALERT_NEVER_LOAD_JS', false),
+    'neverLoadJS' => env('SWEET_ALERT_NEVER_LOAD_JS', true),
 
     /*
     |--------------------------------------------------------------------------

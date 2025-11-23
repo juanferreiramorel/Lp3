@@ -18,8 +18,6 @@
 </section>
 
 <div class="content px-3">
-  @include('sweetalert::alert')
-
   @includeIf('compras.filtros', [
       'proveedores' => $proveedores,
       'sucursales' => $sucursales,

@@ -22,8 +22,6 @@
 
     <div class="content px-3">
 
-        @include('sweetalert::alert')
-
         <div class="card mb-3">
             <div class="card-body">
                 <form method="GET" action="{{ route('timbrados.index') }}">

@@ -206,7 +206,7 @@ class UserController extends AppBaseController
         $users = DB::selectOne('SELECT * FROM users WHERE id = ?', [$id]);
 
         if(empty($users)){
-            Flash::error('Usuario no encontrado.');
+            Alert::error('Error', 'Usuario no encontrado.');
             return redirect(route('users.index'));
         }
 
@@ -230,14 +230,14 @@ class UserController extends AppBaseController
             ->with('sucursalesAsignadas', $sucursalesAsignadas);
     }
 
-    public function update(Request $request, $id) 
+    public function update(Request $request, $id)
     {
         $input = $request->all();
         // Obtener los datos del usuario
         $users = DB::selectOne('SELECT * FROM users WHERE id = ?', [$id]);
 
         if(empty($users)){
-            Flash::error('Usuario no encontrado.');
+            Alert::error('Error', 'Usuario no encontrado.');
             return redirect(route('users.index'));
         }
 
@@ -265,7 +265,7 @@ class UserController extends AppBaseController
         ]);
 
         if ($validacion->fails()) {
-            Flash::error('Error de validación.');
+            Alert::error('Error', 'Error de validación.');
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
@@ -358,28 +358,32 @@ class UserController extends AppBaseController
         return $sucursales->sortBy(fn ($descripcion) => Str::lower($descripcion));
     }
 
-    public function destroy($id) 
+    public function destroy($id)
     {
         $users = DB::selectOne('SELECT * FROM users WHERE id = ?', [$id]);
 
         if(empty($users)){
-            Flash::error('Usuario no encontrado.');
+            Alert::error('Error', 'Usuario no encontrado.');
             return redirect(route('users.index'));
         }
 
-        // validar si debe inactivar o activar segun lo recuperado en la consulta
-        $estado = $users->estado == false ? true : false;
+        try {
+            // validar si debe inactivar o activar segun lo recuperado en la consulta
+            $estado = $users->estado == false ? true : false;
 
-        DB::update('UPDATE users SET estado = ? WHERE id = ?', 
-        [
-            $estado, // valor boolean ya que el campo estado es de tipo booleano
-            $id
-        ]);
-        
-        // Generar mensaje segun estado del usuario
-        $mensaje = $estado == true ? 'Usuario activado exitosamente.' : 'Usuario inactivado exitosamente.';
+            DB::update('UPDATE users SET estado = ? WHERE id = ?',
+            [
+                $estado, // valor boolean ya que el campo estado es de tipo booleano
+                $id
+            ]);
 
-        Flash::success($mensaje);
+            // Generar mensaje segun estado del usuario
+            $mensaje = $estado == true ? 'Usuario activado exitosamente.' : 'Registro eliminado correctamente.';
+
+            Alert::success('Éxito', $mensaje);
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+        }
 
         return redirect(route('users.index'));
     }

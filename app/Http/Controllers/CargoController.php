@@ -194,16 +194,16 @@ class CargoController extends AppBaseController
         $cargo = DB::selectOne('select * from cargos where id_cargo = ?', [$id]);
         // Verificar si el cargo existe y no está vacío
         if (empty($cargo)) {
-            Alert::toast('El cargo no fue encontrado.', 'error');
+            Alert::error('Error', 'Cargo no encontrado.');
             return redirect()->route('cargos.index');
         }
 
         try {
             // Eliminar el cargo utilizando la función delete de la base de datos
             DB::delete('delete from cargos where id_cargo = ?', [$id]);
-            Alert::toast('El cargo fue eliminado con éxito.', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar este cargo porque está siendo utilizado en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('cargos.index'));

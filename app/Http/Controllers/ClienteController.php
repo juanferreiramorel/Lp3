@@ -351,17 +351,15 @@ class ClienteController extends AppBaseController
         $clientes = DB::selectOne('SELECT * FROM clientes WHERE id_cliente = ?', [$id]);
 
         if (empty($clientes)) {
-            // Flash::error('Cliente no encontrado.');
             Alert::error('Error', 'Cliente no encontrado.');
             return redirect(route('clientes.index'));
         }
-        # Utilizaremos try catch en clientes 
+        # Utilizaremos try catch en clientes
         try {
             DB::delete('DELETE FROM clientes WHERE id_cliente = ?', [$id]);
-            // Flash::success('Cliente eliminado correctamente.');
-            Alert::success('Exito', 'Cliente eliminado correctamente.');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) { // excepcion capturada desde la base de datos
-            Alert::error('Error', 'Error al eliminar el cliente. Por motivo: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('clientes.index'));

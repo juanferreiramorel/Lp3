@@ -13,8 +13,6 @@
 
     <div class="content px-3">
 
-        @include('sweetalert::alert')
-
         @include('adminlte-templates::common.errors')
 
         <div class="card">

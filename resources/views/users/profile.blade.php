@@ -17,7 +17,6 @@
     </section>
 
     <section class="content">
-        @include('sweetalert::alert')
 
         @include('adminlte-templates::common.errors')
         <div class="container-fluid">
@@ -98,7 +97,7 @@
                             <div class="tab-content">
                                 <div class="active tab-pane" id="cambiar-clave">
                                     <div class="card-body">
-                                        <p class="login-box-msg">Por favor introdusca su nueva contraseña</p>
+                                        <p class="login-box-msg">Por favor introduzca su nueva contraseña</p>
                                         <form action="{{ url('users/perfil/cambiar-password') }}" method="post">
                                             @csrf
                                             <div class="input-group mb-3">

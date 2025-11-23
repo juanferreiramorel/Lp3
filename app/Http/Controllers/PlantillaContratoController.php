@@ -301,6 +301,7 @@ class PlantillaContratoController extends AppBaseController
             );
 
             if (!$plantilla) {
+                Alert::error('Error', 'Plantilla no encontrada.');
                 return $this->sendError('Plantilla no encontrada');
             }
 
@@ -311,6 +312,7 @@ class PlantillaContratoController extends AppBaseController
             );
 
             if ($contratosGenerados && $contratosGenerados->total > 0) {
+                Alert::error('Error', 'No se puede eliminar la plantilla porque tiene contratos generados asociados. Puede desactivarla en su lugar.');
                 return $this->sendError('No se puede eliminar la plantilla porque tiene contratos generados asociados. Puede desactivarla en su lugar.');
             }
 
@@ -320,9 +322,11 @@ class PlantillaContratoController extends AppBaseController
 
             DB::commit();
 
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
             return $this->sendSuccess('Plantilla eliminada correctamente');
         } catch (\Exception $e) {
             DB::rollBack();
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
             return $this->sendError('Error al eliminar la plantilla: ' . $e->getMessage());
         }
     }

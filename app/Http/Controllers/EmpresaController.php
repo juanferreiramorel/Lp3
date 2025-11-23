@@ -135,6 +135,9 @@ class EmpresaController extends AppBaseController
             Log::info('Empresa insertada exitosamente', ['resultado' => $result]);
 
             DB::commit();
+
+            Alert::success('Éxito', 'Empresa creada correctamente.');
+            return redirect()->route('empresas.index');
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -149,12 +152,9 @@ class EmpresaController extends AppBaseController
                 unlink($this->path . $logoPath);
             }
 
-            Alert::error('Error al registrar empresa', $e->getMessage());
+            Alert::error('Error', 'No se pudo crear el registro: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
-
-        Alert::success('¡Éxito!', 'Empresa registrada exitosamente.');
-        return redirect()->route('empresas.index');
     }
 
     public function show($id)
@@ -162,7 +162,7 @@ class EmpresaController extends AppBaseController
         $empresa = DB::selectOne('SELECT * FROM empresas WHERE id_empresa = ?', [$id]);
 
         if (empty($empresa)) {
-            Alert::toast('Empresa no encontrada', 'error');
+            Alert::error('Error', 'Empresa no encontrada.');
             return redirect()->route('empresas.index');
         }
 
@@ -179,7 +179,7 @@ class EmpresaController extends AppBaseController
         $empresa = DB::selectOne('SELECT * FROM empresas WHERE id_empresa = ?', [$id]);
 
         if (empty($empresa)) {
-            Alert::toast('Empresa no encontrada', 'error');
+            Alert::error('Error', 'Empresa no encontrada.');
             return redirect()->route('empresas.index');
         }
 
@@ -271,6 +271,9 @@ class EmpresaController extends AppBaseController
             Log::info('Empresa actualizada exitosamente', ['id' => $id]);
 
             DB::commit();
+
+            Alert::success('Éxito', 'Empresa actualizada correctamente.');
+            return redirect()->route('empresas.index');
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -280,12 +283,9 @@ class EmpresaController extends AppBaseController
                 'archivo' => $e->getFile()
             ]);
 
-            Alert::error('Error al actualizar empresa', $e->getMessage());
+            Alert::error('Error', 'No se pudo actualizar el registro: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
-
-        Alert::success('¡Éxito!', 'Empresa actualizada exitosamente.');
-        return redirect()->route('empresas.index');
     }
 
     public function destroy($id)
@@ -293,7 +293,7 @@ class EmpresaController extends AppBaseController
         $empresa = DB::selectOne('SELECT * FROM empresas WHERE id_empresa = ?', [$id]);
 
         if (empty($empresa)) {
-            Alert::toast('Empresa no encontrada', 'error');
+            Alert::error('Error', 'Empresa no encontrada.');
             return redirect()->route('empresas.index');
         }
 
@@ -301,7 +301,7 @@ class EmpresaController extends AppBaseController
         $sucursales = DB::selectOne('SELECT COUNT(*) as total FROM sucursales WHERE id_empresa = ?', [$id]);
 
         if ($sucursales->total > 0) {
-            Alert::toast('No se puede eliminar la empresa porque tiene sucursales asociadas', 'error');
+            Alert::error('Error', 'No se puede eliminar la empresa porque tiene sucursales asociadas.');
             return redirect()->route('empresas.index');
         }
 
@@ -314,13 +314,11 @@ class EmpresaController extends AppBaseController
 
             DB::delete('DELETE FROM empresas WHERE id_empresa = ?', [$id]);
             DB::commit();
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
             DB::rollback();
-            Alert::toast('Error al eliminar la empresa: ' . $e->getMessage(), 'error');
-            return redirect()->route('empresas.index');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
-
-        Alert::toast('Empresa eliminada exitosamente.', 'success');
         return redirect()->route('empresas.index');
     }
 }

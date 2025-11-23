@@ -13,7 +13,6 @@
 
     <div class="px-3 content">
         @include('adminlte-templates::common.errors')
-        @include('sweetalert::alert')
 
         <div class="card">
             {!! Form::model($recibo, ['route' => ['recibossimples.update', $recibo->id_recibo], 'method' => 'patch']) !!}

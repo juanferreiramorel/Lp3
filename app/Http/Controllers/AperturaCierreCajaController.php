@@ -188,7 +188,7 @@ class AperturaCierreCajaController extends Controller
             return 0;
         }
 
-        if (is_numeric($valor)) {
+        if (is_numeric($valor) && strpos($valor, '.') === false && strpos($valor, ',') === false) {
             return (float)$valor;
         }
 
@@ -203,11 +203,12 @@ class AperturaCierreCajaController extends Controller
         if (strpos($valor, '.') !== false) {
             $decimales = strlen(substr(strrchr($valor, '.'), 1));
 
-            if ($decimales > 0 && $decimales <= 2) {
+            if ($decimales === 1 || $decimales === 2) {
                 return (float)$valor;
             }
 
-            return (float)str_replace('.', '', $valor);
+            $valor = str_replace('.', '', $valor);
+            return (float)$valor;
         }
 
         return (float)$valor;

@@ -615,24 +615,29 @@ class ReciboSimpleController extends AppBaseController
         $recibo = DB::selectOne('SELECT * FROM recibos_simples WHERE id_recibo = ?', [$id]);
 
         if (empty($recibo)) {
-            Alert::toast('Recibo no encontrado', 'error');
+            Alert::error('Error', 'Recibo no encontrado.');
             return redirect()->route('recibossimples.index');
         }
 
         // Validar que no esté ya anulado
         if ($recibo->estado === 'ANULADO') {
-            Alert::toast('El recibo ya está anulado', 'error');
+            Alert::error('Error', 'El recibo ya está anulado.');
             return redirect()->route('recibossimples.index');
         }
 
-        // Cambiar estado a ANULADO (soft delete)
-        DB::update('UPDATE recibos_simples SET estado = ?, updated_at = ? WHERE id_recibo = ?', [
-            'ANULADO',
-            now(),
-            $id
-        ]);
+        try {
+            // Cambiar estado a ANULADO (soft delete)
+            DB::update('UPDATE recibos_simples SET estado = ?, updated_at = ? WHERE id_recibo = ?', [
+                'ANULADO',
+                now(),
+                $id
+            ]);
 
-        Alert::toast('Recibo anulado exitosamente.', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+        }
+
         return redirect()->route('recibossimples.index');
     }
 

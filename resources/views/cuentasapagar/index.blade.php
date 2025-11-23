@@ -13,8 +13,6 @@
 
     <div class="content px-3">
 
-        @include('sweetalert::alert')
-
         @includeIf('cuentasapagar.filtros', [
             'proveedores' => $proveedores,
             'sucursales' => $sucursales,

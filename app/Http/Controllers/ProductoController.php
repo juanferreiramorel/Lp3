@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Laracasts\Flash\Flash;
+use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;// libreria a importar para paginacion manual
 
 class ProductoController extends AppBaseController
@@ -200,7 +201,7 @@ class ProductoController extends AppBaseController
         );
 
         // Redirigir a la lista de productos con un mensaje de éxito
-        Flash::success('Producto creado correctamente.');
+        Alert::success('Éxito', 'Producto creado correctamente.');
 
         return redirect(route('productos.index'));
     }
@@ -211,7 +212,7 @@ class ProductoController extends AppBaseController
 
         // Si el producto no existe, redirigir con un mensaje de error
         if (empty($productos)) {
-            Flash::error('Producto no encontrado.');
+            Alert::error('Error', 'Producto no encontrado.');
             return redirect(route('productos.index'));
         }
 
@@ -236,7 +237,7 @@ class ProductoController extends AppBaseController
 
         // Si el producto no existe, redirigir con un mensaje de error
         if (empty($productos)) {
-            Flash::error('Producto no encontrado.');
+            Alert::error('Error', 'Producto no encontrado.');
             return redirect(route('productos.index'));
         }
 
@@ -321,7 +322,7 @@ class ProductoController extends AppBaseController
         );
 
         // Redirigir a la lista de productos con un mensaje de éxito
-        Flash::success('Producto actualizado correctamente.');
+        Alert::success('Éxito', 'Producto actualizado correctamente.');
 
         return redirect(route('productos.index'));
     }
@@ -332,7 +333,7 @@ class ProductoController extends AppBaseController
         $producto = DB::selectOne('SELECT * FROM productos WHERE id_producto = ?', [$id]);
 
         if (empty($producto)) {
-            Flash::error('Producto no encontrado.');
+            Alert::error('Error', 'Producto no encontrado.');
             return redirect(route('productos.index'));
         }
 
@@ -344,9 +345,9 @@ class ProductoController extends AppBaseController
 
             // Eliminar el producto de la base de datos
             DB::delete('DELETE FROM productos WHERE id_producto = ?', [$id]);
-            Flash::success('Producto eliminado correctamente.');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar este producto porque está siendo utilizado en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('productos.index'));

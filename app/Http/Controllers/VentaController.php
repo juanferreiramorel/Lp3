@@ -547,7 +547,7 @@ class VentaController extends AppBaseController
         $venta = DB::selectOne('SELECT * FROM ventas WHERE id_venta = ?', [$id]);
 
         if (empty($venta)) {
-            Flash::error('Venta no encontrada');
+            Alert::error('Error', 'Venta no encontrada.');
             return redirect()->route('ventas.index');
         }
 
@@ -602,7 +602,7 @@ class VentaController extends AppBaseController
         $ventas = DB::selectOne('SELECT * FROM ventas WHERE id_venta = ?', [$id]);
 
         if (empty($ventas)) {
-            Flash::error('Venta no encontrada');
+            Alert::error('Error', 'Venta no encontrada.');
             return redirect()->route('ventas.index');
         }
         $input['intervalo'] = $input['intervalo'] ?? 0;
@@ -797,11 +797,11 @@ class VentaController extends AppBaseController
         $ventas = DB::selectOne('SELECT * FROM ventas WHERE id_venta = ?', [$id]);
 
         if (empty($ventas)) {
-            Flash::error('Venta no encontrada');
+            Alert::error('Error', 'Venta no encontrada.');
             return redirect()->route('ventas.index');
         }
 
-        // Usar transacciones 
+        // Usar transacciones
         DB::beginTransaction();
         try {
             // Anular la venta
@@ -838,13 +838,13 @@ class VentaController extends AppBaseController
             }
             // Si todo esta bien realiza el envio e inserta la venta y detalle
             DB::commit();
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
             Log::info('Error al anular la venta: ' . $e->getMessage());
             DB::rollback();
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->getMessage());
         }
-
-        Flash::success('Venta anulada exitosamente.');
 
         return redirect()->route('ventas.index');
     }

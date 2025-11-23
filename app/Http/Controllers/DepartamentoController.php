@@ -122,7 +122,7 @@ class DepartamentoController extends AppBaseController
         );
 
         ## Imprimir mensaje de éxito y redirigir a la vista index
-        Alert::toast('El departamento fue creado con éxito.', 'success');
+        Alert::success('Éxito', 'Departamento creado correctamente.');
         return redirect(route('departamentos.index'));
     }
 
@@ -180,7 +180,7 @@ class DepartamentoController extends AppBaseController
         );
 
         // Imprimir mensaje de éxito y redirigir a la vista index
-        Alert::toast('El departamento fue actualizado con éxito.', 'success');
+        Alert::success('Éxito', 'Departamento actualizado correctamente.');
         return redirect(route('departamentos.index'));
     }
 
@@ -190,16 +190,16 @@ class DepartamentoController extends AppBaseController
         $departamentos = DB::selectOne('select * from departamentos where id_departamento = ?', [$id]);
         // Verificar si el departamento existe y no está vacío
         if (empty($departamentos)) {
-            Alert::error('Error', 'El departamento no fue encontrado.');
+            Alert::error('Error', 'Departamento no encontrado.');
             return redirect()->route('departamentos.index');
         }
 
         try {
             // Eliminar el departamento utilizando la función delete de la base de datos
             DB::delete('delete from departamentos where id_departamento = ?', [$id]);
-            Alert::toast('El departamento fue eliminado con éxito.', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar este departamento porque está siendo utilizado en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('departamentos.index'));

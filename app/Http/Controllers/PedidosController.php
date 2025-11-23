@@ -469,7 +469,7 @@ class PedidosController extends AppBaseController
         $pedido = DB::selectOne('SELECT * FROM pedidos WHERE id_pedido = ?', [$id]);
 
         if (empty($pedido)) {
-            Alert::error('Error', 'Pedido no encontrado');
+            Alert::error('Error', 'Pedido no encontrado.');
             return redirect()->route('pedidos.index');
         }
 
@@ -478,13 +478,14 @@ class PedidosController extends AppBaseController
             // No borramos físico: marcamos estado CANCELADO
             DB::update('UPDATE pedidos SET estado = ? WHERE id_pedido = ?', ['CANCELADO', $id]);
             DB::commit();
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
             Log::info('Error al cancelar el pedido: ' . $e->getMessage());
             DB::rollback();
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->getMessage());
         }
 
-        Alert::success('Éxito', 'Pedido cancelado.');
         return redirect()->route('pedidos.index');
     }
 

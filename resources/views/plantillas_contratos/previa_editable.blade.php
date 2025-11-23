@@ -17,7 +17,6 @@
     <div class="content px-3">
 
         @include('adminlte-templates::common.errors')
-        @include('sweetalert::alert')
 
         <div class="row">
             <!-- Información del Cliente -->

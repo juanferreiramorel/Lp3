@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Laracasts\Flash\Flash;
+use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class TaxController extends AppBaseController
@@ -138,7 +138,7 @@ class TaxController extends AppBaseController
             ]
         );
 
-        Flash::success('Impuesto creado correctamente.');
+        Alert::success('Éxito', 'Impuesto creado correctamente.');
 
         return redirect(route('taxes.index'));
     }
@@ -148,7 +148,7 @@ class TaxController extends AppBaseController
         $tax = DB::selectOne('SELECT * FROM taxes WHERE id_tax = ?', [$id]);
 
         if (empty($tax)) {
-            Flash::error('Impuesto no encontrado.');
+            Alert::error('Error', 'Impuesto no encontrado.');
             return redirect(route('taxes.index'));
         }
 
@@ -163,7 +163,7 @@ class TaxController extends AppBaseController
         $tax = DB::selectOne('SELECT * FROM taxes WHERE id_tax = ?', [$id]);
 
         if (empty($tax)) {
-            Flash::error('Impuesto no encontrado.');
+            Alert::error('Error', 'Impuesto no encontrado.');
             return redirect(route('taxes.index'));
         }
 
@@ -213,7 +213,7 @@ class TaxController extends AppBaseController
             ]
         );
 
-        Flash::success('Impuesto actualizado correctamente.');
+        Alert::success('Éxito', 'Impuesto actualizado correctamente.');
 
         return redirect(route('taxes.index'));
     }
@@ -224,7 +224,7 @@ class TaxController extends AppBaseController
         $tax = DB::selectOne('SELECT * FROM taxes WHERE id_tax = ?', [$id]);
 
         if (empty($tax)) {
-            Flash::error('Impuesto no encontrado.');
+            Alert::error('Error', 'Impuesto no encontrado.');
             return redirect(route('taxes.index'));
         }
 
@@ -236,15 +236,15 @@ class TaxController extends AppBaseController
             );
 
             if ($productosAsociados && $productosAsociados->total > 0) {
-                Flash::error('No se puede eliminar este impuesto porque está asociado a ' . $productosAsociados->total . ' producto(s).');
+                Alert::error('Error', 'No se puede eliminar este impuesto porque está asociado a ' . $productosAsociados->total . ' producto(s).');
                 return redirect(route('taxes.index'));
             }
 
             // Eliminar el impuesto de la base de datos
             DB::delete('DELETE FROM taxes WHERE id_tax = ?', [$id]);
-            Flash::success('Impuesto eliminado correctamente.');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Flash::error('Error al eliminar el impuesto: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('taxes.index'));

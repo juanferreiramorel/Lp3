@@ -211,21 +211,26 @@ class TimbradoController extends Controller
     {
         $this->middleware('permission:timbrados destroy');
 
-        $timbrado = Timbrado::findOrFail($id);
+        $timbrado = Timbrado::find($id);
+
+        if (!$timbrado) {
+            Alert::error('Error', 'Timbrado no encontrado.');
+            return redirect()->route('timbrados.index');
+        }
 
         // No permitir eliminar si ya tiene facturas asociadas
         if ($timbrado->ventas()->count() > 0) {
-            Alert::error('Error', 'No se puede eliminar un timbrado que ya tiene facturas asociadas');
+            Alert::error('Error', 'No se puede eliminar un timbrado que ya tiene facturas asociadas.');
             return redirect()->route('timbrados.index');
         }
 
         try {
             $timbrado->delete();
 
-            Alert::success('Éxito', 'Timbrado eliminado correctamente');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
             return redirect()->route('timbrados.index');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el timbrado: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
             return redirect()->route('timbrados.index');
         }
     }

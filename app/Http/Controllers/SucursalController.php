@@ -154,14 +154,14 @@ class SucursalController extends AppBaseController
                 $input['id_empresa']
             ]
         );
-        //Redirigir a la lista de sucursales con un mesaje de exito
-        Alert::toast('Sucursal creada con exito', 'success');
+        //Redirigir a la lista de sucursales con un mensaje de éxito
+        Alert::success('Éxito', 'Sucursal creada correctamente.');
         return redirect()->route('sucursales.index');   
     }
     public function edit($id){
         $sucursales = DB::selectOne('SELECT * FROM sucursales WHERE id_sucursal = ?', [$id]); //SELECTONE devuelve un objeto()
         if (empty($sucursales)) {
-            Alert::toast('Sucursal no encontrada', 'error');
+            Alert::error('Error', 'Sucursal no encontrada.');
             return redirect()->route('sucursales.index');
         }
         //Obtener ciudades
@@ -181,9 +181,9 @@ class SucursalController extends AppBaseController
         $input = $request->all();
         //Obtener el producto de la base de datos  1 solo valor utilizando selectOne
         $sucursal = DB::selectOne('SELECT * FROM sucursales WHERE id_sucursal = ?', [$id]);
-        //Validar si el producto no existe, redirigir con un mesaje de error
+        //Validar si el producto no existe, redirigir con un mensaje de error
         if (empty($sucursal)) {
-            Alert::toast('Sucursal no encontrada', 'error');
+            Alert::error('Error', 'Sucursal no encontrada.');
             return redirect()->route('sucursales.index');
         }
         //Validar los datos
@@ -230,24 +230,24 @@ class SucursalController extends AppBaseController
                 $id
             ]
         );
-        //Redirigir a la lista de sucursales con un mesaje de exito
-        Alert::toast('Sucursal actualizada con exito', 'success');
+        //Redirigir a la lista de sucursales con un mensaje de éxito
+        Alert::success('Éxito', 'Sucursal actualizada correctamente.');
         return redirect()->route('sucursales.index');
     }
     public function destroy($id){
         //Validar si la sucursal existe
         $sucursal = DB::selectOne('SELECT * FROM sucursales WHERE id_sucursal = ?', [$id]);
         if (empty($sucursal)) {
-            Alert::toast('Sucursal no encontrada', 'error');
+            Alert::error('Error', 'Sucursal no encontrada.');
             return redirect()->route('sucursales.index');
         }
 
         try {
             //Eliminar la sucursal de la base de datos
             DB::delete('DELETE FROM sucursales WHERE id_sucursal = ?', [$id]);
-            Alert::toast('Sucursal eliminada con exito', 'success');
+            Alert::success('Éxito', 'Registro eliminado correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar esta sucursal porque está siendo utilizada en otros registros.');
+            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
         }
 
         return redirect(route('sucursales.index'));

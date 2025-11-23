@@ -29,8 +29,6 @@
     </section>
 
     <div class="content px-3">
-        @include('sweetalert::alert')
-
         <!-- Información del Contrato -->
         <div class="card mb-3">
             <div class="card-body">

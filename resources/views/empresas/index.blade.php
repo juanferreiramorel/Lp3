@@ -22,8 +22,6 @@
 
     <div class="content px-3">
 
-        @include('sweetalert::alert')
-
         <div class="clearfix">
             @includeIf('layouts.buscador', ['url' => url()->current()])
         </div>

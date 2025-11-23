@@ -61,7 +61,6 @@
 
         {{-- @include('flash::message') --}}
         @include('adminlte-templates::common.errors')
-        @include('sweetalert::alert')
 
         @includeIf('ventas.filtros', [
             'clientes' => $clientes,
