@@ -22,7 +22,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" data-widget="pushmenu" href="#" role="button" aria-label="Alternar menú lateral">
-                            <i class="fas fa-bars"></i>
+                            <span class="pushmenu-icon" aria-hidden="true"></span>
                         </a>
                     </li>
                     @hasSection('content_header')
