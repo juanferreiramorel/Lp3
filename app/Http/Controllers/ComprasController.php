@@ -733,7 +733,7 @@ class ComprasController extends AppBaseController
             $compra = new \stdClass();
             $compra->id_proveedor = $orden->id_proveedor;
             $compra->id_sucursal = $orden->id_sucursal;
-            $compra->total = $orden->total_orden;
+            $compra->total = $orden->total;
             $compra->fecha_compra = \Carbon\Carbon::now()->format('Y-m-d');
             $compra->factura = null;
             $compra->condicion_compra = 'CONTADO';

@@ -79,7 +79,7 @@
                                         <td>${orden.id_orden_compra}</td>
                                         <td>${orden.proveedor}</td>
                                         <td>${orden.fecha_orden}</td>
-                                        <td class="text-right">${orden.total_orden}</td>
+                                        <td class="text-right">${orden.total}</td>
                                         <td>
                                             <span class="badge ${badgeClass}">${orden.estado}</span>
                                         </td>
