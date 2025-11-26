@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Exports\CargoExport;
 use App\Exports\ClienteExport;
+use App\Exports\ProductoExport;
+use App\Exports\ProveedorExport;
+use App\Exports\SucursalExport;
+use App\Exports\VentaExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -145,6 +149,13 @@ class ReporteController extends Controller
 
             ##retornar pdf con una configuracion de pagina tipo de impresion y que se hara una descarga
             return $pdf->download("ReporteProveedores.pdf");
+        }elseif(isset($input['exportar']) && $input['exportar'] == 'excel'){
+            // Verificar que se pasen los parámetros correctamente
+            $desde = isset($input['desde']) ? $input['desde'] : null;
+            $hasta = isset($input['hasta']) ? $input['hasta'] : null;
+
+            // llamar la funcion exportar Excel
+            return Excel::download(new ProveedorExport($desde, $hasta), 'proveedores.xlsx');
         }
 
         return view('reportes.rpt_proveedores')->with('proveedores', $proveedores);
@@ -176,6 +187,13 @@ class ReporteController extends Controller
                 ->setPaper('a4', 'portrait');
 
             return $pdf->download("ReporteProductos.pdf");
+        }elseif(isset($input['exportar']) && $input['exportar'] == 'excel'){
+            // Verificar que se pasen los parámetros correctamente
+            $desde = isset($input['desde']) ? $input['desde'] : null;
+            $hasta = isset($input['hasta']) ? $input['hasta'] : null;
+
+            // llamar la funcion exportar Excel
+            return Excel::download(new ProductoExport($desde, $hasta), 'productos.xlsx');
         }
 
         return view('reportes.rpt_productos')->with('productos', $productos);
@@ -206,6 +224,13 @@ class ReporteController extends Controller
                 ->setPaper('a4', 'portrait');
 
             return $pdf->download("ReporteSucursales.pdf");
+        }elseif(isset($input['exportar']) && $input['exportar'] == 'excel'){
+            // Verificar que se pasen los parámetros correctamente
+            $desde = isset($input['desde']) ? $input['desde'] : null;
+            $hasta = isset($input['hasta']) ? $input['hasta'] : null;
+
+            // llamar la funcion exportar Excel
+            return Excel::download(new SucursalExport($desde, $hasta), 'sucursales.xlsx');
         }
 
         return view('reportes.rpt_sucursales')->with('sucursales', $sucursales);
@@ -273,6 +298,14 @@ class ReporteController extends Controller
 
             // retornar la descarga del archivo
             return $pdf->download("ReporteVentas.pdf");
+        }elseif(isset($input['exportar']) && $input['exportar'] == 'excel'){
+            // Verificar que se pasen los parámetros correctamente
+            $cliente = isset($input['cliente']) ? $input['cliente'] : null;
+            $desde = isset($input['desde']) ? $input['desde'] : null;
+            $hasta = isset($input['hasta']) ? $input['hasta'] : null;
+
+            // llamar la funcion exportar Excel
+            return Excel::download(new VentaExport($cliente, $desde, $hasta), 'ventas.xlsx');
         }
 
         // consulta para llenar el select de ciudad en reporte cliente

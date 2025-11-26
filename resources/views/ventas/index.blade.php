@@ -8,6 +8,12 @@
                     <h1>Ventas</h1>
                 </div>
                 <div class="col-sm-6">
+                    <!-- Boton Exportar Excel -->
+                    <button type="button" id="btn-export-excel-ventas" class="btn btn-success float-right ml-2"
+                        data-toggle="tooltip" title="Exportar a Excel">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+
                     <!-- Boton Nueva Venta -->
                     <!-- Verificar si la caja esta abierta y es del dia actual entonces muestro el boton nueva venta -->
                     @if (
@@ -169,5 +175,13 @@
                 (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
         }
 
+        // Botón Exportar Excel
+        $('#btn-export-excel-ventas').on('click', function(e) {
+            e.preventDefault();
+            let url = '{{ url('ventas') }}';
+            let params = new URLSearchParams(window.location.search);
+            params.set('exportar', 'excel');
+            window.open(url + '?' + params.toString(), '_blank');
+        });
     </script>
 @endpush

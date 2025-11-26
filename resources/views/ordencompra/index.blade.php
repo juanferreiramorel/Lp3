@@ -8,6 +8,10 @@
                     <h1>Órdenes de Compra</h1>
                 </div>
                 <div class="col-sm-6">
+                    <button type="button" id="btn-export-excel-ordencompra" class="btn btn-success float-right ml-2"
+                        data-toggle="tooltip" title="Exportar a Excel">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
                     <a class="btn btn-primary float-right"
                        href="{{ route('ordencompra.create') }}">
                        <i class="fas fa-plus"></i>
@@ -32,3 +36,18 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Botón Exportar Excel
+        $('#btn-export-excel-ordencompra').on('click', function(e) {
+            e.preventDefault();
+            let url = '{{ url('ordencompra') }}';
+            let params = new URLSearchParams(window.location.search);
+            params.set('exportar', 'excel');
+            window.open(url + '?' + params.toString(), '_blank');
+        });
+    });
+</script>
+@endpush

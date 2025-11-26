@@ -14,6 +14,8 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Luecano\NumeroALetras\NumeroALetras;
 use App\Models\Timbrado;
 use App\Models\Empresa;
+use App\Exports\VentasExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function Laravel\Prompts\error;
 
@@ -108,6 +110,18 @@ class VentaController extends AppBaseController
         $sqlSucursales = '';
         if (!empty($idsPermitidos)) {
             $sqlSucursales = ' AND v.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
+        // Exportar a Excel si se solicita
+        if (isset($input['exportar']) && $input['exportar'] == 'excel') {
+            $filtros = [
+                'fecha_desde' => $input['fecha_desde'] ?? null,
+                'fecha_hasta' => $input['fecha_hasta'] ?? null,
+                'id_cliente' => $input['id_cliente'] ?? null,
+                'condicion_venta' => $input['condicion_venta'] ?? null,
+                'id_sucursal' => $input['id_sucursal'] ?? null,
+            ];
+            return Excel::download(new VentasExport($filtros, $buscar, $idsPermitidos), 'ventas.xlsx');
         }
 
         $ventas = DB::select(

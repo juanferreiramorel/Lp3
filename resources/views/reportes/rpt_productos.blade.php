@@ -48,8 +48,13 @@
                         </button>
 
                         <button class="btn btn-primary" id="btn-exportar" type="button" data-toggle="tooltip"
-                            title="Exportar" style="margin-top:32px">
+                            title="Exportar a PDF" style="margin-top:32px">
                             <i class="fas fa-print"></i> PDF
+                        </button>
+
+                        <button class="btn btn-primary" id="btn-exportar-excel" type="button" data-toggle="tooltip"
+                            title="Exportar a Excel" style="margin-top:32px">
+                            <i class="fas fa-file-excel"></i> Excel
                         </button>
                     </div>
                 </div>
@@ -106,6 +111,13 @@
                 e.preventDefault();
                 window.open('{{ url('reporte-productos') }}?desde=' + $('#desde').val() + '&hasta=' + $(
                     '#hasta').val() + '&exportar=pdf', '_blank');
+            });
+
+            // Botón de exportación a Excel
+            $('#btn-exportar-excel').click(function(e) {
+                e.preventDefault();
+                window.open('{{ url('reporte-productos') }}?desde=' + $('#desde').val() + '&hasta=' + $(
+                    '#hasta').val() + '&exportar=excel', '_blank');
             });
 
             // Botón de limpieza

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laracasts\Flash\Flash;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Exports\OrdenCompraExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrdenCompraController extends AppBaseController
 {
@@ -76,6 +78,18 @@ class OrdenCompraController extends AppBaseController
             $where .= ' AND oc.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
         }
 
+        // Exportar a Excel si se solicita
+        if (isset($input['exportar']) && $input['exportar'] == 'excel') {
+            $filtros = [
+                'fecha_desde' => $input['fecha_desde'] ?? null,
+                'fecha_hasta' => $input['fecha_hasta'] ?? null,
+                'id_proveedor' => $input['id_proveedor'] ?? null,
+                'estado' => $input['estado'] ?? null,
+                'id_sucursal' => $input['id_sucursal'] ?? null,
+            ];
+            return Excel::download(new OrdenCompraExport($filtros, $buscar, $idsPermitidos), 'ordenes_compra.xlsx');
+        }
+
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
@@ -92,8 +106,8 @@ class OrdenCompraController extends AppBaseController
                     p.descripcion ILIKE ? OR
                     cast(oc.fecha_orden as text) ILIKE ? OR
                     TO_CHAR(oc.fecha_orden, 'DD/MM/YYYY') ILIKE ? OR
-                    cast(oc.total_orden as text) ILIKE ? OR
-                    TO_CHAR(oc.total_orden, 'FM999G999G999G999G999') ILIKE ? OR
+                    cast(oc.total as text) ILIKE ? OR
+                    TO_CHAR(oc.total, 'FM999G999G999G999G999') ILIKE ? OR
                 u.name ILIKE ? OR
                 oc.estado ILIKE ? OR
                 s.descripcion ILIKE ? OR
@@ -111,7 +125,7 @@ class OrdenCompraController extends AppBaseController
         $total = $totalResult[0]->total;
 
         // Obtener registros paginados
-        $query = "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total_orden, oc.estado,
+        $query = "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
                          oc.fecha_entrega_esperada, oc.observaciones,
                          p.descripcion as proveedor,
                          u.name as usuario,
@@ -198,7 +212,7 @@ class OrdenCompraController extends AppBaseController
             $idOrdenCompra = DB::table('ordenes_compra')->insertGetId([
                 'id_proveedor' => $input['id_proveedor'],
                 'fecha_orden' => $input['fecha_orden'],
-                'total_orden' => $total,
+                'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
                 'estado' => 'PENDIENTE',
                 'id_usuario' => auth()->user()->id,
@@ -364,7 +378,7 @@ class OrdenCompraController extends AppBaseController
             // Actualizar cabecera
             DB::update(
                 'UPDATE ordenes_compra
-                 SET id_proveedor = ?, fecha_orden = ?, total_orden = ?, id_sucursal = ?,
+                 SET id_proveedor = ?, fecha_orden = ?, total = ?, id_sucursal = ?,
                      observaciones = ?, fecha_entrega_esperada = ?
                  WHERE id_orden_compra = ?',
                 [
@@ -498,7 +512,7 @@ class OrdenCompraController extends AppBaseController
     public function getPendientes()
     {
         $ordenesCompra = DB::select(
-            "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total_orden, oc.estado,
+            "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
                     oc.fecha_entrega_esperada, p.descripcion as proveedor
              FROM ordenes_compra oc
              JOIN proveedores p ON oc.id_proveedor = p.id_proveedor
@@ -511,7 +525,7 @@ class OrdenCompraController extends AppBaseController
             return [
                 'id_orden_compra' => $oc->id_orden_compra,
                 'fecha_orden' => date('d/m/Y', strtotime($oc->fecha_orden)),
-                'total_orden' => number_format($oc->total_orden, 0, ',', '.'),
+                'total' => number_format($oc->total, 0, ',', '.'),
                 'estado' => $oc->estado,
                 'proveedor' => $oc->proveedor,
                 'fecha_entrega_esperada' => $oc->fecha_entrega_esperada ? date('d/m/Y', strtotime($oc->fecha_entrega_esperada)) : '',

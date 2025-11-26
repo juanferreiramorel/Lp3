@@ -375,8 +375,6 @@
 }
 
 .main-header.navbar .navbar-nav.align-items-center > .nav-item:not(.user-menu) > .nav-link {
-    width: 40px;
-    height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;

@@ -27,7 +27,7 @@
                                 -
                             @endif
                         </td>
-                        <td>{{ number_format($ordenCompra->total_orden, 0, ',', '.') }}</td>
+                        <td>{{ number_format($ordenCompra->total, 0, ',', '.') }}</td>
                         <td>
                             @if($ordenCompra->estado == 'PENDIENTE')
                                 <span class="badge badge-warning">PENDIENTE</span>

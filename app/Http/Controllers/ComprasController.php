@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Exports\ComprasExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ComprasController extends AppBaseController
 {
@@ -100,6 +102,18 @@ class ComprasController extends AppBaseController
         $sqlSucursalesPermitidas = '';
         if (!empty($idsPermitidos)) {
             $sqlSucursalesPermitidas = ' AND c.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
+        // Exportar a Excel si se solicita
+        if (isset($input['exportar']) && $input['exportar'] == 'excel') {
+            $filtros = [
+                'fecha_desde' => $input['fecha_desde'] ?? null,
+                'fecha_hasta' => $input['fecha_hasta'] ?? null,
+                'id_proveedor' => $input['id_proveedor'] ?? null,
+                'condicion_compra' => $input['condicion_compra'] ?? null,
+                'id_sucursal' => $input['id_sucursal'] ?? null,
+            ];
+            return Excel::download(new ComprasExport($filtros, $buscar, $idsPermitidos), 'compras.xlsx');
         }
 
         $compras = DB::select(

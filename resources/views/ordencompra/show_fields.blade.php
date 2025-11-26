@@ -55,8 +55,8 @@
 
     <div class="col-md-6">
         <div class="form-group">
-            {!! Form::label('total_orden', 'Total:') !!}
-            <p><strong>{{ number_format($ordenCompra->total_orden, 0, ',', '.') }}</strong></p>
+            {!! Form::label('total', 'Total:') !!}
+            <p><strong>{{ number_format($ordenCompra->total, 0, ',', '.') }}</strong></p>
         </div>
     </div>
 
@@ -95,7 +95,7 @@
             <tfoot>
                 <tr>
                     <th colspan="4" class="text-right">TOTAL:</th>
-                    <th class="text-right">{{ number_format($ordenCompra->total_orden, 0, ',', '.') }}</th>
+                    <th class="text-right">{{ number_format($ordenCompra->total, 0, ',', '.') }}</th>
                 </tr>
             </tfoot>
         </table>

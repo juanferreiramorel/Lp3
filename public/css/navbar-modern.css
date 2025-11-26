@@ -15,12 +15,109 @@
     mix-blend-mode: overlay !important;
 }
 
-/* Botón hamburguesa */
-.main-header .nav-link[data-widget="pushmenu"] {
+/* ===== BOTÓN HAMBURGUESA MEJORADO ===== */
+.pushmenu-btn {
+    position: relative;
     background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
     color: #0f172a !important;
-    border-radius: 12px !important;
-    box-shadow: 0 6px 15px rgba(92, 208, 255, 0.3) !important;
+    border-radius: 14px !important;
+    padding: 10px 14px !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden;
+    box-shadow:
+        0 6px 20px rgba(92, 208, 255, 0.35),
+        0 0 0 0 rgba(92, 208, 255, 0.5) !important;
+}
+
+/* Efecto de brillo animado */
+.pushmenu-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.6s ease-out;
+    pointer-events: none;
+}
+
+.pushmenu-btn:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow:
+        0 10px 30px rgba(92, 208, 255, 0.5),
+        0 0 0 8px rgba(92, 208, 255, 0.15),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+    background: linear-gradient(135deg, #6dd8ff 0%, #2ddab0 100%) !important;
+}
+
+.pushmenu-btn:hover::before {
+    transform: scale(1);
+}
+
+.pushmenu-btn:active {
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow:
+        0 4px 15px rgba(92, 208, 255, 0.4),
+        0 0 0 4px rgba(92, 208, 255, 0.2) !important;
+}
+
+/* Icono hamburguesa animado */
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 18px;
+    position: relative;
+}
+
+.hamburger-icon .line {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: #0f172a;
+    border-radius: 3px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Animación de las líneas en hover */
+.pushmenu-btn:hover .hamburger-icon .line:nth-child(1) {
+    transform: translateX(-3px);
+}
+
+.pushmenu-btn:hover .hamburger-icon .line:nth-child(3) {
+    transform: translateX(3px);
+}
+
+.pushmenu-btn:hover .hamburger-icon .line:nth-child(2) {
+    width: 100%;
+}
+
+/* Animación pulsante (opcional) */
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow:
+            0 6px 20px rgba(92, 208, 255, 0.35),
+            0 0 0 0 rgba(92, 208, 255, 0.5);
+    }
+    50% {
+        box-shadow:
+            0 6px 25px rgba(92, 208, 255, 0.45),
+            0 0 0 4px rgba(92, 208, 255, 0.3);
+    }
+}
+
+/* Efecto focus para accesibilidad */
+.pushmenu-btn:focus {
+    outline: none !important;
+    box-shadow:
+        0 6px 20px rgba(92, 208, 255, 0.5),
+        0 0 0 4px rgba(92, 208, 255, 0.3),
+        0 0 0 6px rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Buscador */
@@ -44,29 +141,66 @@
     color: #0f172a !important;
 }
 
-/* Items del navbar derecho */
-.navbar-nav.ml-auto .nav-item .nav-link {
-    color: rgba(255, 255, 255, 0.85) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* ===== BOTONES DEL NAVBAR (DERECHA) ===== */
+.navbar-btn-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 8px 12px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 10px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-size: 14px;
+    margin: 0 4px;
+    text-decoration: none !important;
 }
 
-.navbar-nav.ml-auto .nav-item .nav-link:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
+.navbar-btn-icon:hover {
+    background: rgba(92, 208, 255, 0.15) !important;
     color: #5cd0ff !important;
-    border-color: rgba(92, 208, 255, 0.3) !important;
+    border-color: rgba(92, 208, 255, 0.4) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(92, 208, 255, 0.25) !important;
+    text-decoration: none !important;
 }
 
-/* Botón de ayuda */
-.navbar-nav .nav-item .btn-link {
-    color: rgba(255, 255, 255, 0.85) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+.navbar-btn-icon:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(92, 208, 255, 0.2) !important;
 }
 
-.navbar-nav .nav-item .btn-link:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    color: #5cd0ff !important;
+.navbar-btn-icon:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(92, 208, 255, 0.3) !important;
+}
+
+.navbar-btn-icon i {
+    font-size: 17px;
+    line-height: 1;
+}
+
+/* Estilos específicos para el botón de ayuda */
+.navbar-btn-icon.btn-link {
+    font-weight: normal;
+}
+
+.navbar-btn-icon.btn-link:hover,
+.navbar-btn-icon.btn-link:focus {
+    text-decoration: none !important;
+}
+
+/* Espaciado entre botones del navbar */
+.navbar-nav.ml-auto .nav-item {
+    width: auto !important;
+    flex: 0 0 auto !important;
+}
+
+.navbar-nav.ml-auto .nav-item:not(:last-child) {
+    margin-right: 4px;
 }
 
 /* Texto del navbar */
@@ -74,33 +208,136 @@
     color: #f4f7ff !important;
 }
 
-/* Avatar de usuario - Moderno y lindo */
-.user-menu .nav-link {
+/* ===== MENÚ DE USUARIO ===== */
+.user-dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    height: 40px;
+    padding: 4px 12px 4px 8px !important;
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 20px !important;
     color: #fff !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    margin-left: 8px;
 }
 
-.user-menu .nav-link:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
+.user-dropdown-toggle:hover {
+    background: rgba(92, 208, 255, 0.12) !important;
     border-color: rgba(92, 208, 255, 0.4) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(92, 208, 255, 0.25) !important;
 }
 
-.user-avatar {
-    background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(92, 208, 255, 0.3) !important;
+.user-dropdown-toggle:active,
+.user-dropdown-toggle:focus {
+    outline: none !important;
 }
 
-.user-avatar-img {
-    background: linear-gradient(135deg, #1a1d29 0%, #252a3d 100%) !important;
-    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+/* ===== AVATAR DE USUARIO EN NAVBAR ===== */
+.user-avatar-wrapper {
+    position: relative;
+    display: inline-block;
 }
 
-.user-status-badge {
-    background: #1dd3a8 !important;
-    border: 2px solid #1a1d29 !important;
-    box-shadow: 0 0 8px rgba(29, 211, 168, 0.6) !important;
+.user-image {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(92, 208, 255, 0.6) !important;
+    box-shadow:
+        0 0 0 2px rgba(26, 29, 41, 0.8),
+        0 2px 8px rgba(0, 0, 0, 0.3),
+        0 0 12px rgba(92, 208, 255, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    object-fit: cover;
+}
+
+/* Avatar con letra (cuando no hay imagen) */
+.user-avatar-letter {
+    position: relative;
+    background: conic-gradient(from 210deg, #5cd0ff, #1dd3a8, #5cd0ff) !important;
+    color: #0f172a !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    user-select: none;
+    animation: auroraShift 8s linear infinite;
+}
+
+/* Avatar grande para dropdown */
+.user-avatar-letter-large {
+    width: 90px;
+    height: 90px;
+    position: relative;
+    background: conic-gradient(from 210deg, #5cd0ff, #1dd3a8, #5cd0ff) !important;
+    color: #0f172a !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 36px;
+    text-transform: uppercase;
+    user-select: none;
+    margin: 10px auto;
+    animation: auroraShift 8s linear infinite;
+}
+
+/* Animación de rotación del gradiente */
+@keyframes auroraShift {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Indicador de estado online */
+.user-status-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #1dd3a8 0%, #0fb88a 100%);
+    border: 2px solid #1a1d29;
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 1px rgba(29, 211, 168, 0.4),
+        0 0 8px rgba(29, 211, 168, 0.6);
+    animation: pulse-status 2s ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(29, 211, 168, 0.4),
+            0 0 8px rgba(29, 211, 168, 0.6);
+    }
+    50% {
+        box-shadow:
+            0 0 0 3px rgba(29, 211, 168, 0.3),
+            0 0 12px rgba(29, 211, 168, 0.8);
+    }
+}
+
+.user-dropdown-toggle:hover .user-image {
+    border-color: rgba(92, 208, 255, 0.9) !important;
+    box-shadow:
+        0 0 0 2px rgba(26, 29, 41, 0.8),
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(92, 208, 255, 0.6) !important;
+    transform: scale(1.05);
+}
+
+.user-dropdown-toggle:hover .user-avatar-letter {
+    background: conic-gradient(from 210deg, #6dd8ff, #2ddab0, #6dd8ff) !important;
+    animation: auroraShift 4s linear infinite;
+}
+
+.user-dropdown-toggle:hover .user-status-indicator {
+    box-shadow:
+        0 0 0 3px rgba(29, 211, 168, 0.4),
+        0 0 16px rgba(29, 211, 168, 1);
 }
 
 /* Dropdown del usuario */
@@ -148,4 +385,117 @@
 .user-menu .user-footer .btn:hover {
     background: linear-gradient(135deg, #5cd0ff 0%, #1dd3a8 100%) !important;
     color: #0f172a !important;
+}
+
+/* ===== RESPONSIVE - DISEÑO MÓVIL ===== */
+@media (max-width: 768px) {
+    /* Botones del navbar más compactos en móvil */
+    .navbar-btn-icon {
+        min-width: 36px;
+        height: 36px;
+        padding: 6px 10px !important;
+        margin: 0 2px;
+        border-radius: 8px !important;
+        font-size: 0 !important; /* Ocultar texto en móvil */
+    }
+
+    .navbar-btn-icon i {
+        font-size: 16px;
+        margin: 0 !important;
+    }
+
+    /* Mostrar solo ícono en móvil */
+    .navbar-btn-icon span {
+        display: none !important;
+    }
+
+    /* Usuario dropdown más compacto */
+    .user-dropdown-toggle {
+        height: 36px;
+        padding: 4px 10px 4px 6px !important;
+        border-radius: 18px !important;
+        margin-left: 4px;
+    }
+
+    .user-image {
+        width: 28px;
+        height: 28px;
+        border-width: 1.5px !important;
+    }
+
+    .user-status-indicator {
+        width: 8px;
+        height: 8px;
+        border-width: 1.5px;
+        bottom: -1px;
+        right: -1px;
+    }
+
+    /* Botón pushmenu más pequeño en móvil */
+    .pushmenu-btn {
+        padding: 8px 12px !important;
+        border-radius: 10px !important;
+    }
+
+    .hamburger-icon {
+        width: 20px;
+        height: 16px;
+    }
+
+    .hamburger-icon .line {
+        height: 2.5px;
+    }
+
+    /* Reducir espaciado entre items en móvil */
+    .navbar-nav.ml-auto .nav-item:not(:last-child) {
+        margin-right: 2px;
+    }
+
+    /* Navbar más compacto */
+    .main-header.navbar {
+        padding: 0.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* En pantallas muy pequeñas, hacer los botones aún más compactos */
+    .navbar-btn-icon {
+        min-width: 32px;
+        height: 32px;
+        padding: 5px 8px !important;
+        margin: 0 1px;
+        font-size: 0 !important;
+    }
+
+    .navbar-btn-icon i {
+        font-size: 14px;
+        margin: 0 !important;
+    }
+
+    .navbar-btn-icon span {
+        display: none !important;
+    }
+
+    .user-dropdown-toggle {
+        height: 32px;
+        padding: 3px 8px 3px 5px !important;
+    }
+
+    .user-image {
+        width: 24px;
+        height: 24px;
+        border-width: 1.5px !important;
+    }
+
+    .user-status-indicator {
+        width: 7px;
+        height: 7px;
+        border-width: 1.5px;
+        bottom: -1px;
+        right: -1px;
+    }
+
+    .pushmenu-btn {
+        padding: 6px 10px !important;
+    }
 }

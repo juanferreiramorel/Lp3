@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Exports\PedidosExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PedidosController extends AppBaseController
 {
@@ -100,6 +102,18 @@ class PedidosController extends AppBaseController
         $idsPermitidos = $this->getSucursalesPermitidasIds();
         if (!empty($idsPermitidos)) {
             $where .= ' AND p.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
+        }
+
+        // Exportar a Excel si se solicita
+        if (isset($input['exportar']) && $input['exportar'] == 'excel') {
+            $filtros = [
+                'fecha_desde' => $input['fecha_desde'] ?? null,
+                'fecha_hasta' => $input['fecha_hasta'] ?? null,
+                'id_cliente' => $input['id_cliente'] ?? null,
+                'estado' => $input['estado'] ?? null,
+                'id_sucursal' => $input['id_sucursal'] ?? null,
+            ];
+            return Excel::download(new PedidosExport($filtros, $buscar, $idsPermitidos), 'pedidos.xlsx');
         }
 
         // Query base

@@ -21,8 +21,12 @@
                 <!-- Left -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" data-widget="pushmenu" href="#" role="button" aria-label="Alternar menú lateral">
-                            <span class="pushmenu-icon" aria-hidden="true"></span>
+                        <a class="nav-link pushmenu-btn" data-widget="pushmenu" href="#" role="button" aria-label="Alternar menú lateral">
+                            <span class="hamburger-icon" aria-hidden="true">
+                                <span class="line"></span>
+                                <span class="line"></span>
+                                <span class="line"></span>
+                            </span>
                         </a>
                     </li>
                     @hasSection('content_header')
@@ -49,43 +53,61 @@
                 <ul class="navbar-nav ml-auto align-items-center">
 
                     @if ($hasHelpTopics)
-                        <li class="nav-item d-none d-sm-inline-block">
-                            <button class="nav-link btn btn-link p-0" type="button"
+                        <li class="nav-item">
+                            <button class="nav-link btn btn-link navbar-btn-icon" type="button"
                                     data-toggle="modal" data-target="#helpTopicModal"
-                                    aria-label="Abrir ayuda">
-                                <i class="fas fa-question-circle"></i> Ayuda 
+                                    aria-label="Abrir ayuda"
+                                    title="Ayuda">
+                                <i class="fas fa-question-circle"></i>
+                                <span class="d-none d-lg-inline ml-1">Ayuda</span>
                             </button>
                         </li>
                     @endif
 
                     <!-- Fullscreen -->
-                    <li class="nav-item d-none d-sm-inline-block">
-                        <a class="nav-link" data-widget="fullscreen" href="#" role="button" aria-label="Pantalla completa">
+                    <li class="nav-item">
+                        <a class="nav-link navbar-btn-icon" data-widget="fullscreen" href="#" role="button"
+                           aria-label="Pantalla completa" title="Pantalla completa">
                             <i class="fas fa-expand-arrows-alt"></i>
                         </a>
                     </li>
 
                     <!-- Dark mode toggle -->
-                    <li class="nav-item d-none d-sm-inline-block">
-                        <a class="nav-link" href="#" id="darkModeToggle" aria-label="Alternar modo oscuro">
+                    <li class="nav-item">
+                        <a class="nav-link navbar-btn-icon" href="#" id="darkModeToggle"
+                           aria-label="Alternar modo oscuro" title="Modo oscuro">
                             <i class="far fa-moon"></i>
                         </a>
                     </li>
 
-                    <!-- NOTIFICACIONES (removido) -->
-                    {{-- <li class="nav-item dropdown"> ... </li> --}}
-
                     <!-- User -->
                     <li class="nav-item dropdown user-menu">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Menú de usuario">
-                            <img src="{{ Auth::user()->avatar_url ?? 'https://assets.infyom.com/logo/blue_logo_150x150.png' }}"
-                                 class="user-image img-circle elevation-2" alt="User Image">
-                            <span class="d-none d-md-inline">{{ Auth::user()->name }}</span>
+                        <a href="#" class="nav-link dropdown-toggle user-dropdown-toggle"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                           aria-label="Menú de usuario">
+                            <div class="user-avatar-wrapper">
+                                @if(Auth::user()->avatar_url)
+                                    <img src="{{ Auth::user()->avatar_url }}"
+                                         class="user-image img-circle" alt="User Image">
+                                @else
+                                    <div class="user-avatar-letter user-image img-circle">
+                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    </div>
+                                @endif
+                                <span class="user-status-indicator"></span>
+                            </div>
+                            <span class="d-none d-md-inline ml-2">{{ Auth::user()->name }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                             <li class="user-header bg-primary">
-                                <img src="{{ Auth::user()->avatar_url ?? 'https://assets.infyom.com/logo/blue_logo_150x150.png' }}"
-                                     class="img-circle elevation-2" alt="User Image">
+                                @if(Auth::user()->avatar_url)
+                                    <img src="{{ Auth::user()->avatar_url }}"
+                                         class="img-circle elevation-2" alt="User Image">
+                                @else
+                                    <div class="user-avatar-letter-large img-circle elevation-2">
+                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    </div>
+                                @endif
                                 <p>
                                     {{ Auth::user()->name }}
                                     <small>Miembro desde {{ Auth::user()->created_at?->format('M. Y') }}</small>

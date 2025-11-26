@@ -47,7 +47,7 @@
                             <i class="fas fa fa-search"></i>
                         </button>
 
-                        <button class="btn btn-default" type="button" 
+                        <button class="btn btn-default" type="button"
                             style="margin-top:30px"
                             id="btn-limpiar"
                             data-toggle="tooltip" data-placement="top"
@@ -56,8 +56,13 @@
                         </button>
 
                         <button class="btn btn-primary" id="btn-exportar" type="button" data-toggle="tooltip"
-                            title="Exportar" style="margin-top:30px">
-                            <i class="fas fa-print"></i>PDF
+                            title="Exportar a PDF" style="margin-top:30px">
+                            <i class="fas fa-print"></i> PDF
+                        </button>
+
+                        <button class="btn btn-primary" id="btn-exportar-excel" type="button" data-toggle="tooltip"
+                            title="Exportar a Excel" style="margin-top:30px">
+                            <i class="fas fa-file-excel"></i> Excel
                         </button>
                     </div>
                 </div>
@@ -128,6 +133,13 @@
                 window.open('{{ url('reporte-ventas') }}?cliente=' + $("#clientes").val()+
                 '&desde='+$('#desde').val()+
                 '&hasta='+$('#hasta').val()+'&exportar=pdf', '_blank');
+            });
+
+            $("#btn-exportar-excel").click(function(e) {
+                e.preventDefault();
+                window.open('{{ url('reporte-ventas') }}?cliente=' + $("#clientes").val()+
+                '&desde='+$('#desde').val()+
+                '&hasta='+$('#hasta').val()+'&exportar=excel', '_blank');
             });
         })
     </script>
