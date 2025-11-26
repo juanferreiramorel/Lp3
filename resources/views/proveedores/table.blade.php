@@ -5,6 +5,7 @@
                 <tr>
                     <th>#</th>
                     <th>Descripcion</th>
+                    <th>RUC</th>
                     <th>Direccion</th>
                     <th>Telefono</th>
                     <th colspan="3">Acciones</th>
@@ -15,6 +16,7 @@
                     <tr>
                         <td>{{ $proveedor->id_proveedor }}</td>
                         <td>{{ $proveedor->descripcion }}</td>
+                        <td>{{ $proveedor->ruc }}</td>
                         <td>{{ $proveedor->direccion }}</td>
                         <td>{{ $proveedor->telefono }}</td>
                         <td style="width: 120px">

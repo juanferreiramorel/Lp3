@@ -45,9 +45,10 @@ class ProveedorController extends AppBaseController
                     WHERE descripcion ILIKE ?
                     OR direccion ILIKE ?
                     OR telefono ILIKE ?
+                    OR ruc ILIKE ?
                     OR cast(id_proveedor as text) ILIKE ?
                     ORDER BY id_proveedor DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                 );
             }
         } else {
@@ -115,9 +116,10 @@ class ProveedorController extends AppBaseController
 
         //insertar proveedores en la base de datos
         DB::insert(
-            'INSERT INTO proveedores (descripcion, direccion, telefono) values (?, ?, ?)',
+            'INSERT INTO proveedores (descripcion, ruc, direccion, telefono) values (?, ?, ?, ?)',
             [
                 $input['descripcion'],
+                $input['ruc'] ?? null,
                 $input['direccion'],
                 $input['telefono']
             ]);
@@ -167,11 +169,13 @@ class ProveedorController extends AppBaseController
 
         DB::update('UPDATE proveedores
         SET descripcion = ?,
+        ruc = ?,
         direccion = ?,
         telefono = ?
         WHERE id_proveedor = ?',
         [
         $input['descripcion'],
+        $input['ruc'] ?? null,
         $input['direccion'],
         $input['telefono'],
         $id

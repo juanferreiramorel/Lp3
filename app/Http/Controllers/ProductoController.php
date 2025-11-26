@@ -62,11 +62,12 @@ class ProductoController extends AppBaseController
                         LEFT JOIN taxes t ON p.id_tax = t.id_tax
                      WHERE p.descripcion ILIKE ?
                      OR m.descripcion ILIKE ?
+                     OR p.codigo_barras ILIKE ?
                      OR cast(p.id_producto as text) ILIKE ?
                      OR cast(p.precio as text) ILIKE ?
                      OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
                      ORDER BY p.id_producto DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%']
+                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%']
                 );
             }
         } else {
@@ -189,9 +190,10 @@ class ProductoController extends AppBaseController
 
         // Insertar el nuevo producto en la base de datos
         DB::selectOne(
-            'INSERT INTO productos (descripcion, precio, id_marca, id_tax, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?, ?) RETURNING id_producto',
+            'INSERT INTO productos (descripcion, codigo_barras, precio, id_marca, id_tax, controlar_stock, imagen_producto) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id_producto',
             [
                 $input['descripcion'],
+                $input['codigo_barras'] ?? null,
                 $precio,
                 $input['id_marca'],
                 $input['id_tax'],
@@ -309,9 +311,10 @@ class ProductoController extends AppBaseController
 
         // Actualizar el producto en la base de datos
         DB::update(
-            'UPDATE productos SET descripcion = ?, precio = ?, id_marca = ?, id_tax = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
+            'UPDATE productos SET descripcion = ?, codigo_barras = ?, precio = ?, id_marca = ?, id_tax = ?, controlar_stock = ?, imagen_producto = ? WHERE id_producto = ?',
             [
                 $input['descripcion'],
+                $input['codigo_barras'] ?? null,
                 $precio,
                 $input['id_marca'],
                 $input['id_tax'],

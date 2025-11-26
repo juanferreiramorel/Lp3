@@ -4,6 +4,12 @@
     {!! Form::text('descripcion', null, ['class' => 'form-control' , 'required']) !!}
 </div>
 
+<!-- RUC Field -->
+<div class="form-group col-sm-12">
+    {!! Form::label('ruc', 'RUC:') !!}
+    {!! Form::text('ruc', null, ['class' => 'form-control']) !!}
+</div>
+
 <!-- Direccion Field -->
 <div class="form-group col-sm-12 col-lg-12">
     {!! Form::label('direccion', 'Direccion:') !!}

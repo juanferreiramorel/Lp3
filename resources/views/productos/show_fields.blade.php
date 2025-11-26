@@ -4,6 +4,12 @@
     <p>{{ $productos->descripcion }}</p>
 </div>
 
+<!-- Codigo de Barras Field -->
+<div class="col-sm-12">
+    {!! Form::label('codigo_barras', 'C&oacute;digo de Barras:') !!}
+    <p>{{ $productos->codigo_barras ?? '-' }}</p>
+</div>
+
 <!-- Precio Field -->
 <div class="col-sm-12">
     {!! Form::label('precio', 'Precio:') !!}

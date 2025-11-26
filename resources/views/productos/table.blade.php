@@ -6,6 +6,7 @@
                         <th>#</th>
                         <th>Imagen</th>
                         <th>Descripción</th>
+                        <th>Código de Barras</th>
                         <th>Precio</th>
                         <th>Impuesto</th>
                         <th>Controla Stock</th>
@@ -26,6 +27,7 @@
                                 @endif
                             </td>
                             <td>{{ $producto->descripcion }}</td>
+                            <td>{{ $producto->codigo_barras ?? '-' }}</td>
                             <td>{{ number_format($producto->precio, 0, ',', '.') }}</td>
                             <td>
                                 @if($producto->tax_nombre)

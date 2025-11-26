@@ -12,6 +12,15 @@
     ]) !!}
 </div>
 
+<!-- C&oacute;digo de Barras Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('codigo_barras', 'C&oacute;digo de Barras:') !!}
+    {!! Form::text('codigo_barras', null, [
+        'class' => 'form-control',
+        'placeholder' => 'Ingrese el c&oacute;digo de barras',
+    ]) !!}
+</div>
+
 <!-- Precio Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('precio', 'Precio (IVA incluido):') !!}
