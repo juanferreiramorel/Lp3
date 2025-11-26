@@ -23,7 +23,7 @@
                         <td>{{ number_format($pedido->total_pedido, 0, ',', '.') }}</td>
                         <td>{{ $pedido->usuario }}</td>
                         <td>
-                            <span class="badge bg-{{ $pedido->estado == 'COMPLETADO' ? 'success' : 'danger' }}">
+                            <span class="badge bg-{{ $pedido->estado == 'PROCESADO' ? 'success' : ($pedido->estado == 'PENDIENTE' ? 'warning' : 'danger') }}">
                                 {{ $pedido->estado }}
                             </span>
                         </td>

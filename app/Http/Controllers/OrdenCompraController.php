@@ -150,8 +150,7 @@ class OrdenCompraController extends AppBaseController
         $sucursales = $this->getSucursalesPermitidas();
         $estados = [
             'PENDIENTE' => 'Pendiente',
-            'APROBADA' => 'Aprobada',
-            'RECHAZADA' => 'Rechazada',
+            'CANCELADA' => 'Cancelada',
             'PROCESADO' => 'Procesado'
         ];
 
