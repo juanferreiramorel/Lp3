@@ -43,7 +43,7 @@
     });
 
     // Función para seleccionar producto (llamada desde body_producto.blade.php)
-    function seleccionarProducto(codigo, producto, precio) {
+    function seleccionarProducto(codigo, producto, precio, tax_porcentaje) {
         // Verificar si ya existe en la tabla
         let filas = document.getElementById('selectedProducts').getElementsByTagName('tr');
 
@@ -66,6 +66,7 @@
             </td>
             <td>
                 <input type="text" name="producto[]" class="form-control" value="${producto}" readonly>
+                <input type="hidden" name="tax_porcentaje[]" value="${tax_porcentaje || 0}">
             </td>
             <td>
                 <input type="number" name="cantidad[]" class="form-control text-center cantidad-input" value="1" min="1">

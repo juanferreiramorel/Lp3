@@ -110,12 +110,10 @@ class OrdenCompraController extends AppBaseController
                     TO_CHAR(oc.total, 'FM999G999G999G999G999') ILIKE ? OR
                 u.name ILIKE ? OR
                 oc.estado ILIKE ? OR
-                s.descripcion ILIKE ? OR
-                cast(oc.fecha_entrega_esperada as text) ILIKE ? OR
-                TO_CHAR(oc.fecha_entrega_esperada, 'DD/MM/YYYY') ILIKE ?
+                s.descripcion ILIKE ?
                 )";
                 $searchTerm = "%{$buscarTerm}%";
-                $params = array_fill(0, 11, $searchTerm);
+                $params = array_fill(0, 9, $searchTerm);
             }
         }
 
@@ -126,7 +124,7 @@ class OrdenCompraController extends AppBaseController
 
         // Obtener registros paginados
         $query = "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
-                         oc.fecha_entrega_esperada, oc.observaciones,
+                         oc.observaciones,
                          p.descripcion as proveedor,
                          u.name as usuario,
                          s.descripcion as sucursal
@@ -184,7 +182,6 @@ class OrdenCompraController extends AppBaseController
             'id_proveedor' => 'required|exists:proveedores,id_proveedor',
             'fecha_orden' => 'required|date',
             'id_sucursal' => 'required|exists:sucursales,id_sucursal',
-            'fecha_entrega_esperada' => 'nullable|date',
             'observaciones' => 'nullable|string',
             'codigo' => 'required|array|min:1',
             'codigo.*' => 'required|integer',
@@ -195,28 +192,94 @@ class OrdenCompraController extends AppBaseController
         ], [
             'codigo.required' => 'Debe agregar al menos un producto.',
         ]);
-        
+
         try {
             DB::beginTransaction();
 
-            // Calcular total desde el detalle
-            $total = 0;
+            // Inicializar totales
+            $total = 0.0;
+            $subtotal = 0.0;
+            $total_exento = 0;
+            $total_gravado_5 = 0;
+            $total_gravado_10 = 0;
+            $total_iva_5 = 0;
+            $total_iva_10 = 0;
+
+            // Obtener información de productos incluyendo impuestos
+            $codigos = array_map('intval', $input['codigo'] ?? []);
+            $productosInfo = !empty($codigos)
+                ? DB::table('productos as p')
+                    ->leftJoin('taxes as t', 'p.id_tax', '=', 't.id_tax')
+                    ->whereIn('p.id_producto', $codigos)
+                    ->select('p.id_producto', 'p.id_tax', 't.porcentaje')
+                    ->get()
+                    ->keyBy('id_producto')
+                    ->toArray()
+                : [];
+
+            // Calcular totales desde el detalle
             foreach ($input['codigo'] as $i => $codigo) {
-                $monto = str_replace('.', '', $input['precio'][$i] ?? '0');
+                $precio_con_iva = (float)str_replace('.', '', $input['precio'][$i] ?? '0');
                 $cantidad = (int)($input['cantidad'][$i] ?? 0);
-                $total += ($cantidad * (float)$monto);
+
+                // Obtener información del producto
+                $productoInfo = $productosInfo[(int)$codigo] ?? null;
+
+                if ($productoInfo && $productoInfo->id_tax) {
+                    $porcentaje_impuesto = $productoInfo->porcentaje;
+
+                    // Calcular precio sin impuesto usando la fórmula paraguaya
+                    $precio_sin_impuesto = $porcentaje_impuesto > 0
+                        ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                        : $precio_con_iva;
+
+                    // Calcular monto del impuesto
+                    $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                    // Calcular subtotales por item
+                    $subtotal_item = $precio_con_iva * $cantidad;
+                    $gravada_item = $precio_sin_impuesto * $cantidad;
+                    $impuesto_total_item = $monto_impuesto * $cantidad;
+                    $total += $subtotal_item;
+
+                    // Acumular en los totales según tipo de impuesto
+                    if ($porcentaje_impuesto == 0) {
+                        $total_exento += $gravada_item;
+                    } elseif ($porcentaje_impuesto == 5) {
+                        $total_gravado_5 += $gravada_item;
+                        $total_iva_5 += $impuesto_total_item;
+                    } elseif ($porcentaje_impuesto == 10) {
+                        $total_gravado_10 += $gravada_item;
+                        $total_iva_10 += $impuesto_total_item;
+                    }
+                } else {
+                    // Producto sin impuesto definido, sumar al total sin cálculos
+                    $total += $precio_con_iva * $cantidad;
+                    $total_exento += $precio_con_iva * $cantidad;
+                }
             }
 
-            // Insertar cabecera - especificar la columna de secuencia correcta
+            // Calcular subtotal y total de IVA
+            $subtotal = $total_exento + $total_gravado_5 + $total_gravado_10;
+            $total_iva = $total_iva_5 + $total_iva_10;
+            $total = round($total, 2);
+
+            // Insertar cabecera con todos los totales de IVA
             $idOrdenCompra = DB::table('ordenes_compra')->insertGetId([
                 'id_proveedor' => $input['id_proveedor'],
                 'fecha_orden' => $input['fecha_orden'],
+                'subtotal' => $subtotal,
+                'total_exento' => $total_exento,
+                'total_gravado_5' => $total_gravado_5,
+                'total_gravado_10' => $total_gravado_10,
+                'total_iva_5' => $total_iva_5,
+                'total_iva_10' => $total_iva_10,
+                'total_iva' => $total_iva,
                 'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
                 'estado' => 'PENDIENTE',
                 'id_usuario' => auth()->user()->id,
                 'observaciones' => $input['observaciones'] ?? null,
-                'fecha_entrega_esperada' => $input['fecha_entrega_esperada'] ?? null,
             ], 'id_orden_compra');
 
             // Insertar detalle
@@ -294,7 +357,7 @@ class OrdenCompraController extends AppBaseController
         }
 
         // Validar si puede ser editada
-        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA'])) {
+        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA', 'PROCESADO'])) {
             Alert::warning('Advertencia', 'No se puede modificar una orden que está ' . $ordenCompra->estado);
             return redirect()->route('ordencompra.index');
         }
@@ -308,11 +371,12 @@ class OrdenCompraController extends AppBaseController
 
         $usuario = auth()->user()->name;
 
-        // Cargar detalle
+        // Cargar detalle con información de impuestos
         $detalleOrdenCompra = DB::select(
-            "SELECT doc.*, prod.descripcion as producto
+            "SELECT doc.*, prod.descripcion as producto, t.porcentaje as tax_porcentaje
              FROM detalle_orden_compra doc
              JOIN productos prod ON doc.id_producto = prod.id_producto
+             LEFT JOIN taxes t ON prod.id_tax = t.id_tax
              WHERE doc.id_orden_compra = ?",
             [$id]
         );
@@ -342,7 +406,7 @@ class OrdenCompraController extends AppBaseController
         }
 
         // Validar si puede ser editada
-        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA'])) {
+        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA', 'PROCESADO'])) {
             Alert::warning('Advertencia', 'No se puede modificar una orden que está ' . $ordenCompra->estado);
             return redirect()->route('ordencompra.index');
         }
@@ -351,7 +415,6 @@ class OrdenCompraController extends AppBaseController
             'id_proveedor' => 'required|exists:proveedores,id_proveedor',
             'fecha_orden' => 'required|date',
             'id_sucursal' => 'required|exists:sucursales,id_sucursal',
-            'fecha_entrega_esperada' => 'nullable|date',
             'observaciones' => 'nullable|string',
             'codigo' => 'required|array|min:1',
             'codigo.*' => 'required|integer',
@@ -366,27 +429,95 @@ class OrdenCompraController extends AppBaseController
         try {
             DB::beginTransaction();
 
-            // Recalcular total
-            $total = 0;
+            // Inicializar totales
+            $total = 0.0;
+            $subtotal = 0.0;
+            $total_exento = 0;
+            $total_gravado_5 = 0;
+            $total_gravado_10 = 0;
+            $total_iva_5 = 0;
+            $total_iva_10 = 0;
+
+            // Obtener información de productos incluyendo impuestos
+            $codigos = array_map('intval', $input['codigo'] ?? []);
+            $productosInfo = !empty($codigos)
+                ? DB::table('productos as p')
+                    ->leftJoin('taxes as t', 'p.id_tax', '=', 't.id_tax')
+                    ->whereIn('p.id_producto', $codigos)
+                    ->select('p.id_producto', 'p.id_tax', 't.porcentaje')
+                    ->get()
+                    ->keyBy('id_producto')
+                    ->toArray()
+                : [];
+
+            // Recalcular totales con IVA
             foreach ($input['codigo'] as $i => $codigo) {
-                $monto = str_replace('.', '', $input['precio'][$i] ?? '0');
+                $precio_con_iva = (float)str_replace('.', '', $input['precio'][$i] ?? '0');
                 $cantidad = (int)($input['cantidad'][$i] ?? 0);
-                $total += ($cantidad * (float)$monto);
+
+                // Obtener información del producto
+                $productoInfo = $productosInfo[(int)$codigo] ?? null;
+
+                if ($productoInfo && $productoInfo->id_tax) {
+                    $porcentaje_impuesto = $productoInfo->porcentaje;
+
+                    // Calcular precio sin impuesto usando la fórmula paraguaya
+                    $precio_sin_impuesto = $porcentaje_impuesto > 0
+                        ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                        : $precio_con_iva;
+
+                    // Calcular monto del impuesto
+                    $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                    // Calcular subtotales por item
+                    $subtotal_item = $precio_con_iva * $cantidad;
+                    $gravada_item = $precio_sin_impuesto * $cantidad;
+                    $impuesto_total_item = $monto_impuesto * $cantidad;
+                    $total += $subtotal_item;
+
+                    // Acumular en los totales según tipo de impuesto
+                    if ($porcentaje_impuesto == 0) {
+                        $total_exento += $gravada_item;
+                    } elseif ($porcentaje_impuesto == 5) {
+                        $total_gravado_5 += $gravada_item;
+                        $total_iva_5 += $impuesto_total_item;
+                    } elseif ($porcentaje_impuesto == 10) {
+                        $total_gravado_10 += $gravada_item;
+                        $total_iva_10 += $impuesto_total_item;
+                    }
+                } else {
+                    // Producto sin impuesto definido, sumar al total sin cálculos
+                    $total += $precio_con_iva * $cantidad;
+                    $total_exento += $precio_con_iva * $cantidad;
+                }
             }
 
-            // Actualizar cabecera
+            // Calcular subtotal y total de IVA
+            $subtotal = $total_exento + $total_gravado_5 + $total_gravado_10;
+            $total_iva = $total_iva_5 + $total_iva_10;
+            $total = round($total, 2);
+
+            // Actualizar cabecera con totales de IVA
             DB::update(
                 'UPDATE ordenes_compra
-                 SET id_proveedor = ?, fecha_orden = ?, total = ?, id_sucursal = ?,
-                     observaciones = ?, fecha_entrega_esperada = ?
+                 SET id_proveedor = ?, fecha_orden = ?, subtotal = ?,
+                     total_exento = ?, total_gravado_5 = ?, total_gravado_10 = ?,
+                     total_iva_5 = ?, total_iva_10 = ?, total_iva = ?, total = ?,
+                     id_sucursal = ?, observaciones = ?
                  WHERE id_orden_compra = ?',
                 [
                     $input['id_proveedor'],
                     $input['fecha_orden'],
+                    $subtotal,
+                    $total_exento,
+                    $total_gravado_5,
+                    $total_gravado_10,
+                    $total_iva_5,
+                    $total_iva_10,
+                    $total_iva,
                     $total,
                     $input['id_sucursal'],
                     $input['observaciones'] ?? null,
-                    $input['fecha_entrega_esperada'] ?? null,
                     $id
                 ]
             );
@@ -463,7 +594,7 @@ class OrdenCompraController extends AppBaseController
         }
 
         // Validar si puede ser anulada
-        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA'])) {
+        if (in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA', 'PROCESADO'])) {
             Alert::error('Error', 'No se puede anular una orden que está ' . $ordenCompra->estado . '.');
             return redirect()->route('ordencompra.index');
         }
@@ -487,17 +618,19 @@ class OrdenCompraController extends AppBaseController
 
         if ($query) {
             $productos = DB::select(
-                "SELECT id_producto, descripcion, precio
-                 FROM productos
-                 WHERE (CAST(id_producto AS TEXT) iLIKE ? OR CAST(descripcion AS TEXT) iLIKE ?)
+                "SELECT p.id_producto, p.descripcion, p.precio, t.porcentaje as tax_porcentaje
+                 FROM productos p
+                 LEFT JOIN taxes t ON p.id_tax = t.id_tax
+                 WHERE (CAST(p.id_producto AS TEXT) iLIKE ? OR CAST(p.descripcion AS TEXT) iLIKE ?)
                  LIMIT 20",
                 ['%' . $query . '%', '%' . $query . '%']
             );
         } else {
             // Primeros 20 productos sin filtro
             $productos = DB::select(
-                "SELECT id_producto, descripcion, precio
-                 FROM productos
+                "SELECT p.id_producto, p.descripcion, p.precio, t.porcentaje as tax_porcentaje
+                 FROM productos p
+                 LEFT JOIN taxes t ON p.id_tax = t.id_tax
                  LIMIT 20"
             );
         }
@@ -512,7 +645,7 @@ class OrdenCompraController extends AppBaseController
     {
         $ordenesCompra = DB::select(
             "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
-                    oc.fecha_entrega_esperada, p.descripcion as proveedor
+                    p.descripcion as proveedor
              FROM ordenes_compra oc
              JOIN proveedores p ON oc.id_proveedor = p.id_proveedor
              WHERE oc.estado IN ('PENDIENTE', 'APROBADA', 'PARCIAL')
@@ -527,7 +660,6 @@ class OrdenCompraController extends AppBaseController
                 'total' => number_format($oc->total, 0, ',', '.'),
                 'estado' => $oc->estado,
                 'proveedor' => $oc->proveedor,
-                'fecha_entrega_esperada' => $oc->fecha_entrega_esperada ? date('d/m/Y', strtotime($oc->fecha_entrega_esperada)) : '',
             ];
         }, $ordenesCompra);
 

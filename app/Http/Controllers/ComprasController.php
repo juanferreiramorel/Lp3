@@ -191,12 +191,18 @@ class ComprasController extends AppBaseController
 
         if ($buscar !== '') {
             $buscarLower = mb_strtolower($buscar, 'UTF-8');
-            $sql = "SELECT p.* FROM productos p 
+            $sql = "SELECT p.*, t.porcentaje as tax_porcentaje
+                    FROM productos p
+                    LEFT JOIN taxes t ON p.id_tax = t.id_tax
                     WHERE LOWER(p.descripcion) LIKE ? OR CAST(p.id_producto AS TEXT) LIKE ?
                     LIMIT 50";
             $productos = DB::select($sql, ["%{$buscarLower}%", "%{$buscarLower}%"]);
         } else {
-            $productos = DB::select("SELECT p.* FROM productos p LIMIT 20");
+            $sql = "SELECT p.*, t.porcentaje as tax_porcentaje
+                    FROM productos p
+                    LEFT JOIN taxes t ON p.id_tax = t.id_tax
+                    LIMIT 20";
+            $productos = DB::select($sql);
         }
 
         return view('compras.body_producto')->with('productos', $productos);
@@ -235,8 +241,8 @@ class ComprasController extends AppBaseController
             'codigo.*'            => 'required|integer',
             'cantidad'            => 'required|array|min:1',
             'cantidad.*'          => 'required|numeric|min:1',
-            'precio'              => 'required|array|min:1',
-            'precio.*'            => 'required',
+            'precio_unitario'              => 'required|array|min:1',
+            'precio_unitario.*'            => 'required',
         ], [
             'id_proveedor.required'        => 'El proveedor es obligatorio.',
             'id_proveedor.exists'          => 'El proveedor no es válido.',
@@ -264,14 +270,25 @@ class ComprasController extends AppBaseController
 
         $idSucursal = (int)$input['id_sucursal'];
 
-        // Calcular total con normalización robusta (1.234.567,89 -> 1234567.89)
+        // Inicializar totales
         $total = 0.0;
-        foreach ($input['codigo'] as $i => $codigo) {
-            $monto = str_replace('.', '', $input['precio'][$i] ?? '0');
-            $cant  = (int)($input['cantidad'][$i] ?? 0);
-            $total += ($cant * $monto);
-        }
-        $total = round($total, 2);
+        $total_exento = 0;
+        $total_gravado_5 = 0;
+        $total_gravado_10 = 0;
+        $total_iva_5 = 0;
+        $total_iva_10 = 0;
+
+        // Obtener información de productos incluyendo impuestos
+        $codigos = array_map('intval', $input['codigo'] ?? []);
+        $productosInfo = !empty($codigos)
+            ? DB::table('productos as p')
+                ->leftJoin('taxes as t', 'p.id_tax', '=', 't.id_tax')
+                ->whereIn('p.id_producto', $codigos)
+                ->select('p.id_producto', 'p.id_tax', 't.porcentaje')
+                ->get()
+                ->keyBy('id_producto')
+                ->toArray()
+            : [];
 
         DB::beginTransaction();
         try {
@@ -281,11 +298,11 @@ class ComprasController extends AppBaseController
                 $input['cantidad_cuotas'] = null;
             }
 
-            // Cabecera
+            // Cabecera (insertamos con totales iniciales, luego actualizamos)
             $idCompra = DB::table('compras')->insertGetId([
                 'id_proveedor'        => (int)$input['id_proveedor'],
                 'fecha_compra'        => $input['fecha_compra'],
-                'total'               => $total,
+                'total'               => 0, // Se actualizará después
                 'user_id'             => (int)$input['user_id'],
                 'id_sucursal'         => $idSucursal,
                 'factura'             => $input['factura'] ?? null,
@@ -294,21 +311,78 @@ class ComprasController extends AppBaseController
                 'cantidad_cuotas'     => $input['cantidad_cuotas'],
             ], 'id_compra');
 
-            // Detalle + AUMENTO de stock por sucursal
+            // Detalle + AUMENTO de stock por sucursal + Cálculo de IVA
             foreach ($input['codigo'] as $i => $codigo) {
-                $monto = str_replace('.', '', $input['precio_unitario'][$i] ?? '0');
+                $precio_con_iva = str_replace('.', '', $input['precio_unitario'][$i] ?? '0');
                 $cant  = (int)($input['cantidad'][$i] ?? 0);
 
+                // Obtener información del producto
+                $productoInfo = $productosInfo[(int)$codigo] ?? null;
+
+                if (!$productoInfo || !$productoInfo->id_tax) {
+                    // Producto sin impuesto - ERROR
+                    DB::rollback();
+                    Alert::error('Error', 'El producto con ID ' . $codigo . ' no tiene un impuesto asignado. Todos los productos deben tener impuesto.');
+                    return back()->withInput();
+                }
+
+                $porcentaje_impuesto = $productoInfo->porcentaje;
+                $id_tax = $productoInfo->id_tax;
+
+                // Calcular precio sin impuesto usando la fórmula paraguaya
+                $precio_sin_impuesto = $porcentaje_impuesto > 0
+                    ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                    : $precio_con_iva;
+
+                // Calcular monto del impuesto
+                $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                // Calcular subtotales por item
+                $subtotal_item = $precio_con_iva * $cant;
+                $gravada_item = $precio_sin_impuesto * $cant;
+                $impuesto_total_item = $monto_impuesto * $cant;
+                $total += $subtotal_item;
+
+                // Acumular en los totales según tipo de impuesto
+                if ($porcentaje_impuesto == 0) {
+                    $total_exento += $gravada_item;
+                } elseif ($porcentaje_impuesto == 5) {
+                    $total_gravado_5 += $gravada_item;
+                    $total_iva_5 += $impuesto_total_item;
+                } elseif ($porcentaje_impuesto == 10) {
+                    $total_gravado_10 += $gravada_item;
+                    $total_iva_10 += $impuesto_total_item;
+                }
+
+                // Insertar detalle con información de impuestos
                 DB::table('detalle_compras')->insert([
-                    'id_compra'       => $idCompra,
-                    'id_producto'     => (int)$codigo,
-                    'cantidad'        => $cant,
-                    'precio_unitario' => $monto,
+                    'id_compra'           => $idCompra,
+                    'id_producto'         => (int)$codigo,
+                    'cantidad'            => $cant,
+                    'precio_unitario'     => $precio_con_iva,
+                    'id_tax'              => $id_tax,
+                    'precio_sin_impuesto' => $precio_sin_impuesto,
+                    'monto_impuesto'      => $monto_impuesto,
                 ]);
 
                 // stock += cantidad
                 $this->increaseStock((int)$codigo, $cant, $idSucursal);
             }
+
+            // Calcular total de IVA
+            $total_iva = $total_iva_5 + $total_iva_10;
+            $total = round($total, 2);
+
+            // Actualizar totales en la cabecera
+            DB::table('compras')->where('id_compra', $idCompra)->update([
+                'total'           => $total,
+                'total_exento'    => $total_exento,
+                'total_gravado_5' => $total_gravado_5,
+                'total_gravado_10'=> $total_gravado_10,
+                'total_iva_5'     => $total_iva_5,
+                'total_iva_10'    => $total_iva_10,
+                'total_iva'       => $total_iva,
+            ]);
 
             // Si la compra se creó desde una orden, actualizar el estado y vincular
             if (!empty($input['id_orden_compra'])) {
@@ -350,9 +424,10 @@ class ComprasController extends AppBaseController
         }
 
         $detalles = DB::select(
-            "SELECT d.*, pr.descripcion
+            "SELECT d.*, pr.descripcion, t.porcentaje as tax_porcentaje
                FROM detalle_compras d
           LEFT JOIN productos pr ON pr.id_producto = d.id_producto
+          LEFT JOIN taxes t ON pr.id_tax = t.id_tax
               WHERE d.id_compra = ?",
             [$id]
         );
@@ -386,9 +461,10 @@ class ComprasController extends AppBaseController
         $sucursales = $this->getSucursalesPermitidas();
 
         $detalles = DB::select(
-            "SELECT d.*, pr.descripcion
+            "SELECT d.*, pr.descripcion, t.porcentaje as tax_porcentaje
                FROM detalle_compras d
           LEFT JOIN productos pr ON pr.id_producto = d.id_producto
+          LEFT JOIN taxes t ON pr.id_tax = t.id_tax
               WHERE d.id_compra = ?",
             [$id]
         );
@@ -468,16 +544,70 @@ class ComprasController extends AppBaseController
             $mapAnt[$d->id_producto] = ($mapAnt[$d->id_producto] ?? 0) + (int)$d->cantidad;
         }
 
-        // Mapa nuevo + total
-        $mapNuevo = [];
+        // Inicializar totales
         $total = 0.0;
+        $total_exento = 0;
+        $total_gravado_5 = 0;
+        $total_gravado_10 = 0;
+        $total_iva_5 = 0;
+        $total_iva_10 = 0;
+
+        // Obtener información de productos incluyendo impuestos
+        $codigos = array_map('intval', $input['codigo'] ?? []);
+        $productosInfo = !empty($codigos)
+            ? DB::table('productos as p')
+                ->leftJoin('taxes as t', 'p.id_tax', '=', 't.id_tax')
+                ->whereIn('p.id_producto', $codigos)
+                ->select('p.id_producto', 'p.id_tax', 't.porcentaje')
+                ->get()
+                ->keyBy('id_producto')
+                ->toArray()
+            : [];
+
+        // Mapa nuevo + calcular totales con IVA
+        $mapNuevo = [];
         foreach ($input['codigo'] as $i => $codigo) {
-            $monto = $this->normalizeNumber($input['precio'][$i] ?? 0);
+            $precio_con_iva = $this->normalizeNumber(str_replace('.', '', $input['precio_unitario'][$i] ?? '0'));
             $cant  = (int)($input['cantidad'][$i] ?? 0);
-            $total += ($cant * $monto);
             $mapNuevo[(int)$codigo] = ($mapNuevo[(int)$codigo] ?? 0) + $cant;
+
+            // Obtener información del producto para calcular IVA
+            $productoInfo = $productosInfo[(int)$codigo] ?? null;
+
+            if ($productoInfo && $productoInfo->id_tax) {
+                $porcentaje_impuesto = $productoInfo->porcentaje;
+
+                // Calcular precio sin impuesto
+                $precio_sin_impuesto = $porcentaje_impuesto > 0
+                    ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                    : $precio_con_iva;
+
+                // Calcular monto del impuesto
+                $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                // Calcular subtotales por item
+                $subtotal_item = $precio_con_iva * $cant;
+                $gravada_item = $precio_sin_impuesto * $cant;
+                $impuesto_total_item = $monto_impuesto * $cant;
+                $total += $subtotal_item;
+
+                // Acumular en los totales según tipo de impuesto
+                if ($porcentaje_impuesto == 0) {
+                    $total_exento += $gravada_item;
+                } elseif ($porcentaje_impuesto == 5) {
+                    $total_gravado_5 += $gravada_item;
+                    $total_iva_5 += $impuesto_total_item;
+                } elseif ($porcentaje_impuesto == 10) {
+                    $total_gravado_10 += $gravada_item;
+                    $total_iva_10 += $impuesto_total_item;
+                }
+            } else {
+                // Producto sin impuesto definido, sumar al total sin cálculos
+                $total += $precio_con_iva * $cant;
+            }
         }
         $total = round($total, 2);
+        $total_iva = $total_iva_5 + $total_iva_10;
 
         DB::beginTransaction();
         try {
@@ -500,7 +630,7 @@ class ComprasController extends AppBaseController
                 }
             }
 
-            // Actualizar cabecera
+            // Actualizar cabecera con totales de IVA
             DB::table('compras')->where('id_compra', $id)->update([
                 'id_proveedor'        => (int)$input['id_proveedor'],
                 'fecha_compra'        => $input['fecha_compra'],
@@ -511,19 +641,53 @@ class ComprasController extends AppBaseController
                 'condicion_compra'    => $input['condicion_compra'],
                 'intervalo'           => $input['intervalo'],
                 'cantidad_cuotas'     => $input['cantidad_cuotas'],
+                'total_exento'        => $total_exento,
+                'total_gravado_5'     => $total_gravado_5,
+                'total_gravado_10'    => $total_gravado_10,
+                'total_iva_5'         => $total_iva_5,
+                'total_iva_10'        => $total_iva_10,
+                'total_iva'           => $total_iva,
             ]);
 
-            // Reemplazar detalle (simplifica; alternativamente upsert)
+            // Reemplazar detalle con información de impuestos
             DB::table('detalle_compras')->where('id_compra', $id)->delete();
             foreach ($input['codigo'] as $i => $codigo) {
-                $monto = $this->normalizeNumber($input['precio_unitario'][$i] ?? 0);
+                $precio_con_iva = $this->normalizeNumber(str_replace('.', '', $input['precio_unitario'][$i] ?? '0'));
                 $cant  = (int)($input['cantidad'][$i] ?? 0);
-                DB::table('detalle_compras')->insert([
-                    'id_compra'       => $id,
-                    'id_producto'     => (int)$codigo,
-                    'cantidad'        => $cant,
-                    'precio_unitario' => $monto,
-                ]);
+
+                // Obtener información del producto
+                $productoInfo = $productosInfo[(int)$codigo] ?? null;
+
+                if ($productoInfo && $productoInfo->id_tax) {
+                    $porcentaje_impuesto = $productoInfo->porcentaje;
+                    $id_tax = $productoInfo->id_tax;
+
+                    // Calcular precio sin impuesto
+                    $precio_sin_impuesto = $porcentaje_impuesto > 0
+                        ? $precio_con_iva / (1 + ($porcentaje_impuesto / 100))
+                        : $precio_con_iva;
+
+                    // Calcular monto del impuesto
+                    $monto_impuesto = $precio_con_iva - $precio_sin_impuesto;
+
+                    DB::table('detalle_compras')->insert([
+                        'id_compra'           => $id,
+                        'id_producto'         => (int)$codigo,
+                        'cantidad'            => $cant,
+                        'precio_unitario'     => $precio_con_iva,
+                        'id_tax'              => $id_tax,
+                        'precio_sin_impuesto' => $precio_sin_impuesto,
+                        'monto_impuesto'      => $monto_impuesto,
+                    ]);
+                } else {
+                    // Producto sin impuesto
+                    DB::table('detalle_compras')->insert([
+                        'id_compra'       => $id,
+                        'id_producto'     => (int)$codigo,
+                        'cantidad'        => $cant,
+                        'precio_unitario' => $precio_con_iva,
+                    ]);
+                }
             }
 
             DB::commit();
@@ -704,9 +868,10 @@ class ComprasController extends AppBaseController
 
             // Obtener los detalles de la orden
             $detalles = DB::select(
-                "SELECT d.id_producto, d.cantidad, d.precio_unitario, p.descripcion
+                "SELECT d.id_producto, d.cantidad, d.precio_unitario, p.descripcion, t.porcentaje as tax_porcentaje
                  FROM detalle_orden_compra d
                  JOIN productos p ON d.id_producto = p.id_producto
+                 LEFT JOIN taxes t ON p.id_tax = t.id_tax
                  WHERE d.id_orden_compra = ?",
                 [$id]
             );

@@ -35,15 +35,8 @@
 </div>
 <input type="hidden" name="user_id" value="{{ auth()->id() }}">
 
-<!-- Total -->
-<div class="form-group col-sm-3">
-  {!! Form::label('total', 'Total:') !!}
-  {!! Form::text('total', isset($compra) ? number_format($compra->total ?? 0, 0, ',', '.') : '0', [
-      'class' => 'form-control text-right',
-      'readonly',
-      'id' => 'total'
-  ]) !!}
-</div>
+<!-- Total (hidden) -->
+{!! Form::hidden('total', isset($compra) ? $compra->total : 0, ['id' => 'total']) !!}
 
 <!-- Condicion venta Field -->
 <div class="form-group col-sm-4">
@@ -89,9 +82,92 @@
 
 @push('scripts')
     <script>
+        // Función para formatear números con separador de miles (GLOBAL)
+        function formatMoney(n) {
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Función para limpiar formato de número (GLOBAL)
+        function cleanNumber(str) {
+            return parseFloat(str.toString().replace(/\./g, '')) || 0;
+        }
+
+        // Función para calcular el total general (GLOBAL)
+        function calcularTotal() {
+            let total = 0;
+            $('.subtotal-input').each(function() {
+                total += cleanNumber($(this).val());
+            });
+            // Actualizar campo hidden con valor numérico sin formato
+            $('#total').val(total);
+            calcularTotalesImpuestos();
+        }
+
+        // Función para calcular los totales de impuestos (GLOBAL)
+        function calcularTotalesImpuestos() {
+            let subtotal_sin_impuestos = 0;
+            let total_iva_5 = 0;
+            let total_iva_10 = 0;
+            let tiene_iva_5 = false;
+            let tiene_iva_10 = false;
+
+            // Recorrer cada fila de la tabla
+            $('#selectedProducts tr').each(function() {
+                let row = $(this);
+                let subtotal_con_iva = cleanNumber(row.find('.subtotal-input').val());
+                let tax_porcentaje = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
+
+                // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
+                let precio_sin_impuesto = 0;
+                let monto_impuesto = 0;
+
+                if (tax_porcentaje > 0) {
+                    precio_sin_impuesto = subtotal_con_iva / (1 + (tax_porcentaje / 100));
+                    monto_impuesto = subtotal_con_iva - precio_sin_impuesto;
+                } else {
+                    precio_sin_impuesto = subtotal_con_iva;
+                    monto_impuesto = 0;
+                }
+
+                // Acumular subtotal sin impuestos
+                subtotal_sin_impuestos += precio_sin_impuesto;
+
+                // Acumular impuestos según tipo
+                if (tax_porcentaje == 5) {
+                    total_iva_5 += monto_impuesto;
+                    tiene_iva_5 = true;
+                } else if (tax_porcentaje == 10) {
+                    total_iva_10 += monto_impuesto;
+                    tiene_iva_10 = true;
+                }
+            });
+
+            // Calcular total con impuestos
+            let total_con_impuestos = subtotal_sin_impuestos + total_iva_5 + total_iva_10;
+
+            // Actualizar displays
+            $('#subtotal_sin_impuestos_display').text(formatMoney(Math.round(subtotal_sin_impuestos)) + ' Gs.');
+            $('#total_iva_5_display').text(formatMoney(Math.round(total_iva_5)) + ' Gs.');
+            $('#total_iva_10_display').text(formatMoney(Math.round(total_iva_10)) + ' Gs.');
+            $('#total_con_impuestos_display').text(formatMoney(Math.round(total_con_impuestos)) + ' Gs.');
+
+            // Mostrar/ocultar filas de IVA dinámicamente
+            if (tiene_iva_5) {
+                $('#row_iva_5').show();
+            } else {
+                $('#row_iva_5').hide();
+            }
+
+            if (tiene_iva_10) {
+                $('#row_iva_10').show();
+            } else {
+                $('#row_iva_10').hide();
+            }
+        }
+
         // comenzar la carga con document ready
         $(document).ready(function() {
-            
+
             /** CONSULTAR AJAX PARA LLENAR POR DEFECTO EL MODAL AL ABRIR SE CONSULTA LA URL */
             document.getElementById('buscar').addEventListener('click', function() {
                 $('#productSearchModal').modal('show'); // Mostrar el modal
@@ -128,16 +204,6 @@
                     $("#cantidad_cuotas").prop('required', true);
                 }
             });
-
-            // Función para formatear números con separador de miles
-            function formatMoney(n) {
-                return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            }
-
-            // Función para limpiar formato de número
-            function cleanNumber(str) {
-                return parseFloat(str.toString().replace(/\./g, '')) || 0;
-            }
 
             // Calcular subtotal y total cuando cambia cantidad
             $(document).on('change keyup', '.cantidad-input', function() {
@@ -185,15 +251,6 @@
                     }
                 });
             });
-
-            // Función para calcular el total general
-            function calcularTotal() {
-                let total = 0;
-                $('.subtotal-input').each(function() {
-                    total += cleanNumber($(this).val());
-                });
-                $('#total').val(formatMoney(total));
-            }
 
             // Calcular total al cargar la página (cuando viene desde orden)
             calcularTotal();

@@ -17,10 +17,10 @@
 <div class="content px-3">
   <div class="card">
     <div class="card-body">
-      @include('compras.show_fields')
+      <div class="row">
+        @include('compras.show_fields')
+      </div>
     </div>
   </div>
-
-  @include('compras.detalle', ['solo_lectura' => true, 'detalles' => $detalles ?? []])
 </div>
 @endsection

@@ -44,6 +44,8 @@
                     <span class="badge badge-info">APROBADA</span>
                 @elseif($ordenCompra->estado == 'PARCIAL')
                     <span class="badge badge-primary">PARCIAL</span>
+                @elseif($ordenCompra->estado == 'PROCESADO')
+                    <span class="badge badge-success">PROCESADO</span>
                 @elseif($ordenCompra->estado == 'COMPLETADA')
                     <span class="badge badge-success">COMPLETADA</span>
                 @elseif($ordenCompra->estado == 'CANCELADA')
@@ -92,12 +94,35 @@
                     </tr>
                 @endforeach
             </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="4" class="text-right">TOTAL:</th>
-                    <th class="text-right">{{ number_format($ordenCompra->total, 0, ',', '.') }}</th>
-                </tr>
-            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Desglose de Impuestos -->
+<div class="row">
+    <div class="col-md-8"></div>
+    <div class="col-md-4">
+        <table class="table table-sm table-borderless mb-0">
+            <tr>
+                <td><strong>Subtotal:</strong></td>
+                <td class="text-right">{{ number_format($ordenCompra->subtotal ?? 0, 0, ',', '.') }} Gs.</td>
+            </tr>
+            @if(($ordenCompra->total_iva_5 ?? 0) > 0)
+            <tr>
+                <td>IVA 5%:</td>
+                <td class="text-right">{{ number_format($ordenCompra->total_iva_5, 0, ',', '.') }} Gs.</td>
+            </tr>
+            @endif
+            @if(($ordenCompra->total_iva_10 ?? 0) > 0)
+            <tr>
+                <td>IVA 10%:</td>
+                <td class="text-right">{{ number_format($ordenCompra->total_iva_10, 0, ',', '.') }} Gs.</td>
+            </tr>
+            @endif
+            <tr class="border-top">
+                <td><strong style="font-size: 1.1em;">Total:</strong></td>
+                <td class="text-right"><strong style="font-size: 1.1em;">{{ number_format($ordenCompra->total, 0, ',', '.') }} Gs.</strong></td>
+            </tr>
         </table>
     </div>
 </div>

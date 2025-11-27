@@ -69,7 +69,7 @@ class OrdenCompraExport implements FromCollection, WithHeadings
 
         // Obtener todos los registros
         $query = "SELECT oc.id_orden_compra, oc.fecha_orden, p.descripcion as proveedor,
-                         oc.total_orden, oc.estado, oc.fecha_entrega_esperada,
+                         oc.total_orden, oc.estado,
                          s.descripcion as sucursal, u.name as usuario
                   {$queryBase} {$where}
                   ORDER BY oc.id_orden_compra DESC";
@@ -84,7 +84,6 @@ class OrdenCompraExport implements FromCollection, WithHeadings
                 $r->proveedor,
                 $r->total_orden,
                 $r->estado,
-                $r->fecha_entrega_esperada,
                 $r->sucursal,
                 $r->usuario,
             ];
@@ -99,6 +98,6 @@ class OrdenCompraExport implements FromCollection, WithHeadings
      */
     public function headings(): array
     {
-        return ['ID', 'Fecha Orden', 'Proveedor', 'Total', 'Estado', 'Fecha Entrega Esperada', 'Sucursal', 'Usuario'];
+        return ['ID', 'Fecha Orden', 'Proveedor', 'Total', 'Estado', 'Sucursal', 'Usuario'];
     }
 }

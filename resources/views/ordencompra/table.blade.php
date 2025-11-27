@@ -6,7 +6,6 @@
                     <th>N° OC</th>
                     <th>Proveedor</th>
                     <th>Fecha Orden</th>
-                    <th>Fecha Entrega</th>
                     <th>Total</th>
                     <th>Estado</th>
                     <th>Sucursal</th>
@@ -20,23 +19,12 @@
                         <td>{{ $ordenCompra->id_orden_compra }}</td>
                         <td>{{ $ordenCompra->proveedor }}</td>
                         <td>{{ \Carbon\Carbon::parse($ordenCompra->fecha_orden)->format('d/m/Y') }}</td>
-                        <td>
-                            @if($ordenCompra->fecha_entrega_esperada)
-                                {{ \Carbon\Carbon::parse($ordenCompra->fecha_entrega_esperada)->format('d/m/Y') }}
-                            @else
-                                -
-                            @endif
-                        </td>
                         <td>{{ number_format($ordenCompra->total, 0, ',', '.') }}</td>
                         <td>
                             @if($ordenCompra->estado == 'PENDIENTE')
                                 <span class="badge badge-warning">PENDIENTE</span>
-                            @elseif($ordenCompra->estado == 'APROBADA')
-                                <span class="badge badge-info">APROBADA</span>
-                            @elseif($ordenCompra->estado == 'PARCIAL')
-                                <span class="badge badge-primary">PARCIAL</span>
-                            @elseif($ordenCompra->estado == 'COMPLETADA')
-                                <span class="badge badge-success">COMPLETADA</span>
+                            @elseif($ordenCompra->estado == 'PROCESADO')
+                                <span class="badge badge-success">PROCESADO</span>
                             @elseif($ordenCompra->estado == 'CANCELADA')
                                 <span class="badge badge-danger">CANCELADA</span>
                             @endif
@@ -47,12 +35,12 @@
                             {!! Form::open(['route' => ['ordencompra.destroy', $ordenCompra->id_orden_compra], 'method' => 'delete', 'style' => 'display:inline']) !!}
                             <div class='btn-group'>
                                 <a href="{{ route('ordencompra.show', [$ordenCompra->id_orden_compra]) }}"
-                                   class='btn btn-default btn-xs'>
+                                   class='btn btn-info btn-xs'>
                                     <i class="far fa-eye"></i>
                                 </a>
-                                @if(!in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA']))
+                                @if(!in_array($ordenCompra->estado, ['COMPLETADA', 'CANCELADA', 'PROCESADO']))
                                     <a href="{{ route('ordencompra.edit', [$ordenCompra->id_orden_compra]) }}"
-                                       class='btn btn-default btn-xs'>
+                                       class='btn btn-warning btn-xs'>
                                         <i class="far fa-edit"></i>
                                     </a>
                                     {!! Form::button('<i class="far fa-trash-alt"></i>', [
@@ -67,7 +55,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center">No se encontraron registros</td>
+                        <td colspan="8" class="text-center">No se encontraron registros</td>
                     </tr>
                 @endforelse
             </tbody>

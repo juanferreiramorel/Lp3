@@ -46,17 +46,6 @@
         </div>
     </div>
 
-    <!-- Fecha Entrega Esperada -->
-    <div class="col-md-3 d-none">
-        <div class="form-group">
-            {!! Form::label('fecha_entrega_esperada', 'Fecha Entrega Esperada:') !!}
-            {!! Form::date('fecha_entrega_esperada', null, [
-                'class' => 'form-control',
-                'id' => 'fecha_entrega_esperada',
-            ]) !!}
-        </div>
-    </div>
-
     <!-- Observaciones -->
     <div class="col-md-8">
         <div class="form-group">
@@ -164,6 +153,69 @@
             total += cleanNumber($(this).val());
         });
         $('#total').val(formatMoney(total));
+        calcularTotalesImpuestos();
+    }
+
+    // Función para calcular los totales de impuestos
+    function calcularTotalesImpuestos() {
+        let subtotal_sin_impuestos = 0;
+        let total_iva_5 = 0;
+        let total_iva_10 = 0;
+        let tiene_iva_5 = false;
+        let tiene_iva_10 = false;
+
+        // Recorrer cada fila de la tabla
+        $('#selectedProducts tr').each(function() {
+            let row = $(this);
+            let subtotal_con_iva = cleanNumber(row.find('.subtotal-input').val());
+            let tax_porcentaje = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
+
+            // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
+            let precio_sin_impuesto = 0;
+            let monto_impuesto = 0;
+
+            if (tax_porcentaje > 0) {
+                precio_sin_impuesto = subtotal_con_iva / (1 + (tax_porcentaje / 100));
+                monto_impuesto = subtotal_con_iva - precio_sin_impuesto;
+            } else {
+                precio_sin_impuesto = subtotal_con_iva;
+                monto_impuesto = 0;
+            }
+
+            // Acumular subtotal sin impuestos
+            subtotal_sin_impuestos += precio_sin_impuesto;
+
+            // Acumular impuestos según tipo
+            if (tax_porcentaje == 5) {
+                total_iva_5 += monto_impuesto;
+                tiene_iva_5 = true;
+            } else if (tax_porcentaje == 10) {
+                total_iva_10 += monto_impuesto;
+                tiene_iva_10 = true;
+            }
+        });
+
+        // Calcular total con impuestos
+        let total_con_impuestos = subtotal_sin_impuestos + total_iva_5 + total_iva_10;
+
+        // Actualizar displays
+        $('#subtotal_sin_impuestos_display').text(formatMoney(Math.round(subtotal_sin_impuestos)) + ' Gs.');
+        $('#total_iva_5_display').text(formatMoney(Math.round(total_iva_5)) + ' Gs.');
+        $('#total_iva_10_display').text(formatMoney(Math.round(total_iva_10)) + ' Gs.');
+        $('#total_con_impuestos_display').text(formatMoney(Math.round(total_con_impuestos)) + ' Gs.');
+
+        // Mostrar/ocultar filas de IVA dinámicamente
+        if (tiene_iva_5) {
+            $('#row_iva_5').show();
+        } else {
+            $('#row_iva_5').hide();
+        }
+
+        if (tiene_iva_10) {
+            $('#row_iva_10').show();
+        } else {
+            $('#row_iva_10').hide();
+        }
     }
 
     // Calcular total al cargar la página (modo edición)

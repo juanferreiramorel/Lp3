@@ -8,7 +8,7 @@
     </thead>
     <tbody>
         @forelse($productos as $product)
-            <tr onclick="seleccionarProducto('{{ $product->id_producto }}', '{{ $product->descripcion }}', '{{ $product->precio }}')">
+            <tr onclick="seleccionarProducto('{{ $product->id_producto }}', '{{ $product->descripcion }}', '{{ round($product->precio) }}', '{{ round($product->precio) }}', 1, '{{ $product->tax_porcentaje ?? 0 }}')">
                 <td>{{ $product->id_producto }}</td>
                 <td>{{ $product->descripcion }}</td>
                 <td>{{ number_format($product->precio, 0, ',', '.') }}</td>

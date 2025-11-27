@@ -46,6 +46,7 @@
                                     <input type="text" class="form-control" name="producto[]" readonly
                                         placeholder="Buscar productos" value="{!! $value->descripcion !!}">
                                     {!! Form::hidden('id_producto[]', $value->id_producto) !!}
+                                    {!! Form::hidden('tax_porcentaje[]', $value->tax_porcentaje ?? 0) !!}
                                     @if(isset($value->id_detalle_compra))
                                         {!! Form::hidden('id_det_compra[]', $value->id_detalle_compra) !!}
                                     @endif
@@ -75,6 +76,35 @@
                             @endforeach
                         @endif
                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Desglose de Impuestos (Estilo Odoo) -->
+<div class="card card-secondary mt-3">
+    <div class="card-body p-3">
+        <div class="row">
+            <div class="col-md-8"></div>
+            <div class="col-md-4">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td><strong>Subtotal:</strong></td>
+                        <td class="text-right" id="subtotal_sin_impuestos_display">0 Gs.</td>
+                    </tr>
+                    <tr id="row_iva_5" style="display: none;">
+                        <td>IVA 5%:</td>
+                        <td class="text-right" id="total_iva_5_display">0 Gs.</td>
+                    </tr>
+                    <tr id="row_iva_10" style="display: none;">
+                        <td>IVA 10%:</td>
+                        <td class="text-right" id="total_iva_10_display">0 Gs.</td>
+                    </tr>
+                    <tr class="border-top">
+                        <td><strong style="font-size: 1.1em;">Total:</strong></td>
+                        <td class="text-right"><strong style="font-size: 1.1em;" id="total_con_impuestos_display">0 Gs.</strong></td>
+                    </tr>
                 </table>
             </div>
         </div>
