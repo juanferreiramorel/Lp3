@@ -79,6 +79,11 @@ Route::get('compras/crear-desde-orden/{id}', [App\Http\Controllers\ComprasContro
 Route::resource('compras', App\Http\Controllers\ComprasController::class);
 // Rutas específicas de órdenes de compra (ANTES del resource)
 Route::get('ordencompra/pendientes', [App\Http\Controllers\OrdenCompraController::class, 'getPendientes'])->name('ordencompra.getPendientes');
+// Rutas para OC con IA
+Route::get('ordencompra/crear-con-ia', [App\Http\Controllers\OrdenCompraController::class, 'createWithAi'])->name('ordencompra.createWithAi');
+Route::post('ordencompra/procesar-ai-pdf', [App\Http\Controllers\OrdenCompraController::class, 'processAiPdf'])->name('ordencompra.processAiPdf');
+Route::post('ordencompra/guardar-ai', [App\Http\Controllers\OrdenCompraController::class, 'storeAi'])->name('ordencompra.storeAi');
+Route::post('ordencompra/proveedor-ajax', [App\Http\Controllers\OrdenCompraController::class, 'storeProviderAjax'])->name('ordencompra.storeProviderAjax');
 Route::resource('ordencompra', App\Http\Controllers\OrdenCompraController::class);
 Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);

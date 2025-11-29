@@ -95,7 +95,7 @@
                         Nueva Orden de Compra
                     </a>
                     <a class="btn btn-ai-gradient ml-2 float-right"
-                       href="{{ route('ordencompra.create') }}">
+                       href="{{ route('ordencompra.createWithAi') }}">
                        <i class="fas fa-robot"></i>
                         <span class="btn-text">Generar Con IA</span>
                     </a>

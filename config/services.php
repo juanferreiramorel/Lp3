@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'ai_ocr' => [
+        'base_url' => env('AI_OCR_API_BASE', 'http://localhost:3005'),
+        'jwt' => env('AI_OCR_JWT', ''),
+        'socket_secret' => env('AI_OCR_SOCKET_SECRET', ''),
+    ],
+
 ];
