@@ -167,8 +167,8 @@ class ReporteController extends Controller
         $input = $request->all();
 
         // construir la consulta con join para mostrar la descripción de la marca
-        $baseQuery = 'SELECT p.id_producto, p.descripcion, p.precio, p.tipo_iva, m.descripcion AS marca 
-                 FROM productos p 
+        $baseQuery = 'SELECT p.id_producto, p.descripcion, p.precio, m.descripcion AS marca
+                 FROM productos p
                  LEFT JOIN marcas m ON p.id_marca = m.id_marca';
 
         // verificar si los filtros no estan vacios para realizar el where

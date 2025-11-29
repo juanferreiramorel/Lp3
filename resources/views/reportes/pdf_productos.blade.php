@@ -70,7 +70,6 @@
                         <th>#</th>
                         <th>Descripción</th>
                         <th>Precio</th>
-                        <th>IVA</th>
                         <th>Marca</th>
                     </tr>
                 </thead>
@@ -80,7 +79,6 @@
                             <td>{{ $producto->id_producto }}</td>
                             <td>{{ $producto->descripcion }}</td>
                             <td>{{ number_format($producto->precio, 2, ',', '.') }}</td>
-                            <td>{{ $producto->tipo_iva }}</td>
                             <td>{{ $producto->marca }}</td>
                         </tr>
                     @endforeach

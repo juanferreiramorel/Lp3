@@ -16,12 +16,6 @@
     <p>{{ $productos->precio }}</p>
 </div>
 
-<!-- Tipo Iva Field -->
-<div class="col-sm-12">
-    {!! Form::label('tipo_iva', 'Tipo Iva:') !!}
-    <p>{{ $productos->tipo_iva }}</p>
-</div>
-
 <!-- Controlar Stock Field -->
 <div class="col-sm-12">
     {!! Form::label('controlar_stock', 'Controlar Stock:') !!}

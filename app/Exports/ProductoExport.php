@@ -23,7 +23,7 @@ class ProductoExport implements FromCollection, WithHeadings
     public function collection()
     {
         // Construir la consulta con join para mostrar la descripción de la marca
-        $baseQuery = 'SELECT p.id_producto, p.descripcion, p.precio, p.tipo_iva, m.descripcion AS marca
+        $baseQuery = 'SELECT p.id_producto, p.descripcion, p.precio, m.descripcion AS marca
                  FROM productos p
                  LEFT JOIN marcas m ON p.id_marca = m.id_marca';
 
@@ -41,7 +41,6 @@ class ProductoExport implements FromCollection, WithHeadings
                 $r->id_producto,
                 $r->descripcion,
                 $r->precio,
-                $r->tipo_iva,
                 $r->marca,
             ];
         }, $productos);
@@ -55,6 +54,6 @@ class ProductoExport implements FromCollection, WithHeadings
      */
     public function headings(): array
     {
-        return ['ID', 'Descripción', 'Precio', 'IVA', 'Marca'];
+        return ['ID', 'Descripción', 'Precio', 'Marca'];
     }
 }
