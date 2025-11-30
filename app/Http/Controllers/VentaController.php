@@ -558,7 +558,13 @@ class VentaController extends AppBaseController
     }
     public function edit($id)
     {
-        $venta = DB::selectOne('SELECT * FROM ventas WHERE id_venta = ?', [$id]);
+        $venta = DB::selectOne(
+            "SELECT v.*, t.numero_timbrado
+            FROM ventas v
+            LEFT JOIN timbrados t ON v.id_timbrado = t.id_timbrado
+            WHERE v.id_venta = ?",
+            [$id]
+        );
 
         if (empty($venta)) {
             Alert::error('Error', 'Venta no encontrada.');

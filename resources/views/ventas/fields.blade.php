@@ -20,7 +20,16 @@
 <!-- Timbrado Field -->
 <div class="form-group col-sm-4">
     {!! Form::label('id_timbrado', 'Timbrado: *') !!}
-    @if(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+    @if(isset($ventas) && isset($ventas->id_timbrado))
+        {{-- Modo edición: mostrar como texto readonly --}}
+        {!! Form::text('timbrado_display', $ventas->numero_timbrado ?? $ventas->id_timbrado, [
+            'class' => 'form-control',
+            'readonly' => true,
+        ]) !!}
+        {!! Form::hidden('id_timbrado', $ventas->id_timbrado) !!}
+        <small class="form-text text-muted">El timbrado no puede ser modificado en una venta registrada</small>
+    @elseif(isset($timbrados_vigentes) && count($timbrados_vigentes) > 0)
+        {{-- Modo creación: mostrar selector --}}
         {!! Form::select('id_timbrado',
             $timbrados_vigentes->pluck('numero_timbrado', 'id_timbrado')->prepend('Seleccione un timbrado', ''),
             null,
@@ -44,15 +53,25 @@
 
 <!-- Factura Nro Field -->
 <div class="form-group col-sm-4">
-    {!! Form::label('factura_nro_display', 'Número de Factura (Preview):') !!}
-    {!! Form::text(
-        'factura_nro_display',
-        null,
-        ['class' => 'form-control bg-light', 'readonly' => 'readonly', 'id' => 'factura_nro_display', 'placeholder' => 'Seleccione un timbrado primero'],
-    ) !!}
-    <small class="form-text text-success">
-        <i class="fas fa-info-circle"></i> El número se generará automáticamente del timbrado seleccionado
-    </small>
+    {!! Form::label('factura_nro_display', 'Número de Factura:') !!}
+    @if(isset($ventas) && isset($ventas->factura_nro))
+        {{-- Modo edición: mostrar el número de factura como texto readonly --}}
+        {!! Form::text('factura_nro_display', $ventas->factura_nro, [
+            'class' => 'form-control',
+            'readonly' => true,
+        ]) !!}
+        <small class="form-text text-muted">El número de factura no puede ser modificado</small>
+    @else
+        {{-- Modo creación: mostrar preview --}}
+        {!! Form::text(
+            'factura_nro_display',
+            null,
+            ['class' => 'form-control bg-light', 'readonly' => 'readonly', 'id' => 'factura_nro_display', 'placeholder' => 'Seleccione un timbrado primero'],
+        ) !!}
+        <small class="form-text text-success">
+            <i class="fas fa-info-circle"></i> El número se generará automáticamente del timbrado seleccionado
+        </small>
+    @endif
 </div>
 
 @push('page_scripts')

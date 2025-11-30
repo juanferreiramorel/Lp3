@@ -36,106 +36,144 @@
 <!-- SECCION JAVASCRIPT -->
 @push('scripts')
 <script>
-        // Evento para buscar productos al teclear en el input y consultar la funcion buscar productos
-        document.getElementById('productSearchQuery').addEventListener('keyup', function() {
-            let query = this.value;
-            fetch('{{ url('buscar-productos') }}?query=' + query + '&cod_suc=' + $("#id_sucursal").val())
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('modalResults').innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
+        // Evento para buscar productos al teclear en el input
+        const productSearchInput = document.getElementById('productSearchQuery');
+        if (productSearchInput) {
+            productSearchInput.addEventListener('keyup', function() {
+                // Validar que haya una sucursal seleccionada
+                const idSucursal = $("#id_sucursal").val();
+                if (!idSucursal || idSucursal === '') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sucursal Requerida',
+                        text: 'Debe seleccionar una sucursal antes de buscar productos.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
 
-        function seleccionarProducto(codigo, producto, precio) {
-            // Obtener todas las filas de la tabla que fue seleccionado
-            let filas = document.getElementById('selectedProducts').getElementsByTagName('tr');
+                const query = encodeURIComponent(this.value || '');
+                fetch("{{ url('buscar-productos-pedidos') }}?query=" + query + "&cod_suc=" + idSucursal)
+                    .then(response => response.text())
+                    .then(html => {
+                        const modalResults = document.getElementById('modalResults');
+                        if (modalResults) {
+                            modalResults.innerHTML = html;
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        }
 
-            // Verificar si el producto ya ha sido agregado en el detalle de la tabla html para validar
+        // Funciones simplificadas que usan las globales de fields.blade.php
+        function formatMoneyPedido(value) {
+            // Usar la función global formatMoney de fields.blade.php
+            if (typeof formatMoney === 'function') {
+                return formatMoney(value, 0);
+            }
+            // Fallback si no está disponible
+            const sanitizedValue = value === undefined || value === null ? 0 : value;
+            const parsed = parseInt(sanitizedValue.toString().replace(/[^\d-]/g, ''), 10) || 0;
+            return parsed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        // Función para seleccionar producto (similar a ventas)
+        function seleccionarProducto(codigo, producto, precio, tax_porcentaje = 0) {
+            // Si existe la función agregarProductoATabla (vista de IA), usarla
+            if (typeof window.agregarProductoATabla === 'function') {
+                // Verificar si hay un producto no encontrado pendiente
+                if (window.currentUnmappedProduct) {
+                    window.agregarProductoATabla(
+                        codigo,
+                        producto,
+                        window.currentUnmappedProduct.precio || precio,
+                        tax_porcentaje || 0,
+                        window.currentUnmappedProduct.cantidad || 1
+                    );
+                    window.currentUnmappedProduct = null;
+                } else {
+                    // Agregar producto normal desde el modal
+                    window.agregarProductoATabla(
+                        codigo,
+                        producto,
+                        precio,
+                        tax_porcentaje || 0,
+                        1
+                    );
+                }
+                $('#productSearchModal').modal('hide');
+                return;
+            }
+
+            // Código original para vista normal de pedidos
+            const tabla = document.getElementById('selectedProducts');
+            if (!tabla) {
+                return;
+            }
+
+            // Verificar si el producto ya fue agregado
+            const filas = tabla.getElementsByTagName('tr');
             for (let i = 0; i < filas.length; i++) {
-                let codigoExistente = filas[i].querySelector('input[name="codigo[]"]').value;//capturar el valor del codigo del proudcto
-                if (codigoExistente === codigo) {//verifica si el codigo del proudcto ya fue agregado
+                const codigoExistente = filas[i].querySelector('input[name="codigo[]"]');
+                if (codigoExistente && codigoExistente.value === codigo) {
                     alert('El producto ya fue agregado.');
-                    return; // Salir de la función si el producto ya existe
+                    return;
                 }
             }
 
-            // Crear una nueva fila para el producto seleccionado con inputs
-            let row = document.createElement('tr');
+            // Asegurar que tax_porcentaje sea un número válido (0-100)
+            // Si viene como precio (mayor a 100), corregirlo a 0
+            let taxPorcentajeFinal = parseFloat(tax_porcentaje);
+            // Validar que sea un número válido y esté en el rango correcto (0-100)
+            if (isNaN(taxPorcentajeFinal)) {
+                taxPorcentajeFinal = 0;
+            } else if (taxPorcentajeFinal > 100) {
+                // Si el valor es mayor a 100, probablemente es un precio, no un porcentaje
+                console.warn('tax_porcentaje parece ser un precio (' + taxPorcentajeFinal + '), estableciendo a 0');
+                taxPorcentajeFinal = 0;
+            } else if (taxPorcentajeFinal < 0) {
+                taxPorcentajeFinal = 0;
+            }
 
-            // Agregar los inputs a la fila con los valores obtenidos de la función seleccionarProducto
-            // Se cambia el tipo de dato de number a tipo text para que no dé problemas en el separador de miles
+            // Calcular subtotal inicial (precio * cantidad = precio * 1)
+            // El precio viene como número entero desde PHP (ej: 88280)
+            const cantidad = 1;
+            const subtotal = precio * cantidad;
+
+            // Crear la fila
+            const row = document.createElement('tr');
             row.innerHTML = `
-                <td><input type="text" name="codigo[]" class="form-control" value="${codigo}" readonly></td>
-                <td><input type="text" name="producto[]" class="form-control" value="${producto}" readonly></td>
-                <td><input type="number" name="cantidad[]" class="text-center form-control" value="1" min="1" oninput="calcularSubtotal(this)"></td>
-                <td><input type="text" name="precio[]" class="text-center form-control precio-input" value="${formatMoney(precio, 0)}" oninput="calcularSubtotal(this)"></td>
-                <td><input type="text" name="subtotal[]" class="text-center form-control" value="${formatMoney(precio, 0)}" readonly></td>
-                <td><button type="button" class="btn btn-danger" onclick="borrar(this)"><i class="far fa-trash-alt"></i></button></td>
+                <td class="text-center"><input type="text" name="codigo[]" class="form-control text-center" value="${codigo}" readonly></td>
+                <td>
+                    <input type="text" name="producto[]" class="form-control" value="${producto}" readonly>
+                    <input type="hidden" name="tax_porcentaje[]" value="${taxPorcentajeFinal}">
+                </td>
+                <td class="text-center"><input type="number" name="cantidad[]" class="text-center form-control cantidad-input" value="${cantidad}" min="1"></td>
+                <td class="text-center"><input type="text" name="precio[]" class="text-center form-control precio-input" value="${formatMoneyPedido(precio)}"></td>
+                <td class="text-center"><input type="text" name="subtotal[]" class="text-center form-control subtotal-input" value="${formatMoneyPedido(subtotal)}" readonly></td>
+                <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-item"><i class="far fa-trash-alt"></i></button></td>
             `;
 
-            // Agregar la fila a la tabla de productos seleccionados
-            document.getElementById('selectedProducts').appendChild(row);
+            // Agregar la fila a la tabla
+            tabla.appendChild(row);
 
-            // Calcular el total general según el detalle cargado
-            total();
+            // Calcular el total general
+            if (typeof window.pedidosCalcularTotal === 'function') {
+                window.pedidosCalcularTotal();
+            }
 
-            // Cerrar el modal después de seleccionar el producto
+            // Cerrar el modal
             $('#productSearchModal').modal('hide');
         }
+        
+        // Exponer función globalmente
+        window.seleccionarProducto = seleccionarProducto;
 
-        function calcularSubtotal(element) {
-            // Obtener la fila padre de este elemento (la fila del producto seleccionado)
-            let row = element.closest('tr');
-            // Obtener los valores de precio y cantidad y convertirlos a números
-            let precio = parseFloat(row.querySelector('input[name="precio[]"]').value.replace(/\./g, ''));
-            let cantidad = parseFloat(element.value);
-            let subtotal = precio * cantidad;
-            // Asignar el calculo al campo subtotal al nuestro detalle del producto
-            row.querySelector('input[name="subtotal[]"]').value = formatMoney(subtotal);
-
-            // Calcular el total general segun el detalle cargado al momento de aumentar la cantidad
-            total();
-        }
-
-        // Funcion total para sumar todo los subtotales de lo que agrega el cliente
-        function total() {
-            let total = 0;
-            let subtotals = document.querySelectorAll('input[name="subtotal[]"]');
-
-            subtotals.forEach(function(subtotal) {
-                // Convertir el subtotal a número y sumarlo al total general
-                total += parseFloat(subtotal.value.replace(/\./g, ''));
-            });
-
-            /** actualizar mi elemento total y dentro del campo imprimimos el valor calculado */
-            document.getElementById('total').value = formatMoney(total);
-        }
-
+        // Función para eliminar producto (ya no se usa, se maneja con event listener en fields.blade.php)
         function borrar(button) {
-            // Eliminar la fila del producto
-            let row = button.closest('tr');
-            row.remove();
-
-            // Recalcular el total general después de eliminar un producto
-            calcularSubtotal(button);
+            // Esta función ya no se usa, se maneja con el event listener en fields.blade.php
+            // Se mantiene por compatibilidad pero no hace nada
         }
 
-        /** esta funcion nos ayudara a dar el formato a nuestros precios en javacript y colocar el separador de miles correspondientes */
-        function formatMoney (n, c, d, t) {
-            let s, i, j;
-            c = isNaN(c = Math.abs(c)) ? 0 : c;
-            d = d === undefined ? "," : d;
-            t = t === undefined ? "." : t;
-            s = n < 0 ? "-" : "";
-            i = String(parseInt(n = Math.abs(Number(n) || 0).toFixed(c)));
-            j = (j = i.length) > 3 ? j % 3 : 0;
-            return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) +
-                (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
-        }
-
-       
 </script>
 @endpush

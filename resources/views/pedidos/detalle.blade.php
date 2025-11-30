@@ -20,7 +20,7 @@
             
             <div class="table-responsive">
                 <br>
-                <table class="table item-table">
+                <table class="table detalle-pedido">
                     <thead>
                         <tr>
                             <th style="width:12%;">#</th>
@@ -47,6 +47,7 @@
                                         placeholder="Buscar productos" value="{!! $value->descripcion !!}">
                                     {!! Form::hidden('id_producto[]', $value->id_producto) !!}
                                     {!! Form::hidden('id_det_pedido[]', $value->id_detalle_pedido) !!}
+                                    {!! Form::hidden('tax_porcentaje[]', $value->tax_porcentaje ?? 0) !!}
                                 </td>
 
                                 <td class="text-center">

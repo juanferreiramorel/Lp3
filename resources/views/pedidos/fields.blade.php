@@ -54,15 +54,48 @@
 </div>
 
 <!-- Detalle de pedido -->
-<div class="form-group col-sm-12"> 
+<div class="form-group col-sm-12">
     @includeIf('pedidos.detalle')
 </div>
 
+<!-- Total Field (Hidden - se calcula automáticamente) -->
+{!! Form::hidden('total', isset($pedido) ? $pedido->total_pedido : 0, ['id' => 'total']) !!}
 
-<!-- Total Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('total', 'Total:') !!}
-    {!! Form::text('total', isset($pedido) ? number_format($pedido->total_pedido, 0, ',', '.') : null, ['class' => 'form-control', 'id' => 'total', 'readonly']) !!}
+<!-- Hidden fields for tax totals -->
+{!! Form::hidden('subtotal_sin_impuestos', 0, ['id' => 'subtotal_sin_impuestos']) !!}
+{!! Form::hidden('total_iva_5', 0, ['id' => 'total_iva_5']) !!}
+{!! Form::hidden('total_iva_10', 0, ['id' => 'total_iva_10']) !!}
+{!! Form::hidden('total_con_impuestos', 0, ['id' => 'total_con_impuestos']) !!}
+
+<!-- Desglose de Impuestos (Estilo Odoo) -->
+<div class="col-sm-12 mt-3">
+    <div class="row">
+        <div class="col-md-8"></div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td><strong>Subtotal:</strong></td>
+                            <td class="text-right" id="subtotal_sin_impuestos_display">0 Gs.</td>
+                        </tr>
+                        <tr id="row_iva_5" style="display: none;">
+                            <td>IVA 5%:</td>
+                            <td class="text-right" id="total_iva_5_display">0 Gs.</td>
+                        </tr>
+                        <tr id="row_iva_10" style="display: none;">
+                            <td>IVA 10%:</td>
+                            <td class="text-right" id="total_iva_10_display">0 Gs.</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong style="font-size: 1.1em;">Total:</strong></td>
+                            <td class="text-right"><strong style="font-size: 1.1em;" id="total_con_impuestos_display">0 Gs.</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @includeIf('pedidos.modal_producto')
@@ -70,107 +103,225 @@
 <!-- Js -->
 @push('scripts')
     <script>
-        // comenzar la carga con document ready
-        $(document).ready(function() {
-            
-            /** CONSULTAR AJAX PARA LLENAR POR DEFECTO EL MODAL AL ABRIR SE CONSULTA LA URL */
-            document.getElementById('buscar').addEventListener('click', function() {
-                $('#productSearchModal').modal('show'); // Mostrar el modal
-                fetch('{{ url('buscar-productos') }}?cod_suc=' + $("#id_sucursal").val())// capturar valor de sucursal utilzando val()
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('modalResults').innerHTML = html; // innerHTML es para cargar en el modal
-                    })
-                    .catch(error => {
-                        console.error('Error:', error); // mostrar error en consola
-                    });
-            });
+        // Funciones globales para cálculo de totales (accesibles desde modal_producto.blade.php)
+        // Funciones simples idénticas a ventas
 
-            // Ocultar o mostra campos segun seleccion de condicion de pedido
-            $("#condicion_pedido").on("change", function() {
-                var condicion_pedido = $(this).val();// es capturar el dato selecciona con this.val()
-                if(condicion_pedido == 'CONTADO') {
-                    //hide es para ocultar
-                    $("#div-intervalo").hide();
-                    $("#div-cantidad-cuota").hide();
-                    // prop es para asignar una propiedad al campo input y decirle no requerido
-                    $("#intervalo").prop('required', false);
-                    $("#cantidad_cuota").prop('required', false);
+        // Función para formatear números con separador de miles (compatible con versión extendida)
+        function formatMoney(n, c, d, t) {
+            let s, i, j;
+            c = isNaN(c = Math.abs(c)) ? 0 : c;
+            d = d === undefined ? "," : d;
+            t = t === undefined ? "." : t;
+            s = n < 0 ? "-" : "";
+            i = String(parseInt(n = Math.abs(Number(n) || 0).toFixed(c)));
+            j = (j = i.length) > 3 ? j % 3 : 0;
+            return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) +
+                (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
+        }
+
+        // Función para limpiar formato de número (simple: solo elimina puntos) - igual que ventas
+        function cleanNumber(str) {
+            if (!str) return 0;
+            // Convertir a string, eliminar puntos y convertir a número
+            let numero = str.toString().replace(/\./g, '');
+            return parseFloat(numero) || 0;
+        }
+
+        // Alias para compatibilidad con código existente
+        window.pedidosFormatMoney = formatMoney;
+        window.pedidosCleanNumber = cleanNumber;
+
+        // Función simplificada para actualizar subtotal de una fila (igual que ventas)
+        window.pedidosActualizarSubtotalFila = function(row) {
+            const cantidad = parseFloat(row.find('.cantidad-input').val()) || 0;
+            const precioInput = row.find('.precio-input');
+            const precio = cleanNumber(precioInput.val());
+            const subtotal = cantidad * precio;
+            
+            row.find('.subtotal-input').val(formatMoney(subtotal));
+        };
+
+        // Función para calcular los totales de impuestos (Estilo Odoo) - usando cleanNumber simple
+        window.pedidosCalcularTotalesImpuestos = function() {
+            let subtotal_sin_impuestos = 0;
+            let total_iva_5 = 0;
+            let total_iva_10 = 0;
+            let tiene_iva_5 = false;
+            let tiene_iva_10 = false;
+
+            // Recorrer cada fila de la tabla (igual que ventas)
+            $('.detalle-pedido tbody tr').each(function() {
+                let row = $(this);
+                let subtotalVal = row.find('.subtotal-input').val();
+                let subtotal_con_iva = cleanNumber(subtotalVal);
+                // Obtener tax_porcentaje específicamente de esta fila - buscar dentro del td que contiene producto
+                let taxInput = row.find('td').eq(1).find('input[name="tax_porcentaje[]"]');
+                let tax_porcentaje = 0;
+                if (taxInput.length > 0) {
+                    let taxVal = taxInput.val();
+                    tax_porcentaje = parseFloat(taxVal) || 0;
+                }
+
+                // Calcular precio sin impuesto y monto de impuesto (fórmula paraguaya)
+                let precio_sin_impuesto = 0;
+                let monto_impuesto = 0;
+
+                if (tax_porcentaje > 0) {
+                    precio_sin_impuesto = subtotal_con_iva / (1 + (tax_porcentaje / 100));
+                    monto_impuesto = subtotal_con_iva - precio_sin_impuesto;
                 } else {
-                    //show es para mostrar
-                    $("#div-intervalo").show();
-                    $("#div-cantidad-cuota").show();
-                    // prop es para asignar una propiedad al campo input y decirle es requerido
-                    $("#intervalo").prop('required', true);
-                    $("#cantidad_cuota").prop('required', true);
+                    precio_sin_impuesto = subtotal_con_iva;
+                    monto_impuesto = 0;
+                }
+
+                // Acumular subtotal sin impuestos
+                subtotal_sin_impuestos += precio_sin_impuesto;
+
+                // Acumular impuestos según tipo
+                if (tax_porcentaje == 5) {
+                    total_iva_5 += monto_impuesto;
+                    tiene_iva_5 = true;
+                } else if (tax_porcentaje == 10) {
+                    total_iva_10 += monto_impuesto;
+                    tiene_iva_10 = true;
                 }
             });
 
-            // Función para formatear números con separador de miles
-            function formatMoney(n) {
-                return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            // Calcular total con impuestos
+            let total_con_impuestos = subtotal_sin_impuestos + total_iva_5 + total_iva_10;
+
+            // Actualizar displays
+            $('#subtotal_sin_impuestos_display').text(formatMoney(Math.round(subtotal_sin_impuestos)) + ' Gs.');
+            $('#total_iva_5_display').text(formatMoney(Math.round(total_iva_5)) + ' Gs.');
+            $('#total_iva_10_display').text(formatMoney(Math.round(total_iva_10)) + ' Gs.');
+            $('#total_con_impuestos_display').text(formatMoney(Math.round(total_con_impuestos)) + ' Gs.');
+
+            // Actualizar campos hidden si existen (para vista de IA)
+            if ($('#subtotal_sin_impuestos').length) {
+                $('#subtotal_sin_impuestos').val(Math.round(subtotal_sin_impuestos));
+            }
+            if ($('#total_iva_5').length) {
+                $('#total_iva_5').val(Math.round(total_iva_5));
+            }
+            if ($('#total_iva_10').length) {
+                $('#total_iva_10').val(Math.round(total_iva_10));
+            }
+            if ($('#total_con_impuestos').length) {
+                $('#total_con_impuestos').val(Math.round(total_con_impuestos));
             }
 
-            // Función para limpiar formato de número
-            function cleanNumber(str) {
-                return parseFloat(str.toString().replace(/\./g, '')) || 0;
+            // Mostrar/ocultar filas de IVA dinámicamente
+            if (tiene_iva_5) {
+                $('#row_iva_5').show();
+            } else {
+                $('#row_iva_5').hide();
             }
 
-            // Calcular subtotal y total cuando cambia cantidad
-            $(document).on('change keyup', '.cantidad-input', function() {
-                let row = $(this).closest('tr');
-                let cantidad = parseInt($(this).val()) || 0;
-                let precioInput = row.find('.precio-input');
-                let precio = cleanNumber(precioInput.val());
-                let subtotal = cantidad * precio;
+            if (tiene_iva_10) {
+                $('#row_iva_10').show();
+            } else {
+                $('#row_iva_10').hide();
+            }
+        };
 
-                row.find('.subtotal-input').val(formatMoney(subtotal));
-                calcularTotal();
+        // Función para calcular el total general - usando cleanNumber simple (igual que ventas)
+        window.pedidosCalcularTotal = function() {
+            let total = 0;
+            // Solo leer subtotales de la tabla de pedidos
+            $('.detalle-pedido .subtotal-input').each(function() {
+                let valor = $(this).val();
+                if (valor && valor.trim() !== '') {
+                    let numeroLimpio = cleanNumber(valor);
+                    total += numeroLimpio;
+                }
             });
 
-            // Calcular subtotal y total cuando cambia precio
-            $(document).on('change keyup', '.precio-input', function() {
-                let row = $(this).closest('tr');
-                let cantidad = parseInt(row.find('.cantidad-input').val()) || 0;
-                let precio = cleanNumber($(this).val());
-                let subtotal = cantidad * precio;
+            // Actualizar campo hidden con valor numérico sin formato
+            $('#total').val(total);
+            window.pedidosCalcularTotalesImpuestos();
+        };
 
-                row.find('.subtotal-input').val(formatMoney(subtotal));
+        (function($) {
+            $(document).ready(function() {
+                // Calcular totales al cargar la página
+                window.pedidosCalcularTotal();
 
-                // Reformatear el precio mientras el usuario escribe
-                $(this).val(formatMoney(precio));
+                $('#buscar').on('click', function() {
+                    $('#productSearchModal').modal('show');
+                    fetch("{{ url('buscar-productos-pedidos') }}?cod_suc=" + $("#id_sucursal").val())
+                        .then(response => response.text())
+                        .then(html => {
+                            const modalResults = document.getElementById('modalResults');
+                            if (modalResults) {
+                                modalResults.innerHTML = html;
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                });
 
-                calcularTotal();
-            });
-
-            // Eliminar fila
-            $(document).on('click', '.remove-item', function() {
-                const row = $(this).closest('tr');
-                Swal.fire({
-                    title: '¿Está seguro?',
-                    text: '¿Está seguro de eliminar este item?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        row.remove();
-                        calcularTotal();
+                $('#condicion_pedido').on('change', function() {
+                    const condicion_pedido = $(this).val();
+                    if (condicion_pedido === 'CONTADO') {
+                        $('#div-intervalo, #div-cantidad-cuota').hide();
+                        $('#intervalo, #cantidad_cuota').prop('required', false);
+                    } else {
+                        $('#div-intervalo, #div-cantidad-cuota').show();
+                        $('#intervalo, #cantidad_cuota').prop('required', true);
                     }
                 });
-            });
 
-            // Función para calcular el total general
-            function calcularTotal() {
-                let total = 0;
-                $('.subtotal-input').each(function() {
-                    total += cleanNumber($(this).val());
+                // Calcular subtotal y total cuando cambia cantidad (igual que ventas)
+                $(document).on('change keyup', '.cantidad-input', function() {
+                    let row = $(this).closest('tr');
+                    let cantidad = parseInt($(this).val()) || 0;
+                    let precioInput = row.find('.precio-input');
+                    let precio = cleanNumber(precioInput.val());
+                    let subtotal = cantidad * precio;
+
+                    row.find('.subtotal-input').val(formatMoney(subtotal));
+                    window.pedidosCalcularTotal();
                 });
-                $('#total').val(formatMoney(total));
-            }
-        });
+
+                // Calcular subtotal y total cuando cambia precio (igual que ventas)
+                $(document).on('change keyup', '.precio-input', function() {
+                    let row = $(this).closest('tr');
+                    let cantidad = parseInt(row.find('.cantidad-input').val()) || 0;
+                    let precio = cleanNumber($(this).val());
+                    let subtotal = cantidad * precio;
+
+                    row.find('.subtotal-input').val(formatMoney(subtotal));
+
+                    // Reformatear el precio mientras el usuario escribe
+                    $(this).val(formatMoney(precio));
+
+                    window.pedidosCalcularTotal();
+                });
+
+                // Eliminar fila
+                $(document).on('click', '.remove-item', function() {
+                    const row = $(this).closest('tr');
+                    Swal.fire({
+                        title: 'Esta seguro?',
+                        text: 'Esta seguro de eliminar este item?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            row.remove();
+                            window.pedidosCalcularTotal();
+                        }
+                    });
+                });
+
+                // Calcular totales de impuestos al cargar la página (para modo edición)
+                if ($('.detalle-pedido tbody tr').length > 0) {
+                    window.pedidosCalcularTotalesImpuestos();
+                }
+            });
+        })(jQuery);
     </script>
 @endpush

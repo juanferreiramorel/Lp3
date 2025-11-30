@@ -29,6 +29,12 @@ Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']
 
 // Rutas específicas de pedidos (ANTES del resource para evitar conflictos)
 Route::get('pedidos/pendientes', [App\Http\Controllers\PedidosController::class, 'getPendientes'])->name('pedidos.getPendientes');
+// Rutas para Pedidos con IA
+Route::get('pedidos/crear-con-ia', [App\Http\Controllers\PedidosController::class, 'createWithAi'])->name('pedidos.createWithAi');
+Route::post('pedidos/procesar-ai-pdf', [App\Http\Controllers\PedidosController::class, 'processAiPdf'])->name('pedidos.processAiPdf');
+Route::get('pedidos/revisar-ai', [App\Http\Controllers\PedidosController::class, 'reviewAi'])->name('pedidos.reviewAi');
+Route::post('pedidos/guardar-ai', [App\Http\Controllers\PedidosController::class, 'storeAi'])->name('pedidos.storeAi');
+Route::post('pedidos/cliente-ajax', [App\Http\Controllers\PedidosController::class, 'storeClienteAjax'])->name('pedidos.storeClienteAjax');
 Route::get('ventas/crear-desde-pedido/{id}', [App\Http\Controllers\VentaController::class, 'crearDesdePedido'])->name('ventas.crearDesdePedido');
 
 // Rutas utilitarias para selects dependientes
@@ -79,11 +85,11 @@ Route::get('compras/crear-desde-orden/{id}', [App\Http\Controllers\ComprasContro
 Route::resource('compras', App\Http\Controllers\ComprasController::class);
 // Rutas específicas de órdenes de compra (ANTES del resource)
 Route::get('ordencompra/pendientes', [App\Http\Controllers\OrdenCompraController::class, 'getPendientes'])->name('ordencompra.getPendientes');
-// Rutas para OC con IA
-Route::get('ordencompra/crear-con-ia', [App\Http\Controllers\OrdenCompraController::class, 'createWithAi'])->name('ordencompra.createWithAi');
-Route::post('ordencompra/procesar-ai-pdf', [App\Http\Controllers\OrdenCompraController::class, 'processAiPdf'])->name('ordencompra.processAiPdf');
-Route::post('ordencompra/guardar-ai', [App\Http\Controllers\OrdenCompraController::class, 'storeAi'])->name('ordencompra.storeAi');
-Route::post('ordencompra/proveedor-ajax', [App\Http\Controllers\OrdenCompraController::class, 'storeProviderAjax'])->name('ordencompra.storeProviderAjax');
+// Rutas para OC con IA - DESHABILITADAS (funcionalidad migrada a Pedidos)
+// Route::get('ordencompra/crear-con-ia', [App\Http\Controllers\OrdenCompraController::class, 'createWithAi'])->name('ordencompra.createWithAi');
+// Route::post('ordencompra/procesar-ai-pdf', [App\Http\Controllers\OrdenCompraController::class, 'processAiPdf'])->name('ordencompra.processAiPdf');
+// Route::post('ordencompra/guardar-ai', [App\Http\Controllers\OrdenCompraController::class, 'storeAi'])->name('ordencompra.storeAi');
+// Route::post('ordencompra/proveedor-ajax', [App\Http\Controllers\OrdenCompraController::class, 'storeProviderAjax'])->name('ordencompra.storeProviderAjax');
 Route::resource('ordencompra', App\Http\Controllers\OrdenCompraController::class);
 Route::resource('stock', App\Http\Controllers\StockController::class);
 Route::resource('auditoria', App\Http\Controllers\AuditoriaController::class);
@@ -115,6 +121,7 @@ Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserControlle
 
 // Buscadores
 Route::get('buscar-productos', [App\Http\Controllers\VentaController::class, 'buscarProducto']);
+Route::get('buscar-productos-pedidos', [App\Http\Controllers\PedidosController::class, 'buscarProducto']);
 Route::get('buscar-productoscompras', [ComprasController::class, 'buscarProducto']);
 Route::get('buscar-productos-oc', [App\Http\Controllers\OrdenCompraController::class, 'buscarProducto']);
 Route::get('buscar-productos-recibos', [App\Http\Controllers\ReciboSimpleController::class, 'buscarProducto']);
