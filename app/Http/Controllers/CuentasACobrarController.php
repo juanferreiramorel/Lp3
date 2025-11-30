@@ -151,6 +151,7 @@ class CuentasACobrarController extends AppBaseController
         $estados_cuota = [
             'PENDIENTE' => 'PENDIENTE',
             'VENCIDO' => 'VENCIDO',
+            'PARCIAL' => 'PARCIAL',
             'PAGADO' => 'PAGADO'
         ];
 
