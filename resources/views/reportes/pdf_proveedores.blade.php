@@ -83,7 +83,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($proveedores as $proveedor)
+                    @foreach ($proveedoresAll as $proveedor)
                         <tr>
                             <td>{{ $proveedor->id_proveedor }}</td>
                             <td>{{ $proveedor->descripcion }}</td>

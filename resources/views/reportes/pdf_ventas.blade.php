@@ -76,7 +76,7 @@
         <div class="box-body">
             <table class="tabla">
                 <thead>
-                    @foreach ($ventas as $venta)
+                    @foreach ($ventasAll as $venta)
                         <tr>
                             <td colspan="2"><b>Fecha:</b>
                                 {{ \Carbon\Carbon::parse($venta->fecha_venta)->format('d/m/Y') }}</td>
@@ -109,7 +109,7 @@
                             <td>Subtotal</td>
                         </tr>
                         <!-- usar forelse para mostrar mensaje si no hay detalles -->
-                        @forelse ($array_detalles[$venta->id_venta] as $key => $det)
+                        @forelse ($array_detalles_all[$venta->id_venta] as $key => $det)
                             <tr>
                                 <td>{{ $det->id_producto }}</td>
                                 <td>{{ $det->producto }}</td>

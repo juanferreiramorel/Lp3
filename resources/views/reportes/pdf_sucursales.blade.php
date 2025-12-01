@@ -75,7 +75,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($sucursales as $sucursal)
+                    @foreach ($sucursalesAll as $sucursal)
                         <tr>
                             <td>{{ $sucursal->id_sucursal }}</td>
                             <td>{{ $sucursal->descripcion }}</td>

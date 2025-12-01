@@ -87,7 +87,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($ventas as $venta)
+                            @forelse ($ventas as $venta)
                                 <tr>
                                     <td>{{ $venta->id_venta }}</td>
                                     <td>{{ $venta->cliente }}</td>
@@ -99,10 +99,41 @@
                                     <td>{{ $venta->sucursal }}</td>
                                     <td>{{ $venta->usuario }}</td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No se encontraron registros</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="card-footer clearfix">
+                <div class="float-left">
+                    Mostrando {{ count($ventas) }} de {{ $total }} registros
+                </div>
+                <ul class="pagination pagination-sm m-0 float-right">
+                    @php
+                        $params = [];
+                        if(request()->get('cliente')) $params['cliente'] = request()->get('cliente');
+                        if(request()->get('desde')) $params['desde'] = request()->get('desde');
+                        if(request()->get('hasta')) $params['hasta'] = request()->get('hasta');
+                        $queryString = http_build_query($params);
+                    @endphp
+                    @if($page > 1)
+                        <li class="page-item"><a class="page-link" href="?{{ $queryString }}&page={{ $page - 1 }}">«</a></li>
+                    @endif
+
+                    @for($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++)
+                        <li class="page-item {{ $i == $page ? 'active' : '' }}">
+                            <a class="page-link" href="?{{ $queryString }}&page={{ $i }}">{{ $i }}</a>
+                        </li>
+                    @endfor
+
+                    @if($page < $totalPages)
+                        <li class="page-item"><a class="page-link" href="?{{ $queryString }}&page={{ $page + 1 }}">»</a></li>
+                    @endif
+                </ul>
             </div>
 
         </div>

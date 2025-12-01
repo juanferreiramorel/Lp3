@@ -11,67 +11,48 @@ class ComprasExport implements FromCollection, WithHeadings
     /**
      * @return \Illuminate\Support\Collection
      */
-    protected $filtros;
-    protected $buscar;
-    protected $idsPermitidos;
+    protected $proveedor;
+    protected $desde;
+    protected $hasta;
 
-    public function __construct($filtros = [], $buscar = null, $idsPermitidos = [])
+    public function __construct($proveedor, $desde, $hasta)
     {
-        $this->filtros = $filtros;
-        $this->buscar = $buscar;
-        $this->idsPermitidos = $idsPermitidos;
+        $this->proveedor = $proveedor;
+        $this->desde = $desde;
+        $this->hasta = $hasta;
     }
 
     public function collection()
     {
-        $sql_filtros = '';
+        // definir variables para filtros
+        $filtro_proveedor = "";
+        $filtro_desde = "";
+        $filtro_hasta = "";
 
-        // FILTRO POR RANGO DE FECHAS
-        if (!empty($this->filtros['fecha_desde']) && !empty($this->filtros['fecha_hasta'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND c.fecha_compra BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
-        } elseif (!empty($this->filtros['fecha_desde'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $sql_filtros .= " AND c.fecha_compra >= '{$fecha_desde}'";
-        } elseif (!empty($this->filtros['fecha_hasta'])) {
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND c.fecha_compra <= '{$fecha_hasta}'";
+        if (!empty($this->proveedor)) {
+            // concatenar los filtros y siempre dejar un espacio en blanco al comienzo del string " "
+            $filtro_proveedor = " AND c.id_proveedor = " . $this->proveedor;
         }
 
-        // FILTRO POR PROVEEDOR
-        if (!empty($this->filtros['id_proveedor'])) {
-            $sql_filtros .= " AND c.id_proveedor = " . (int)$this->filtros['id_proveedor'];
+        // filtros desde y concatena el sql and
+        if (!empty($this->desde)) {
+            $filtro_desde = " AND c.fecha_compra >= '" . $this->desde . "'";
         }
 
-        // FILTRO POR CONDICIÓN DE COMPRA
-        if (!empty($this->filtros['condicion_compra'])) {
-            $sql_filtros .= " AND c.condicion_compra = '" . $this->filtros['condicion_compra'] . "'";
+        // filtros hasta y concatena el sql correspondientes
+        if (!empty($this->hasta)) {
+            $filtro_hasta = " AND c.fecha_compra <= '" . $this->hasta . "'";
         }
 
-        // FILTRO POR SUCURSAL
-        if (!empty($this->filtros['id_sucursal'])) {
-            $sql_filtros .= " AND c.id_sucursal = " . (int)$this->filtros['id_sucursal'];
-        }
-
-        $sql_busqueda = 'WHERE 1=1';
-
-        // Filtros de sucursales permitidas
-        $sqlSucursalesPermitidas = '';
-        if (!empty($this->idsPermitidos)) {
-            $sqlSucursalesPermitidas = ' AND c.id_sucursal IN (' . implode(',', $this->idsPermitidos) . ')';
-        }
-
-        $compras = DB::select(
-            "SELECT c.id_compra, c.fecha_compra, p.descripcion as proveedor,
+        // concatenar todos los filtros en el where
+        $compras = DB::select("SELECT c.id_compra, c.fecha_compra, p.descripcion as proveedor,
             c.condicion_compra, c.total, c.estado, c.factura, s.descripcion as sucursal, u.name as usuario
             FROM compras c
-                JOIN proveedores p ON c.id_proveedor = p.id_proveedor
-                JOIN users u ON c.user_id = u.id
-                JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-            {$sql_busqueda} {$sql_filtros} {$sqlSucursalesPermitidas}
-            ORDER BY c.fecha_compra DESC"
-        );
+            JOIN proveedores p ON c.id_proveedor = p.id_proveedor
+            JOIN users u ON c.user_id = u.id
+            JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+            WHERE 1=1 " . $filtro_proveedor . " " . $filtro_desde . " " . $filtro_hasta . "
+            ORDER BY c.id_compra desc");
 
         // Asegurar que cada fila sea un array indexado en el mismo orden que los headings
         $compras = array_map(function($r) {

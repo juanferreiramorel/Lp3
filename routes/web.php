@@ -137,6 +137,9 @@ Route::get('reporte-productos', [App\Http\Controllers\ReporteController::class, 
 Route::get('reporte-sucursales', [App\Http\Controllers\ReporteController::class, 'rpt_sucursales']);
 Route::get('reporte-sucursales', [App\Http\Controllers\ReporteController::class, 'rpt_sucursales']);
 Route::get('reporte-ventas', [App\Http\Controllers\ReporteController::class, 'rpt_ventas']);
+Route::get('reporte-compras', [App\Http\Controllers\ReporteController::class, 'rpt_compras']);
+Route::get('reporte-pedidos', [App\Http\Controllers\ReporteController::class, 'rpt_pedidos']);
+Route::get('reporte-ordenes-compra', [App\Http\Controllers\ReporteController::class, 'rpt_ordenes_compra']);
 
 // Roles y permisos
 Route::resource('permissions', App\Http\Controllers\PermissionController::class);

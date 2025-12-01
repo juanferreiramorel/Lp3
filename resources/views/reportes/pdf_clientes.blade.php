@@ -75,7 +75,7 @@
         <br>
         <div class="box-body">
             <!-- se crea un archivo table_clientes y lo incluimos en los blade a utilizar. Tambien se debe compartir la variable que utiliza el table_clientes -->
-            @includeIf('reportes.table_clientes', ['clientes' => $clientes])
+            @includeIf('reportes.table_clientes', ['clientes' => $clientesAll])
         </div>
     </div>
 </body>

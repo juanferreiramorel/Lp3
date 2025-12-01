@@ -74,7 +74,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($productos as $producto)
+                    @foreach ($productosAll as $producto)
                         <tr>
                             <td>{{ $producto->id_producto }}</td>
                             <td>{{ $producto->descripcion }}</td>

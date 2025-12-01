@@ -82,7 +82,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($cargos as $cargo)
+                    @foreach ($cargosAll as $cargo)
                         <tr>
                             <td>{{ $cargo->id_cargo }}</td>
                             <td>{{ $cargo->descripcion }}</td>

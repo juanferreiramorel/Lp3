@@ -181,6 +181,30 @@
             </a>
         </li>
         @endcan
+        @can('compras index')
+        <li class="nav-item">
+            <a href="{{ url('reporte-compras') }}" class="nav-link {{ Request::is('reporte-compras*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-shopping-cart"></i>
+                <p>Reporte compras</p>
+            </a>
+        </li>
+        @endcan
+        @can('pedidos index')
+        <li class="nav-item">
+            <a href="{{ url('reporte-pedidos') }}" class="nav-link {{ Request::is('reporte-pedidos*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-clipboard-list"></i>
+                <p>Reporte pedidos</p>
+            </a>
+        </li>
+        @endcan
+        @can('ordencompra index')
+        <li class="nav-item">
+            <a href="{{ url('reporte-ordenes-compra') }}" class="nav-link {{ Request::is('reporte-ordenes-compra*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-invoice"></i>
+                <p>Reporte órdenes compra</p>
+            </a>
+        </li>
+        @endcan
     </ul>
 </li>
 

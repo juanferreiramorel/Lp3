@@ -86,6 +86,33 @@
                    @includeIf('reportes.table_clientes', ['clientes' => $clientes])
                 </div>
             </div>
+            <div class="card-footer clearfix">
+                <div class="float-left">
+                    Mostrando {{ count($clientes) }} de {{ $total }} registros
+                </div>
+                <ul class="pagination pagination-sm m-0 float-right">
+                    @php
+                        $params = [];
+                        if(request()->get('desde')) $params['desde'] = request()->get('desde');
+                        if(request()->get('hasta')) $params['hasta'] = request()->get('hasta');
+                        if(request()->get('ciudad')) $params['ciudad'] = request()->get('ciudad');
+                        $queryString = http_build_query($params);
+                    @endphp
+                    @if($page > 1)
+                        <li class="page-item"><a class="page-link" href="?{{ $queryString }}&page={{ $page - 1 }}">«</a></li>
+                    @endif
+
+                    @for($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++)
+                        <li class="page-item {{ $i == $page ? 'active' : '' }}">
+                            <a class="page-link" href="?{{ $queryString }}&page={{ $i }}">{{ $i }}</a>
+                        </li>
+                    @endfor
+
+                    @if($page < $totalPages)
+                        <li class="page-item"><a class="page-link" href="?{{ $queryString }}&page={{ $page + 1 }}">»</a></li>
+                    @endif
+                </ul>
+            </div>
         </div>
     </div>
 @endsection

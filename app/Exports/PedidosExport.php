@@ -11,69 +11,54 @@ class PedidosExport implements FromCollection, WithHeadings
     /**
      * @return \Illuminate\Support\Collection
      */
-    protected $filtros;
-    protected $buscar;
-    protected $idsPermitidos;
+    protected $cliente;
+    protected $estado;
+    protected $desde;
+    protected $hasta;
 
-    public function __construct($filtros = [], $buscar = null, $idsPermitidos = [])
+    public function __construct($cliente, $estado, $desde, $hasta)
     {
-        $this->filtros = $filtros;
-        $this->buscar = $buscar;
-        $this->idsPermitidos = $idsPermitidos;
+        $this->cliente = $cliente;
+        $this->estado = $estado;
+        $this->desde = $desde;
+        $this->hasta = $hasta;
     }
 
     public function collection()
     {
-        $sql_filtros = '';
+        // definir variables para filtros
+        $filtro_cliente = "";
+        $filtro_estado = "";
+        $filtro_desde = "";
+        $filtro_hasta = "";
 
-        // FILTRO POR RANGO DE FECHAS
-        if (!empty($this->filtros['fecha_desde']) && !empty($this->filtros['fecha_hasta'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND p.fecha_pedido BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
-        } elseif (!empty($this->filtros['fecha_desde'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $sql_filtros .= " AND p.fecha_pedido >= '{$fecha_desde}'";
-        } elseif (!empty($this->filtros['fecha_hasta'])) {
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND p.fecha_pedido <= '{$fecha_hasta}'";
+        if (!empty($this->cliente)) {
+            $filtro_cliente = " AND p.id_cliente = " . $this->cliente;
         }
 
-        // FILTRO POR CLIENTE
-        if (!empty($this->filtros['id_cliente'])) {
-            $sql_filtros .= " AND p.id_cliente = " . (int)$this->filtros['id_cliente'];
+        if (!empty($this->estado)) {
+            $filtro_estado = " AND p.estado = '" . $this->estado . "'";
         }
 
-        // FILTRO POR ESTADO
-        if (!empty($this->filtros['estado'])) {
-            $sql_filtros .= " AND p.estado = '" . $this->filtros['estado'] . "'";
+        // filtros desde y concatena el sql and
+        if (!empty($this->desde)) {
+            $filtro_desde = " AND p.fecha_pedido >= '" . $this->desde . "'";
         }
 
-        // FILTRO POR SUCURSAL
-        if (!empty($this->filtros['id_sucursal'])) {
-            $sql_filtros .= " AND p.id_sucursal = " . (int)$this->filtros['id_sucursal'];
+        // filtros hasta y concatena el sql correspondientes
+        if (!empty($this->hasta)) {
+            $filtro_hasta = " AND p.fecha_pedido <= '" . $this->hasta . "'";
         }
 
-        // Construir WHERE
-        $where = "WHERE 1=1" . $sql_filtros;
-
-        if (!empty($this->idsPermitidos)) {
-            $where .= ' AND p.id_sucursal IN (' . implode(',', $this->idsPermitidos) . ')';
-        }
-
-        // Query base
-        $queryBase = "FROM pedidos p
-                      JOIN clientes c ON p.id_cliente = c.id_cliente
-                      JOIN users u ON p.id_usuario = u.id
-                      JOIN sucursales s ON p.id_sucursal = s.id_sucursal";
-
-        // Obtener todos los registros
-        $query = "SELECT p.id_pedido, p.fecha_pedido, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente,
-                         c.clie_ci, p.total_pedido, p.estado, s.descripcion as sucursal, u.name AS usuario
-                  {$queryBase} {$where}
-                  ORDER BY p.fecha_pedido DESC";
-
-        $pedidos = DB::select($query);
+        // concatenar todos los filtros en el where
+        $pedidos = DB::select("SELECT p.id_pedido, p.fecha_pedido, CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente,
+            c.clie_ci, p.total_pedido, p.estado, s.descripcion as sucursal, u.name as usuario
+            FROM pedidos p
+            JOIN clientes c ON p.id_cliente = c.id_cliente
+            LEFT JOIN users u ON p.id_usuario = u.id
+            LEFT JOIN sucursales s ON p.id_sucursal = s.id_sucursal
+            WHERE 1=1 " . $filtro_cliente . " " . $filtro_estado . " " . $filtro_desde . " " . $filtro_hasta . "
+            ORDER BY p.id_pedido desc");
 
         // Asegurar que cada fila sea un array indexado en el mismo orden que los headings
         $pedidos = array_map(function($r) {

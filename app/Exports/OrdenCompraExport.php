@@ -11,70 +11,54 @@ class OrdenCompraExport implements FromCollection, WithHeadings
     /**
      * @return \Illuminate\Support\Collection
      */
-    protected $filtros;
-    protected $buscar;
-    protected $idsPermitidos;
+    protected $proveedor;
+    protected $estado;
+    protected $desde;
+    protected $hasta;
 
-    public function __construct($filtros = [], $buscar = null, $idsPermitidos = [])
+    public function __construct($proveedor, $estado, $desde, $hasta)
     {
-        $this->filtros = $filtros;
-        $this->buscar = $buscar;
-        $this->idsPermitidos = $idsPermitidos;
+        $this->proveedor = $proveedor;
+        $this->estado = $estado;
+        $this->desde = $desde;
+        $this->hasta = $hasta;
     }
 
     public function collection()
     {
-        $sql_filtros = '';
+        // definir variables para filtros
+        $filtro_proveedor = "";
+        $filtro_estado = "";
+        $filtro_desde = "";
+        $filtro_hasta = "";
 
-        // FILTRO POR RANGO DE FECHAS
-        if (!empty($this->filtros['fecha_desde']) && !empty($this->filtros['fecha_hasta'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND oc.fecha_orden BETWEEN '{$fecha_desde}' AND '{$fecha_hasta}'";
-        } elseif (!empty($this->filtros['fecha_desde'])) {
-            $fecha_desde = $this->filtros['fecha_desde'];
-            $sql_filtros .= " AND oc.fecha_orden >= '{$fecha_desde}'";
-        } elseif (!empty($this->filtros['fecha_hasta'])) {
-            $fecha_hasta = $this->filtros['fecha_hasta'];
-            $sql_filtros .= " AND oc.fecha_orden <= '{$fecha_hasta}'";
+        if (!empty($this->proveedor)) {
+            $filtro_proveedor = " AND oc.id_proveedor = " . $this->proveedor;
         }
 
-        // FILTRO POR PROVEEDOR
-        if (!empty($this->filtros['id_proveedor'])) {
-            $sql_filtros .= " AND oc.id_proveedor = " . (int)$this->filtros['id_proveedor'];
+        if (!empty($this->estado)) {
+            $filtro_estado = " AND oc.estado = '" . $this->estado . "'";
         }
 
-        // FILTRO POR ESTADO
-        if (!empty($this->filtros['estado'])) {
-            $sql_filtros .= " AND oc.estado = '" . $this->filtros['estado'] . "'";
+        // filtros desde y concatena el sql and
+        if (!empty($this->desde)) {
+            $filtro_desde = " AND oc.fecha_orden >= '" . $this->desde . "'";
         }
 
-        // FILTRO POR SUCURSAL
-        if (!empty($this->filtros['id_sucursal'])) {
-            $sql_filtros .= " AND oc.id_sucursal = " . (int)$this->filtros['id_sucursal'];
+        // filtros hasta y concatena el sql correspondientes
+        if (!empty($this->hasta)) {
+            $filtro_hasta = " AND oc.fecha_orden <= '" . $this->hasta . "'";
         }
 
-        // Query base
-        $queryBase = "FROM ordenes_compra oc
-                      JOIN proveedores p ON oc.id_proveedor = p.id_proveedor
-                      LEFT JOIN users u ON oc.id_usuario = u.id
-                      LEFT JOIN sucursales s ON oc.id_sucursal = s.id_sucursal";
-
-        // Condiciones de búsqueda
-        $where = "WHERE 1=1" . $sql_filtros;
-
-        if (!empty($this->idsPermitidos)) {
-            $where .= ' AND oc.id_sucursal IN (' . implode(',', $this->idsPermitidos) . ')';
-        }
-
-        // Obtener todos los registros
-        $query = "SELECT oc.id_orden_compra, oc.fecha_orden, p.descripcion as proveedor,
-                         oc.total_orden, oc.estado,
-                         s.descripcion as sucursal, u.name as usuario
-                  {$queryBase} {$where}
-                  ORDER BY oc.id_orden_compra DESC";
-
-        $ordenesCompra = DB::select($query);
+        // concatenar todos los filtros en el where
+        $ordenesCompra = DB::select("SELECT oc.id_orden_compra, oc.fecha_orden, p.descripcion as proveedor,
+            oc.total, oc.estado, s.descripcion as sucursal, u.name as usuario
+            FROM ordenes_compra oc
+            JOIN proveedores p ON oc.id_proveedor = p.id_proveedor
+            LEFT JOIN users u ON oc.id_usuario = u.id
+            LEFT JOIN sucursales s ON oc.id_sucursal = s.id_sucursal
+            WHERE 1=1 " . $filtro_proveedor . " " . $filtro_estado . " " . $filtro_desde . " " . $filtro_hasta . "
+            ORDER BY oc.id_orden_compra desc");
 
         // Asegurar que cada fila sea un array indexado en el mismo orden que los headings
         $ordenesCompra = array_map(function($r) {
@@ -82,7 +66,7 @@ class OrdenCompraExport implements FromCollection, WithHeadings
                 $r->id_orden_compra,
                 $r->fecha_orden,
                 $r->proveedor,
-                $r->total_orden,
+                $r->total,
                 $r->estado,
                 $r->sucursal,
                 $r->usuario,
