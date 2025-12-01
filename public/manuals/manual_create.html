@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Crear Orden de Compra</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #008B8B;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(to right, #00E5FF, #00FF9D) 1;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #00C9A7;
+            margin-top: 20px;
+            border-left: 5px solid #00E5FF;
+            padding-left: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        .screenshot {
+            width: 100%;
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #00E5FF, #00FF9D);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .steps {
+            background-color: #f0fdff;
+            padding: 15px;
+            border-left: 4px solid #00E5FF;
+            margin-bottom: 15px;
+        }
+        .steps ol, .steps ul {
+            margin-left: 20px;
+        }
+        strong {
+            color: #008B8B;
+        }
+        @media print {
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual de Usuario: Crear Orden de Compra</h1>
+    
+    <p>Este documento explica paso a paso cómo registrar una nueva orden de compra en el sistema.</p>
+
+    <h2>Formulario de Registro</h2>
+    <p>Al ingresar a la opción "Agregar Nuevo", se presentará el siguiente formulario:</p>
+
+    <img src="http://127.0.0.1:8000/manuals/images/create.png" alt="Captura de pantalla de creación de orden" class="screenshot">
+
+    <h2>Pasos para el Registro</h2>
+    
+    <div class="steps">
+        <ol>
+            <li><strong>Seleccionar Proveedor:</strong> Elija el proveedor al cual se le realizará el pedido desde la lista desplegable.</li>
+            <li><strong>Fecha de Orden:</strong> Por defecto aparece la fecha actual, pero puede modificarla si es necesario.</li>
+            <li><strong>Sucursal:</strong> Seleccione la sucursal para la cual es el pedido.</li>
+            <li><strong>Observaciones:</strong> (Opcional) Agregue cualquier nota relevante para la orden.</li>
+        </ol>
+    </div>
+
+    <div class="steps">
+        <h3>Agregar Productos</h3>
+        <p>En la sección de detalle:</p>
+        <ol>
+            <li>Busque el producto por nombre o código en el campo de búsqueda.</li>
+            <li>Ingrese la <strong>Cantidad</strong> requerida.</li>
+            <li>Verifique el <strong>Precio Unitario</strong> (puede ajustarlo si ha cambiado).</li>
+            <li>El subtotal se calculará automáticamente.</li>
+            <li>Para agregar más productos, repita el proceso en las siguientes líneas o presione el botón "+" si está disponible.</li>
+        </ol>
+    </div>
+
+    <div class="steps">
+        <h3>Finalizar</h3>
+        <p>Una vez cargados todos los datos, presione el botón <strong>"Guardar"</strong> al final del formulario para registrar la orden de compra. Si desea descartar los cambios, presione "Cancelar".</p>
+    </div>
+</body>
+</html>

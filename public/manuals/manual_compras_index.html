@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Listado de Compras</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #008B8B;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(to right, #00E5FF, #00FF9D) 1;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #00C9A7;
+            margin-top: 20px;
+            border-left: 5px solid #00E5FF;
+            padding-left: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        .screenshot {
+            width: 100%;
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #00E5FF, #00FF9D);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .steps {
+            background-color: #f0fdff;
+            padding: 15px;
+            border-left: 4px solid #00E5FF;
+            margin-bottom: 15px;
+        }
+        .steps ol, .steps ul {
+            margin-left: 20px;
+        }
+        strong {
+            color: #008B8B;
+        }
+        @media print {
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual de Usuario: Listado de Compras</h1>
+    
+    <p>Este documento describe el funcionamiento de la pantalla principal del módulo de Compras.</p>
+
+    <h2>Vista General</h2>
+    <p>La pantalla de listado permite visualizar todas las facturas de compra registradas, facilitando el control de gastos y proveedores.</p>
+
+    <img src="http://127.0.0.1:8000/manuals/images/compras_index.png" alt="Captura de pantalla del listado de compras" class="screenshot">
+
+    <h2>Funcionalidades Principales</h2>
+    
+    <div class="steps">
+        <h3>1. Filtros de Búsqueda</h3>
+        <p>Utilice los filtros superiores para encontrar facturas específicas:</p>
+        <ul>
+            <li><strong>Fecha Desde / Hasta:</strong> Filtre por rango de fechas de factura.</li>
+            <li><strong>Proveedor:</strong> Seleccione un proveedor para ver su historial de facturas.</li>
+            <li><strong>Estado:</strong> Filtre por estado (Pendiente, Pagada, Anulada).</li>
+            <li><strong>Sucursal:</strong> Filtre las compras por sucursal.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>2. Acciones Disponibles</h3>
+        <p>En la tabla de resultados, cada fila ofrece las siguientes opciones:</p>
+        <ul>
+            <li><strong>Ver Detalle (Ojo):</strong> Muestra la información completa de la factura y sus productos.</li>
+            <li><strong>Editar (Lápiz):</strong> Permite modificar la compra si aún no ha sido procesada o pagada.</li>
+            <li><strong>Anular (Basurero):</strong> Permite anular una factura de compra registrada por error.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>3. Registrar Nueva Compra</h3>
+        <p>Para ingresar una nueva factura de compra, haga clic en el botón <strong>"Agregar Nuevo"</strong> ubicado en la parte superior derecha.</p>
+    </div>
+</body>
+</html>

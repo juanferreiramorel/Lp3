@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Editar Compra</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #008B8B;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(to right, #00E5FF, #00FF9D) 1;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #00C9A7;
+            margin-top: 20px;
+            border-left: 5px solid #00E5FF;
+            padding-left: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        .screenshot {
+            width: 100%;
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #00E5FF, #00FF9D);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .steps {
+            background-color: #f0fdff;
+            padding: 15px;
+            border-left: 4px solid #00E5FF;
+            margin-bottom: 15px;
+        }
+        .steps ol, .steps ul {
+            margin-left: 20px;
+        }
+        strong {
+            color: #008B8B;
+        }
+        @media print {
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual de Usuario: Editar Compra</h1>
+    
+    <p>Este documento explica cómo corregir o modificar una compra ya registrada.</p>
+    
+    <div style="background-color: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 15px;">
+        <strong>Advertencia:</strong> Modificar una compra afectará directamente al stock de los productos involucrados. Asegúrese de que los cambios sean correctos.
+    </div>
+
+    <h2>Pantalla de Edición</h2>
+    <p>Al seleccionar la opción "Editar" en el listado, verá el formulario con los datos actuales de la compra:</p>
+
+    <img src="http://127.0.0.1:8000/manuals/images/compras_edit.png" alt="Captura de pantalla de edición de compra" class="screenshot">
+
+    <h2>Modificaciones Permitidas</h2>
+    
+    <div class="steps">
+        <h3>Corrección de Datos</h3>
+        <ul>
+            <li><strong>Cabecera:</strong> Puede corregir el número de factura, fecha o condición de pago si hubo un error de tipeo.</li>
+            <li><strong>Productos:</strong> Puede ajustar las cantidades o precios si no coinciden con la factura física.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>Gestión de Ítems</h3>
+        <ul>
+            <li><strong>Eliminar Ítems:</strong> Si cargó un producto por error, puede eliminarlo de la lista. El sistema revertirá la entrada de stock correspondiente.</li>
+            <li><strong>Agregar Ítems:</strong> Si olvidó cargar un producto de la factura, puede agregarlo en esta pantalla. El sistema sumará este stock al inventario.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>Guardar Cambios</h3>
+        <p>Presione <strong>"Actualizar"</strong> para confirmar las modificaciones. El sistema recalculará los totales y ajustará el inventario según las diferencias (entradas o salidas) generadas por la edición.</p>
+    </div>
+</body>
+</html>

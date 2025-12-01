@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Editar Orden de Compra</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #008B8B;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(to right, #00E5FF, #00FF9D) 1;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #00C9A7;
+            margin-top: 20px;
+            border-left: 5px solid #00E5FF;
+            padding-left: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        .screenshot {
+            width: 100%;
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #00E5FF, #00FF9D);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .steps {
+            background-color: #f0fdff;
+            padding: 15px;
+            border-left: 4px solid #00E5FF;
+            margin-bottom: 15px;
+        }
+        .steps ol, .steps ul {
+            margin-left: 20px;
+        }
+        strong {
+            color: #008B8B;
+        }
+        @media print {
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual de Usuario: Editar Orden de Compra</h1>
+    
+    <p>Este documento explica cómo modificar una orden de compra existente.</p>
+    
+    <div style="background-color: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 15px;">
+        <strong>Importante:</strong> Solo se pueden editar órdenes que se encuentren en estado "PENDIENTE". Las órdenes procesadas o canceladas no pueden ser modificadas.
+    </div>
+
+    <h2>Pantalla de Edición</h2>
+    <p>Al seleccionar la opción "Editar" (icono de lápiz) en el listado, verá el formulario con los datos cargados:</p>
+
+    <img src="http://127.0.0.1:8000/manuals/images/edit.png" alt="Captura de pantalla de edición de orden" class="screenshot">
+
+    <h2>Modificaciones Permitidas</h2>
+    
+    <div class="steps">
+        <h3>Cabecera</h3>
+        <ul>
+            <li>Puede cambiar el <strong>Proveedor</strong> si hubo un error en la selección inicial.</li>
+            <li>Puede corregir la <strong>Fecha</strong> de la orden.</li>
+            <li>Puede modificar las <strong>Observaciones</strong>.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>Detalle de Productos</h3>
+        <ul>
+            <li><strong>Modificar Cantidades:</strong> Cambie el número en la columna "Cantidad" para ajustar el pedido.</li>
+            <li><strong>Modificar Precios:</strong> Actualice el "Precio Unitario" si es necesario.</li>
+            <li><strong>Eliminar Productos:</strong> Si desea quitar un producto de la orden, puede eliminar la línea correspondiente (generalmente con un botón de eliminar o dejando la cantidad en 0, según configuración).</li>
+            <li><strong>Agregar Nuevos Productos:</strong> Puede añadir nuevas líneas para incluir más ítems a la orden.</li>
+        </ul>
+    </div>
+
+    <div class="steps">
+        <h3>Guardar Cambios</h3>
+        <p>Una vez realizadas las correcciones, presione el botón <strong>"Guardar"</strong> o "Actualizar" para confirmar los cambios. El sistema recalculará automáticamente los totales (Subtotal, IVA, Total General).</p>
+    </div>
+</body>
+</html>
