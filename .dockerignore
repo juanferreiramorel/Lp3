@@ -1,0 +1,12 @@
+node_modules
+vendor
+.git
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+public/storage
+.phpunit.result.cache
+.DS_Store
+Thumbs.db

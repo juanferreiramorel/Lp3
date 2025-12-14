@@ -601,7 +601,7 @@
             <table>
                 <tr>
                     <th>Total en letras:</th>
-                    <td colspan="2">{{ ucfirst($total_letras) }} guaraníes</td>
+                    <td colspan="2">{{ ucfirst($total_letras) }} GUARANÍES</td>
                 </tr>
                 <tr>
                     <th>TOTAL:</th>

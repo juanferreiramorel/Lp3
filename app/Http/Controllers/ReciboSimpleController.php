@@ -81,10 +81,10 @@ class ReciboSimpleController extends AppBaseController
                 // Limpiar separadores de miles para búsqueda de montos
                 $buscarMonto = str_replace('.', '', $buscarTerm);
 
-                $sql_busqueda = "WHERE (CAST(r.id_recibo AS TEXT) iLIKE '%{$buscarTerm}%'
-                    OR CAST(c.clie_nombre AS TEXT) iLIKE '%{$buscarTerm}%'
-                    OR CAST(c.clie_apellido AS TEXT) iLIKE '%{$buscarTerm}%'
-                    OR CAST(c.clie_ci AS TEXT) iLIKE '%{$buscarTerm}%'
+                $sql_busqueda = "WHERE (CAST(r.id_recibo AS TEXT) ILIKE '%{$buscarTerm}%'
+                    OR c.clie_nombre ILIKE '%{$buscarTerm}%'
+                    OR c.clie_apellido ILIKE '%{$buscarTerm}%'
+                    OR c.clie_ci ILIKE '%{$buscarTerm}%'
                     OR CAST(r.fecha_recibo AS TEXT) ILIKE '%{$buscarFecha}%'
                     OR TO_CHAR(r.fecha_recibo, 'DD/MM/YYYY') ILIKE '%{$buscarTerm}%'
                     OR r.estado ILIKE '%{$buscarTerm}%'
@@ -154,6 +154,11 @@ class ReciboSimpleController extends AppBaseController
             'ACTIVO' => 'ACTIVO',
             'ANULADO' => 'ANULADO'
         ];
+
+        // Si es petición AJAX, solo retornar la tabla
+        if ($request->ajax()) {
+            return view('recibossimples.table')->with('recibos', $recibos);
+        }
 
         return view('recibossimples.index')
             ->with('recibos', $recibos)
@@ -335,12 +340,13 @@ class ReciboSimpleController extends AppBaseController
 
         ## Si query es vacio mostrar todo los productos utilizando un limitador
         if ($query) {
+            // Buscar en productos
             $productos = DB::select(
                 "SELECT productos.*, stocks.cantidad, stocks.id_sucursal
                     FROM productos
                         LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
-                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
+                    WHERE (CAST(productos.id_producto AS TEXT) ILIKE ? OR productos.descripcion ILIKE ?)
                     LIMIT 20",
                 [
                     $cod_suc,

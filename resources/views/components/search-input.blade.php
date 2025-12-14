@@ -185,6 +185,7 @@
             opacity: 0;
             transform: translateY(-20px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -264,7 +265,8 @@
                 <p>Encuentra registros por ID o cualquier campo</p>
             </div>
         </div>
-        <form id="form-busqueda-texto">
+        <!-- Changing ID to CLASS to avoid collisions with duplicates -->
+        <form class="form-busqueda-texto">
             <div class="input-group-search-modern">
                 <select class="search-mode search-mode-select" name="search_mode">
                     <option value="all" {{ request()->get('search_mode') == 'all' || !request()->get('search_mode') ? 'selected' : '' }}>
@@ -275,12 +277,12 @@
                     </option>
                 </select>
                 <input type="text"
-                       class="buscar buscar-input-modern"
-                       name="buscar"
-                       value="{{ request()->get('buscar', null) }}"
-                       placeholder="Escribe tu búsqueda aquí... (Ej: 'id:123' o '#123' para ID exacto)"
-                       data-url="{{ url()->current() }}"
-                       title="Use 'id:' o '#' seguido del número para buscar solo por ID">
+                    class="buscar buscar-input-modern"
+                    name="buscar"
+                    value="{{ request()->get('buscar', null) }}"
+                    placeholder="Escribe tu búsqueda aquí... (Ej: 'id:123' o '#123' para ID exacto)"
+                    data-url="{{ url()->current() }}"
+                    title="Use 'id:' o '#' seguido del número para buscar solo por ID">
                 <button class="btn-buscar-modern" type="submit">
                     <i class="fas fa-search"></i>
                     <span>Buscar</span>
@@ -291,28 +293,29 @@
 </div>
 
 @push('scripts')
-    <script>
-        $(document).ready(function() {
-            // Manejar el submit del formulario de búsqueda de texto
-            $('#form-busqueda-texto').on('submit', function(e) {
-                e.preventDefault();
-                var buscar = $('.buscar').val();
-                var searchMode = $('.search-mode').val();
-                var url = '{{ url()->current() }}';
+<script>
+    $(document).ready(function() {
+        // Manejar el submit del formulario de búsqueda de texto (using classes)
+        $('.form-busqueda-texto').on('submit', function(e) {
+            e.preventDefault();
+            // Find inputs strictly within THIS form instance
+            var buscar = $(this).find('.buscar').val();
+            var searchMode = $(this).find('.search-mode').val();
+            var url = '{{ url()->current() }}';
 
-                // Mantener los filtros actuales
-                var params = new URLSearchParams(window.location.search);
-                if (buscar) {
-                    params.set('buscar', buscar);
-                } else {
-                    params.delete('buscar');
-                }
-                if (searchMode) {
-                    params.set('search_mode', searchMode);
-                }
+            // Mantener los filtros actuales
+            var params = new URLSearchParams(window.location.search);
+            if (buscar) {
+                params.set('buscar', buscar);
+            } else {
+                params.delete('buscar');
+            }
+            if (searchMode) {
+                params.set('search_mode', searchMode);
+            }
 
-                window.location.href = url + '?' + params.toString();
-            });
+            window.location.href = url + '?' + params.toString();
         });
-    </script>
+    });
+</script>
 @endpush
