@@ -20,22 +20,24 @@ RUN apt-get update && apt-get install -y \
 # Limpiar cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP
-RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
+# Instalar extensiones de PHP (incluyendo opcache)
+RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip opcache
 
 # Obtener Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiar configuración de Nginx
+# Copiar configuración de Nginx y Supervisor
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
-
-# Copiar configuración de Supervisor
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copiar composer.json y composer.lock
+# Copiar configuración PHP-FPM optimizada
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copiar composer files PRIMERO para aprovechar caché de Docker
+# Si composer.json no cambia, este paso se salta en rebuilds
 COPY composer.json composer.lock /var/www/html/
 
-# Instalar dependencias de Composer (sin código aún)
+# Instalar dependencias de Composer
 RUN composer install --no-scripts --no-autoloader --no-dev
 
 # Copiar el resto de los archivos del proyecto

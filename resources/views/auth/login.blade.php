@@ -24,8 +24,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Vivid Gradient Background as base */
-            background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 50%, #FC466B 100%);
+            /* Dark Blue / Slate Gradient to match TAP ERP Header */
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             position: relative;
             overflow: hidden;
         }
@@ -47,14 +47,14 @@
             width: 420px;
             max-width: 90%;
             padding: 50px 40px;
-            background: rgba(255, 255, 255, 0.05); /* More transparent */
+            background: rgba(30, 41, 59, 0.7); /* Darker glass */
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-top: 1px solid rgba(255, 255, 255, 0.5);
-            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 24px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
             color: #fff;
             overflow: hidden;
             animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -70,13 +70,13 @@
             width: 90px;
             height: 90px;
             margin: 0 auto 20px auto;
-            background: rgba(255, 255, 255, 0.15);
+            background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); /* Cyan gradient */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3); /* Cyan shadow */
             transition: transform 0.3s;
         }
 
@@ -87,7 +87,7 @@
         .avatar-container i {
             font-size: 40px;
             color: #fff;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
         .login-header h2 {
@@ -96,14 +96,14 @@
             font-weight: 700;
             margin-bottom: 5px;
             letter-spacing: -0.5px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
         .login-header p {
             text-align: center;
             font-size: 15px;
             margin-bottom: 35px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.6);
         }
 
         /* Inputs */
@@ -115,7 +115,7 @@
         .input-group input {
             width: 100%;
             padding: 16px 20px 16px 50px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(15, 23, 42, 0.6); /* Darker input bg */
             border: 1px solid rgba(255, 255, 255, 0.1);
             outline: none;
             border-radius: 12px;
@@ -125,13 +125,13 @@
         }
 
         .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .input-group input:focus {
-            background: rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+            border-color: #22d3ee; /* Cyan border */
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1); /* Cyan glow */
         }
 
         .input-group i {
@@ -140,12 +140,12 @@
             top: 50%;
             transform: translateY(-50%);
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.4);
             transition: 0.3s;
         }
 
         .input-group input:focus + i {
-            color: #fff;
+            color: #22d3ee; /* Cyan icon */
             transform: translateY(-50%) scale(1.1);
         }
 
@@ -155,14 +155,14 @@
             padding: 16px;
             border: none;
             outline: none;
-            background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
-            color: #1a1a1a;
+            background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); /* Cyan gradient */
+            color: #fff;
             font-size: 16px;
             font-weight: 700;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3);
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -175,7 +175,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #e2e8f0 0%, #fff 100%);
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%); /* Reverse gradient */
             transition: 0.5s;
             z-index: -1;
             opacity: 0;
@@ -183,7 +183,7 @@
 
         .btn-submit:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.4);
         }
         
         .btn-submit:hover::before {
@@ -201,7 +201,7 @@
         }
 
         .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.6);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
@@ -210,15 +210,15 @@
         }
 
         .footer-links a:hover {
-            color: #fff;
-            border-bottom-color: #fff;
+            color: #22d3ee;
+            border-bottom-color: #22d3ee;
         }
 
         /* Alerts */
         .alert {
-            background: rgba(254, 202, 202, 0.2);
-            border: 1px solid rgba(254, 202, 202, 0.3);
-            color: #fed7d7;
+            background: rgba(254, 202, 202, 0.1);
+            border: 1px solid rgba(254, 202, 202, 0.2);
+            color: #fecaca;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
@@ -239,7 +239,7 @@
 
         .is-invalid {
             border-color: #ef4444 !important;
-            background: rgba(239, 68, 68, 0.15) !important;
+            background: rgba(239, 68, 68, 0.1) !important;
         }
         
         .invalid-feedback {
@@ -260,7 +260,7 @@
     <div class="login-card">
         
         <div class="avatar-container">
-            <i class="fas fa-user"></i>
+            <i class="fas fa-user-lock"></i>
         </div>
 
         <div class="login-header">
@@ -271,7 +271,7 @@
         <!-- System Messages -->
         @if(session('flash_notification'))
             @foreach(session('flash_notification') as $message)
-                <div class="alert" style="background: rgba(191, 219, 254, 0.2); border-color: rgba(191, 219, 254, 0.3); color: #bfdbfe; animation: none;">
+                <div class="alert" style="background: rgba(34, 211, 238, 0.1); border-color: rgba(34, 211, 238, 0.2); color: #a5f3fc; animation: none;">
                     <i class="fas fa-info-circle"></i> {{ $message['message'] }}
                 </div>
             @endforeach
@@ -294,25 +294,25 @@
 
             <!-- Username -->
             <div class="input-group">
-                <input type="text" name="email" placeholder="Usuario" value="{{ old('email') }}" required autofocus>
-                <i class="fas fa-user-astronaut"></i>
+                <input type="text" name="email" placeholder="Usuario / Correo" value="{{ old('email') }}" required autofocus>
+                <i class="fas fa-user"></i>
             </div>
 
             <!-- Password -->
             <div class="input-group">
                 <input type="password" name="password" placeholder="Contraseña" required class="@error('password') is-invalid @enderror">
-                <i class="fas fa-key"></i>
+                <i class="fas fa-lock"></i>
                 @error('password')
                     <span class="invalid-feedback">{{ $message }}</span>
                 @enderror
             </div>
 
             <button type="submit" class="btn-submit">
-                INICIAR SESIÓN
+                INGRESAR SISTEMA
             </button>
 
             <div class="footer-links">
-                <a href="{{ route('register') }}">Registrar nueva cuenta</a>
+                <a href="{{ route('register') }}">Crear cuenta</a>
             </div>
         </form>
     </div>
@@ -348,7 +348,8 @@
                 this.vx = (Math.random() - 0.5) * 1.5; // Velocity X
                 this.vy = (Math.random() - 0.5) * 1.5; // Velocity Y
                 this.size = Math.random() * 2 + 1;
-                this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.2})`;
+                // Subtle Cyan/Teal particles
+                this.color = `rgba(34, 211, 238, ${Math.random() * 0.4 + 0.1})`;
             }
 
             update() {
@@ -372,13 +373,8 @@
                         const force = (mouseDistance - distance) / mouseDistance;
                         const directionX = forceDirectionX * force * 3; // Push strength
                         const directionY = forceDirectionY * force * 3;
-
-                        // "Attract" or "Repel" - let's connect tightly to mouse
-                        // To attract:
-                        // this.x += directionX;
-                        // this.y += directionY;
                         
-                        // To have a "web" effect, let's just draw lines to mouse
+                        // Optional: attract/repel logic could go here
                     }
                 }
             }
@@ -414,7 +410,8 @@
 
                     if (distance < connectionDistance) {
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / connectionDistance})`;
+                        // Cyan connections
+                        ctx.strokeStyle = `rgba(34, 211, 238, ${0.2 * (1 - distance / connectionDistance)})`;
                         ctx.lineWidth = 1;
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
@@ -430,7 +427,7 @@
 
                     if (distance < mouseDistance) {
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - distance / mouseDistance) * 0.8})`;
+                        ctx.strokeStyle = `rgba(34, 211, 238, ${(1 - distance / mouseDistance) * 0.4})`;
                         ctx.lineWidth = 1.5;
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(mouse.x, mouse.y);
