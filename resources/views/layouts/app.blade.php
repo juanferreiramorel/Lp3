@@ -299,6 +299,27 @@
                         });
                 });
 
+                //sweetalert para confirmacion de activar/inactivar - usa delegación de eventos para AJAX
+                $(document).on('click', '.alert-toggle', function(event) {
+                    var form = $(this).closest("form");
+                    event.preventDefault();
+                    let title = $(this).data("title") || "Atención";
+                    let message = $(this).data("mensage") || "¿Está seguro?";
+                    Swal.fire({
+                            title: title,
+                            text: message,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: "Confirmar",
+                            cancelButtonText: "Cancelar",
+                        })
+                        .then(resultado => {
+                            if (resultado.value) {
+                                form.submit();
+                            }
+                        });
+                });
+
                 // Función para manejar confirmación de eliminación en Livewire
                 window.handleLivewireDelete = function(recordId, button) {
                     Swal.fire({

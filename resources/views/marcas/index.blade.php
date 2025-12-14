@@ -20,7 +20,7 @@
     <div class="content px-3">
 
         <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
+            @include('marcas.filtros')
         </div>
 
         <div class="card tabla-container">

@@ -5,25 +5,45 @@
                 <tr>
                     <th>#</th>
                     <th>Descripcion</th>
+                    <th>Estado</th>
                     <th colspan="3">Action</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($marcas as $marca)
-                    <tr>
+                    <tr style="{{ !$marca->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $marca->id_marca }}</td>
                         <td>{{ $marca->descripcion }}</td>
+                        <td>
+                            @if($marca->activo)
+                                <span class="badge badge-success">Activo</span>
+                            @else
+                                <span class="badge badge-secondary">Inactivo</span>
+                            @endif
+                        </td>
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['marcas.destroy', $marca->id_marca], 'method' => 'delete']) !!}
                             <div class='btn-group'>
                                 <a href="{{ route('marcas.edit', [$marca->id_marca]) }}" class='btn btn-default btn-xs'>
                                     <i class="far fa-edit"></i>
                                 </a>
-                                {!! Form::button('<i class="far fa-trash-alt"></i>', [
-                                    'type' => 'submit',
-                                    'class' => 'btn btn-danger btn-xs alert-delete',
-                                    'data-mensage' => $marca->descripcion,
-                                ]) !!}
+                                @if($marca->activo)
+                                    {!! Form::button('<i class="fas fa-ban"></i>', [
+                                        'type' => 'submit',
+                                        'class' => 'btn btn-warning btn-xs alert-toggle',
+                                        'data-title' => 'Inactivar Marca',
+                                        'data-mensage' => 'Desea inactivar la marca: ' . $marca->descripcion . '?',
+                                        'title' => 'Inactivar marca'
+                                    ]) !!}
+                                @else
+                                    {!! Form::button('<i class="fas fa-check-circle"></i>', [
+                                        'type' => 'submit',
+                                        'class' => 'btn btn-success btn-xs alert-toggle',
+                                        'data-title' => 'Activar Marca',
+                                        'data-mensage' => 'Desea activar la marca: ' . $marca->descripcion . '?',
+                                        'title' => 'Activar marca'
+                                    ]) !!}
+                                @endif
                             </div>
                             {!! Form::close() !!}
                         </td>

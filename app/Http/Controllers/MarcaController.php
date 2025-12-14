@@ -21,36 +21,43 @@ class MarcaController extends AppBaseController
 
     public function index(Request $request)
     {
-        // Obtener el término de búsqueda
+        // Obtener parámetros de búsqueda
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter'); // nuevo: filtro de estado del dropdown
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // Construir la query base
+        $query = 'SELECT * FROM marcas WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado si existe
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $query .= ' AND activo = ?';
+            $params[] = ($estadoFilter === '1' || $estadoFilter === 'true');
+        }
+
+        // Aplicar búsqueda por texto
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $marcas = DB::select(
-                    'SELECT * FROM marcas
-                    WHERE id_marca = ?
-                    ORDER BY id_marca DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND id_marca = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
-                // Búsqueda múltiple en todos los campos
+                // Búsqueda por descripción o ID
                 $buscarTerm = $searchConfig['term'];
-                $marcas = DB::select(
-                    'SELECT * FROM marcas
-                    WHERE descripcion ILIKE ?
-                    OR cast(id_marca as text) ILIKE ?
-                    ORDER BY id_marca DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (descripcion ILIKE ? OR cast(id_marca as text) ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            $marcas = DB::SELECT('SELECT * FROM marcas ORDER BY id_marca DESC');
         }
+
+        $query .= ' ORDER BY id_marca DESC';
+
+        // Ejecutar la consulta
+        $marcas = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -77,7 +84,9 @@ class MarcaController extends AppBaseController
             return view('marcas.table')->with('marcas', $marcas);
         }
 
-        return view('marcas.index')->with('marcas', $marcas);
+        return view('marcas.index')
+            ->with('marcas', $marcas)
+            ->with('estadoFilter', $estadoFilter);
     }
     public function create()
     {
@@ -180,10 +189,14 @@ class MarcaController extends AppBaseController
         }
 
         try {
-            DB::delete('DELETE FROM marcas WHERE id_marca = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // Cambiar el estado activo (toggle)
+            $nuevoEstado = !$marca->activo;
+            DB::update('UPDATE marcas SET activo = ? WHERE id_marca = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Marca activada correctamente.' : 'Marca inactivada correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect()->route('marcas.index');
