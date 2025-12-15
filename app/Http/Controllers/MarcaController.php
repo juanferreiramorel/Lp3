@@ -29,14 +29,18 @@ class MarcaController extends AppBaseController
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
-        // Construir la query base
-        $query = 'SELECT * FROM marcas WHERE 1=1';
+        // Construir la query base con subconsulta para columna calculada estado
+        $query = 'SELECT * FROM (
+            SELECT *, CASE WHEN activo = true THEN \'Activo\' ELSE \'Inactivo\' END as estado 
+            FROM marcas
+        ) AS marcas_con_estado WHERE 1=1';
         $params = [];
 
-        // Aplicar filtro de estado si existe
+        // Aplicar filtro de estado si existe (dropdown tiene prioridad)
         if ($estadoFilter !== null && $estadoFilter !== '') {
-            $query .= ' AND activo = ?';
-            $params[] = ($estadoFilter === '1' || $estadoFilter === 'true');
+            $estadoValue = ($estadoFilter === '1' || $estadoFilter === 'true') ? 'Activo' : 'Inactivo';
+            $query .= ' AND estado = ?';
+            $params[] = $estadoValue;
         }
 
         // Aplicar búsqueda por texto
@@ -46,9 +50,10 @@ class MarcaController extends AppBaseController
                 $query .= ' AND id_marca = ?';
                 $params[] = (int)$searchConfig['term'];
             } else {
-                // Búsqueda por descripción o ID
+                // Búsqueda por descripción, ID o estado (con OR para que sea opcional)
                 $buscarTerm = $searchConfig['term'];
-                $query .= ' AND (descripcion ILIKE ? OR cast(id_marca as text) ILIKE ?)';
+                $query .= ' AND (descripcion ILIKE ? OR cast(id_marca as text) ILIKE ? OR estado ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
                 $params[] = '%' . $buscarTerm . '%';
                 $params[] = '%' . $buscarTerm . '%';
             }

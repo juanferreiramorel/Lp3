@@ -919,7 +919,8 @@ class VentaController extends AppBaseController
                         LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
                         LEFT JOIN taxes t ON productos.id_tax = t.id_tax
-                    WHERE (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
+                    WHERE productos.activo = true
+                    AND (CAST(productos.id_producto AS TEXT) iLIKE ? OR CAST(productos.descripcion AS TEXT) iLIKE ?)
                     LIMIT 20",
                 [
                     $cod_suc,
@@ -936,6 +937,7 @@ class VentaController extends AppBaseController
                         LEFT JOIN stocks ON productos.id_producto = stocks.id_producto
                         AND stocks.id_sucursal = ?
                         LEFT JOIN taxes t ON productos.id_tax = t.id_tax
+                    WHERE productos.activo = true
                  LIMIT 20",
                 [$cod_suc]
             );

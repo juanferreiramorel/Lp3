@@ -11,12 +11,13 @@
                         <th>Impuesto</th>
                         <th>Controla Stock</th>
                         <th>Marca</th>
+                        <th>Estado</th>
                         <th colspan="3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($productos as $producto)
-                        <tr>
+                        <tr style="{{ !$producto->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                             <td>{{ $producto->id_producto }}</td>
                             <td>
                                 @if ($producto->imagen_producto)
@@ -38,18 +39,36 @@
                             </td>
                             <td>{{ !empty($producto->controlar_stock) ? 'Sí' : 'No' }}</td>
                             <td>{{ $producto->marcas }}</td>
+                            <td>
+                                @if($producto->activo)
+                                    <span class="badge badge-success">Activo</span>
+                                @else
+                                    <span class="badge badge-secondary">Inactivo</span>
+                                @endif
+                            </td>
                             <td style="width: 120px">
                                 {!! Form::open(['route' => ['productos.destroy', $producto->id_producto], 'method' => 'delete']) !!}
                                 <div class='btn-group'>
-                                    <a href="{{ route('productos.edit', [$producto->id_producto]) }}"
-                                        class='btn btn-default btn-xs'>
+                                    <a href="{{ route('productos.edit', [$producto->id_producto]) }}" class='btn btn-default btn-xs'>
                                         <i class="far fa-edit"></i>
                                     </a>
-                                    {!! Form::button('<i class="far fa-trash-alt"></i>', [
-                                        'type' => 'submit',
-                                        'class' => 'btn btn-danger btn-xs alert-delete',
-                                        'data-mensaje' => 'este registro',
-                                    ]) !!}
+                                    @if($producto->activo)
+                                        {!! Form::button('<i class="fas fa-ban"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-warning btn-xs alert-toggle',
+                                            'data-title' => 'Inactivar Producto',
+                                            'data-mensage' => 'Desea inactivar el producto: ' . $producto->descripcion . '?',
+                                            'title' => 'Inactivar producto'
+                                        ]) !!}
+                                    @else
+                                        {!! Form::button('<i class="fas fa-check-circle"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-success btn-xs alert-toggle',
+                                            'data-title' => 'Activar Producto',
+                                            'data-mensage' => 'Desea activar el producto: ' . $producto->descripcion . '?',
+                                            'title' => 'Activar producto'
+                                        ]) !!}
+                                    @endif
                                 </div>
                                 {!! Form::close() !!}
                             </td>

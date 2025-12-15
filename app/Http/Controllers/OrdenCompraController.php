@@ -624,7 +624,8 @@ class OrdenCompraController extends AppBaseController
                 "SELECT p.id_producto, p.descripcion, p.precio, t.porcentaje as tax_porcentaje
                  FROM productos p
                  LEFT JOIN taxes t ON p.id_tax = t.id_tax
-                 WHERE (CAST(p.id_producto AS TEXT) iLIKE ? OR CAST(p.descripcion AS TEXT) iLIKE ?)
+                 WHERE p.activo = true
+                 AND (CAST(p.id_producto AS TEXT) iLIKE ? OR CAST(p.descripcion AS TEXT) iLIKE ?)
                  LIMIT 20",
                 ['%' . $query . '%', '%' . $query . '%']
             );
@@ -634,6 +635,7 @@ class OrdenCompraController extends AppBaseController
                 "SELECT p.id_producto, p.descripcion, p.precio, t.porcentaje as tax_porcentaje
                  FROM productos p
                  LEFT JOIN taxes t ON p.id_tax = t.id_tax
+                 WHERE p.activo = true
                  LIMIT 20"
             );
         }

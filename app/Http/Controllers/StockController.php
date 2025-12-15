@@ -57,6 +57,7 @@ class StockController extends AppBaseController
         }
         
         // Consulta para obtener los productos con la marca asociada y si posee filtros
+        // Solo mostrar productos que controlan stock, están activos y tienen marcas activas
         $stock = DB::select(
             'SELECT s.cantidad, m.descripcion as marca, p.descripcion AS producto, sc.descripcion as sucursal,
             s.id_stock AS id, p.descripcion
@@ -64,7 +65,9 @@ class StockController extends AppBaseController
              JOIN sucursales sc USING(id_sucursal)
              JOIN productos p USING(id_producto) 
              JOIN marcas m USING(id_marca)
-             WHERE 1=1
+             WHERE p.controlar_stock = true
+             AND p.activo = true
+             AND m.activo = true
              ' . $sql . ' ' . $filtro_sucursales . ' ' . $filtro_productos . ' ' . $filtroSucursalesPermitidas . '
              ORDER BY p.id_producto desc'
         );
@@ -91,7 +94,11 @@ class StockController extends AppBaseController
 
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         $sucursales = $this->getSucursalesPermitidas();
-        $productos = DB::table('productos')->pluck('descripcion', 'id_producto');
+        // Solo mostrar productos activos que controlan stock en el combo de filtro
+        $productos = DB::table('productos')
+            ->where('controlar_stock', true)
+            ->where('activo', true)
+            ->pluck('descripcion', 'id_producto');
 
          // Verificamos si la petición es AJAX
         if ($request->ajax()) { //devuelve true o false si es ajax o no

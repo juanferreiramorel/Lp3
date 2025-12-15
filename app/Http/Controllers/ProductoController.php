@@ -28,25 +28,59 @@ class ProductoController extends AppBaseController
     }
     public function index(Request $request)
     {
-        // Obtener el término de búsqueda del request
+        // Obtener parámetros de búsqueda
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter');
+        $marcaFilter = $request->get('marca_filter');
+        $taxFilter = $request->get('tax_filter');
+        $stockFilter = $request->get('stock_filter');
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // Construir la query base con subconsulta para columna calculada estado
+        $query = 'SELECT * FROM (
+            SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje,
+                   CASE WHEN p.activo = true THEN \'Activo\' ELSE \'Inactivo\' END as estado
+            FROM productos p
+                JOIN marcas m ON p.id_marca = m.id_marca
+                LEFT JOIN taxes t ON p.id_tax = t.id_tax
+        ) AS productos_completo WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado si existe
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $estadoValue = ($estadoFilter === '1' || $estadoFilter === 'true') ? 'Activo' : 'Inactivo';
+            $query .= ' AND estado = ?';
+            $params[] = $estadoValue;
+        }
+
+        // Aplicar filtro de marca si existe
+        if ($marcaFilter !== null && $marcaFilter !== '') {
+            $query .= ' AND id_marca = ?';
+            $params[] = (int)$marcaFilter;
+        }
+
+        // Aplicar filtro de impuesto si existe
+        if ($taxFilter !== null && $taxFilter !== '') {
+            $query .= ' AND id_tax = ?';
+            $params[] = (int)$taxFilter;
+        }
+
+        // Aplicar filtro de controlar stock si existe
+        if ($stockFilter !== null && $stockFilter !== '') {
+            $stockValue = ($stockFilter === '1' || $stockFilter === 'true');
+            $query .= ' AND controlar_stock = ?';
+            $params[] = $stockValue;
+        }
+
+        // Aplicar búsqueda por texto
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $productos = DB::select(
-                    'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
-                     FROM productos p
-                        JOIN marcas m ON p.id_marca = m.id_marca
-                        LEFT JOIN taxes t ON p.id_tax = t.id_tax
-                     WHERE p.id_producto = ?
-                     ORDER BY p.id_producto DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND id_producto = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
@@ -55,31 +89,27 @@ class ProductoController extends AppBaseController
                 $buscarPrecio = str_replace('.', '', $buscarTerm);
 
                 // Consulta con parámetros preparados para seguridad
-                $productos = DB::select(
-                    'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
-                     FROM productos p
-                        JOIN marcas m ON p.id_marca = m.id_marca
-                        LEFT JOIN taxes t ON p.id_tax = t.id_tax
-                     WHERE p.descripcion ILIKE ?
-                     OR m.descripcion ILIKE ?
-                     OR p.codigo_barras ILIKE ?
-                     OR cast(p.id_producto as text) ILIKE ?
-                     OR cast(p.precio as text) ILIKE ?
-                     OR TO_CHAR(p.precio, \'FM999G999G999G999G999\') ILIKE ?
-                     ORDER BY p.id_producto DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarPrecio . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (descripcion ILIKE ?
+                     OR marcas ILIKE ?
+                     OR codigo_barras ILIKE ?
+                     OR cast(id_producto as text) ILIKE ?
+                     OR cast(precio as text) ILIKE ?
+                     OR TO_CHAR(precio, \'FM999G999G999G999G999\') ILIKE ?
+                     OR estado ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarPrecio . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            // Consulta para obtener los productos con la marca asociada
-            $productos = DB::select(
-                'SELECT p.*, m.descripcion as marcas, t.nombre as tax_nombre, t.porcentaje as tax_porcentaje
-                 FROM productos p
-                    JOIN marcas m ON p.id_marca = m.id_marca
-                    LEFT JOIN taxes t ON p.id_tax = t.id_tax
-                 ORDER BY p.id_producto DESC'
-            );
         }
+
+        $query .= ' ORDER BY id_producto DESC';
+
+        // Ejecutar la consulta
+        $productos = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -108,13 +138,23 @@ class ProductoController extends AppBaseController
         }
 
 
-        return view('productos.index')->with('productos', $productos);
+        // Obtener marcas para el filtro
+        $marcas = DB::table('marcas')->orderBy('descripcion')->pluck('descripcion', 'id_marca');
+
+        // Obtener impuestos para el filtro
+        $taxes = DB::table('taxes')->orderBy('nombre')->pluck('nombre', 'id_tax');
+
+        return view('productos.index')
+            ->with('productos', $productos)
+            ->with('estadoFilter', $estadoFilter)
+            ->with('marcas', $marcas)
+            ->with('taxes', $taxes);
     }
 
     public function create()
     {
-        // Obtener las marcas para cargar el select
-        $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
+        // Obtener solo las marcas activas para el select
+        $marcas = DB::table('marcas')->where('activo', true)->pluck('descripcion', 'id_marca');
 
         // Obtener los impuestos activos
         $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
@@ -218,8 +258,12 @@ class ProductoController extends AppBaseController
             return redirect(route('productos.index'));
         }
 
-        // Obtener las marcas para cargar el select
-        $marcas = DB::table('marcas')->pluck('descripcion', 'id_marca');
+        // Obtener marcas activas O la marca actual del producto (aunque esté inactiva)
+        // Esto permite editar productos con marcas inactivas sin perder la asignación
+        $marcas = DB::table('marcas')
+            ->where('activo', true)
+            ->orWhere('id_marca', $productos->id_marca)
+            ->pluck('descripcion', 'id_marca');
 
         // Obtener los impuestos activos
         $taxes = DB::select('SELECT * FROM taxes WHERE activo = true ORDER BY nombre');
@@ -341,16 +385,14 @@ class ProductoController extends AppBaseController
         }
 
         try {
-            // Eliminar imagen del producto si existe
-            if ($producto->imagen_producto && file_exists($this->path . $producto->imagen_producto)) {
-                unlink($this->path . $producto->imagen_producto);
-            }
-
-            // Eliminar el producto de la base de datos
-            DB::delete('DELETE FROM productos WHERE id_producto = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // Cambiar el estado activo (toggle)
+            $nuevoEstado = !$producto->activo;
+            DB::update('UPDATE productos SET activo = ? WHERE id_producto = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Producto activado correctamente.' : 'Producto inactivado correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('productos.index'));

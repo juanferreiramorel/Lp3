@@ -194,13 +194,15 @@ class ComprasController extends AppBaseController
             $sql = "SELECT p.*, t.porcentaje as tax_porcentaje
                     FROM productos p
                     LEFT JOIN taxes t ON p.id_tax = t.id_tax
-                    WHERE LOWER(p.descripcion) LIKE ? OR CAST(p.id_producto AS TEXT) LIKE ?
+                    WHERE p.activo = true
+                    AND (LOWER(p.descripcion) LIKE ? OR CAST(p.id_producto AS TEXT) LIKE ?)
                     LIMIT 50";
             $productos = DB::select($sql, ["%{$buscarLower}%", "%{$buscarLower}%"]);
         } else {
             $sql = "SELECT p.*, t.porcentaje as tax_porcentaje
                     FROM productos p
                     LEFT JOIN taxes t ON p.id_tax = t.id_tax
+                    WHERE p.activo = true
                     LIMIT 20";
             $productos = DB::select($sql);
         }

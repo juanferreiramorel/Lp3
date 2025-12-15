@@ -647,7 +647,8 @@ class PedidosController extends AppBaseController
                    LEFT JOIN stocks ON productos.id_producto = stocks.id_producto 
                         AND stocks.id_sucursal = ?
                    LEFT JOIN taxes t ON productos.id_tax = t.id_tax
-                  WHERE (LOWER(productos.descripcion) LIKE ? OR CAST(productos.id_producto AS TEXT) LIKE ?)
+                  WHERE productos.activo = true
+                  AND (LOWER(productos.descripcion) LIKE ? OR CAST(productos.id_producto AS TEXT) LIKE ?)
                   LIMIT 50",
                 [$cod_suc, "%{$buscar}%", "%{$buscar}%"]
             );
@@ -660,6 +661,7 @@ class PedidosController extends AppBaseController
                    LEFT JOIN stocks ON productos.id_producto = stocks.id_producto 
                         AND stocks.id_sucursal = ?
                    LEFT JOIN taxes t ON productos.id_tax = t.id_tax
+                  WHERE productos.activo = true
                   LIMIT 20",
                 [$cod_suc]
             );
