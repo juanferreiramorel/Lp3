@@ -22,76 +22,65 @@ class ClienteController extends AppBaseController
 
     public function index(Request $request)
     {
-        // Buscar
+        // Obtener parámetros de búsqueda
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter'); // nuevo: filtro de estado del dropdown
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // Construir la query base con subconsulta para columna calculada estado
+        $query = 'SELECT * FROM (
+            SELECT c.*, ciu.descripcion as ciudad,
+            d.descripcion as departamento,
+            CASE WHEN c.activo = true THEN \'Activo\' ELSE \'Inactivo\' END as estado
+            FROM clientes c
+            JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
+            JOIN departamentos d ON d.id_departamento = c.id_departamento
+        ) AS clientes_con_estado WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado si existe (dropdown tiene prioridad)
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $estadoValue = ($estadoFilter === '1' || $estadoFilter === 'true') ? 'Activo' : 'Inactivo';
+            $query .= ' AND estado = ?';
+            $params[] = $estadoValue;
+        }
+
+        // Aplicar búsqueda por texto
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $clientes = DB::select(
-                    'SELECT c.*, ciu.descripcion as ciudad,
-                    d.descripcion as departamento
-                    FROM clientes c
-                        JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
-                        JOIN departamentos d ON d.id_departamento = c.id_departamento
-                    WHERE c.id_cliente = ?
-                    ORDER BY c.id_cliente DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND id_cliente = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
 
                 // Convertir fecha si está en formato dd/mm/yyyy a yyyy-mm-dd para búsqueda
                 $buscarFecha = $buscarTerm;
-                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
+                if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $buscarTerm, $matches)) {
                     $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
                 }
 
-                // Búsqueda con formato de fecha para TO_CHAR
-                $clientes = DB::select(
-                    'SELECT c.*, ciu.descripcion as ciudad,
-                    d.descripcion as departamento
-                    FROM clientes c
-                        JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
-                        JOIN departamentos d ON d.id_departamento = c.id_departamento
-                    WHERE c.clie_nombre ILIKE ?
-                    OR c.clie_apellido ILIKE ?
-                    OR c.clie_ci ILIKE ?
-                    OR c.clie_telefono ILIKE ?
-                    OR ciu.descripcion ILIKE ?
-                    OR d.descripcion ILIKE ?
-                    OR cast(c.id_cliente as text) ILIKE ?
-                    OR cast(c.clie_fecha_nac as text) ILIKE ?
-                    OR TO_CHAR(c.clie_fecha_nac, \'DD/MM/YYYY\') ILIKE ?
-                    ORDER BY c.id_cliente DESC',
-                    [
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarFecha . '%',
-                        '%' . $buscarTerm . '%'
-                    ]
-                );
+                $query .= ' AND (clie_nombre ILIKE ? OR clie_apellido ILIKE ? OR clie_ci ILIKE ? OR clie_telefono ILIKE ? OR ciudad ILIKE ? OR departamento ILIKE ? OR cast(id_cliente as text) ILIKE ? OR cast(clie_fecha_nac as text) ILIKE ? OR estado ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarFecha . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            $clientes = DB::select('
-                SELECT c.*, ciu.descripcion as ciudad,
-                d.descripcion as departamento
-                FROM clientes c
-                JOIN ciudades ciu ON ciu.id_ciudad = c.id_ciudad
-                JOIN departamentos d ON d.id_departamento = c.id_departamento
-                ORDER BY c.id_cliente DESC
-            ');
         }
+
+        $query .= ' ORDER BY id_cliente DESC';
+
+        // Ejecutar la consulta
+        $clientes = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -113,14 +102,14 @@ class ClienteController extends AppBaseController
             ]
         );
 
-        // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
+        // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
             return view('clientes.table')->with('clientes', $clientes);
         }
 
-
-        return view('clientes.index')->with('clientes', $clientes);
+        return view('clientes.index')
+            ->with('clientes', $clientes)
+            ->with('estadoFilter', $estadoFilter);
     }
 
     public function create()
@@ -354,12 +343,16 @@ class ClienteController extends AppBaseController
             Alert::error('Error', 'Cliente no encontrado.');
             return redirect(route('clientes.index'));
         }
-        # Utilizaremos try catch en clientes
+
         try {
-            DB::delete('DELETE FROM clientes WHERE id_cliente = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
-        } catch (\Exception $e) { // excepcion capturada desde la base de datos
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            // Cambiar el estado activo (toggle)
+            $nuevoEstado = !$clientes->activo;
+            DB::update('UPDATE clientes SET activo = ? WHERE id_cliente = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Cliente activado correctamente.' : 'Cliente inactivado correctamente.';
+            Alert::success('Éxito', $mensaje);
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('clientes.index'));

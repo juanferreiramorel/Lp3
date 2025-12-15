@@ -11,7 +11,6 @@ services:
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
       # Volúmenes nombrados para caché - mejora rendimiento en Windows
       - vendor_cache:/var/www/html/vendor
-      - storage_framework:/var/www/html/storage/framework
       - bootstrap_cache:/var/www/html/bootstrap/cache
     networks:
       - laravel
@@ -60,8 +59,6 @@ networks:
 volumes:
   # Volúmenes de caché para mejor rendimiento
   vendor_cache:
-    driver: local
-  storage_framework:
     driver: local
   bootstrap_cache:
     driver: local

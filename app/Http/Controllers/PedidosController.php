@@ -178,8 +178,9 @@ class PedidosController extends AppBaseController
     /** CREAR */
     public function create()
     {
-        // Select de clientes (mismo estilo que ventas)
+        // Select de clientes - solo clientes activos
         $clientes = DB::table('clientes')
+            ->where('activo', true)
             ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
             ->pluck('cliente', 'id_cliente');
 
@@ -394,7 +395,12 @@ class PedidosController extends AppBaseController
             return redirect()->route('pedidos.index');
         }
 
+        // Select de clientes - solo clientes activos O el cliente asignado a este pedido
         $clientes = DB::table('clientes')
+            ->where(function($query) use ($pedido) {
+                $query->where('activo', true)
+                      ->orWhere('id_cliente', $pedido->id_cliente);
+            })
             ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
             ->pluck('cliente', 'id_cliente');
 
@@ -747,7 +753,9 @@ class PedidosController extends AppBaseController
      */
     public function createWithAi()
     {
+        // Select de clientes - solo clientes activos
         $clientes = DB::table('clientes')
+            ->where('activo', true)
             ->selectRaw("id_cliente, CONCAT(clie_nombre,' ', clie_apellido) AS cliente")
             ->pluck('cliente', 'id_cliente');
         $sucursales = $this->getSucursalesPermitidas();

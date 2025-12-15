@@ -194,8 +194,9 @@ class VentaController extends AppBaseController
 
     public function create()
     {
-        // Crear select para clientes utilizamos selectRaw para consultas puras
+        // Crear select para clientes - solo clientes activos
         $clientes = DB::table('clientes')
+            ->where('activo', true)
             ->selectRaw("id_cliente, concat(clie_nombre,' ', clie_apellido) as cliente")
             ->pluck('cliente', 'id_cliente');
 
@@ -571,8 +572,12 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
-        // Crear select para clientes utilizamos selectRaw para consultas puras
+        // Crear select para clientes - solo clientes activos O el cliente asignado a esta venta
         $clientes = DB::table('clientes')
+            ->where(function($query) use ($venta) {
+                $query->where('activo', true)
+                      ->orWhere('id_cliente', $venta->id_cliente);
+            })
             ->selectRaw("id_cliente, concat(clie_nombre,' ', clie_apellido) as cliente")
             ->pluck('cliente', 'id_cliente');
 

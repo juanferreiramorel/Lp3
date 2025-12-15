@@ -21,7 +21,7 @@
     <div class="content px-3">
 
         <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
+            @includeIf('clientes.filtros')
         </div>
 
         <div class="card tabla-container">
