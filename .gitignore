@@ -18,3 +18,4 @@ yarn-error.log
 /.vscode
 /public/img
 /public/uploads/ckeditor
+/docker/postgres_data

@@ -46,6 +46,9 @@ COPY . /var/www/html
 # Generar autoloader optimizado
 RUN composer dump-autoload --optimize --no-dev
 
+# Crear backup del vendor para sincronizar al volumen nombrado
+RUN cp -r /var/www/html/vendor /var/www/html/vendor_backup
+
 # Crear directorios necesarios para Laravel (incluyendo uploads)
 RUN mkdir -p /var/www/html/storage/framework/sessions \
     && mkdir -p /var/www/html/storage/framework/cache/data \
@@ -74,10 +77,20 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 777 /var/www/html/public/archivos \
     && chmod -R 775 /var/www/html/public
 
-# Crear script de inicialización integrado
+# Crear script de inicialización integrado con sincronización de vendor
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Iniciando configuración del contenedor..."\n\
+\n\
+# Sincronizar vendor si el volumen está vacío\n\
+if [ ! -f /var/www/html/vendor/autoload.php ]; then\n\
+    echo "Sincronizando vendor desde imagen..."\n\
+    if [ -d /var/www/html/vendor_backup ]; then\n\
+        cp -r /var/www/html/vendor_backup/* /var/www/html/vendor/ 2>/dev/null || true\n\
+    else\n\
+        cd /var/www/html && composer install --no-dev --optimize-autoloader\n\
+    fi\n\
+fi\n\
 \n\
 # Crear directorios de storage\n\
 mkdir -p /var/www/html/storage/framework/sessions\n\
@@ -99,6 +112,7 @@ mkdir -p /var/www/html/public/archivos\n\
 # Establecer propietario\n\
 chown -R www-data:www-data /var/www/html/storage\n\
 chown -R www-data:www-data /var/www/html/bootstrap/cache\n\
+chown -R www-data:www-data /var/www/html/vendor\n\
 chown -R www-data:www-data /var/www/html/public/img\n\
 chown -R www-data:www-data /var/www/html/public/uploads\n\
 chown -R www-data:www-data /var/www/html/public/archivos\n\
@@ -107,6 +121,7 @@ chown -R www-data:www-data /var/www/html/public/storage 2>/dev/null || true\n\
 # Establecer permisos\n\
 chmod -R 775 /var/www/html/storage\n\
 chmod -R 775 /var/www/html/bootstrap/cache\n\
+chmod -R 775 /var/www/html/vendor\n\
 chmod -R 777 /var/www/html/public/img\n\
 chmod -R 777 /var/www/html/public/uploads\n\
 chmod -R 777 /var/www/html/public/archivos\n\
@@ -116,6 +131,13 @@ if [ ! -L /var/www/html/public/storage ]; then\n\
     echo "Creando enlace simbólico de storage..."\n\
     php artisan storage:link 2>/dev/null || true\n\
 fi\n\
+\n\
+# Warm-up de caché de Laravel\n\
+echo "Generando caché de Laravel..."\n\
+cd /var/www/html\n\
+php artisan config:cache 2>/dev/null || true\n\
+php artisan route:cache 2>/dev/null || true\n\
+php artisan view:cache 2>/dev/null || true\n\
 \n\
 echo "Configuración completada. Iniciando servicios..."\n\
 exec "$@"' > /usr/local/bin/docker-entrypoint.sh \
