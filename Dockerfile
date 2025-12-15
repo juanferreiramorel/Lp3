@@ -120,6 +120,7 @@ chown -R www-data:www-data /var/www/html/public/storage 2>/dev/null || true\n\
 \n\
 # Establecer permisos\n\
 chmod -R 775 /var/www/html/storage\n\
+chmod -R 777 /var/www/html/storage/framework/views\n\
 chmod -R 775 /var/www/html/bootstrap/cache\n\
 chmod -R 775 /var/www/html/vendor\n\
 chmod -R 777 /var/www/html/public/img\n\
