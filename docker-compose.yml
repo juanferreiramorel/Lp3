@@ -12,6 +12,8 @@ services:
       # Volúmenes nombrados para caché - mejora rendimiento en Windows
       - vendor_cache:/var/www/html/vendor
       - bootstrap_cache:/var/www/html/bootstrap/cache
+      # Volumen para vistas compiladas - evita problemas de permisos al editar
+      - views_cache:/var/www/html/storage/framework/views
     networks:
       - laravel
     ports:
@@ -61,4 +63,6 @@ volumes:
   vendor_cache:
     driver: local
   bootstrap_cache:
+    driver: local
+  views_cache:
     driver: local

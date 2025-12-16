@@ -75,12 +75,12 @@
             <div class="card-header bg-white">
                 <h5 class="mb-0"><i class="fas fa-file-signature"></i> Contenido del Contrato</h5>
             </div>
-            <div class="card-body" style="background-color: white; padding: 20px;">
+            <div class="card-body" style="background-color: #e0e0e0; padding: 20px;">
                 <!-- Contenido oculto -->
                 <textarea id="contenido_contrato_vista" style="display:none;">{{ $contrato->contenido_generado }}</textarea>
 
-                <!-- Editor de solo lectura -->
-                <div id="editor-vista-contrato-wrapper" class="contrato-lectura">
+                <!-- Editor de solo lectura con estilo de hoja de papel -->
+                <div id="editor-vista-contrato-wrapper" class="editor-hoja-papel contrato-lectura">
                     <div id="editor-vista-contrato"></div>
                 </div>
             </div>
@@ -88,126 +88,58 @@
     </div>
 
         @push('page_css')
+
+
         <style>
-            .contrato-lectura .ck.ck-editor {
-                background: white;
-                border-radius: 6px;
-                border: 1px solid #dee2e6;
+            /* Contenedor principal que simula el escritorio/visor PDF */
+            .card-body.p-0 {
+                background-color: #525659; /* Color de fondo típico de visores PDF */
+                padding: 40px 0 !important;
+                text-align: center;
             }
 
+            /* Estilos específicos para modo lectura y corrección Firefox */
             .contrato-lectura .ck.ck-toolbar {
                 display: none !important;
             }
-
+            
+            /* Simulación de Hoja A4 */
             .contrato-lectura .ck-editor__main > .ck-editor__editable {
-                border: none !important;
-                font-family: 'Times New Roman', Times, serif !important;
+                width: 21cm !important;
+                min-height: 29.7cm !important;
+                padding: 2cm 2cm !important; /* Márgenes estándar de impresión (coincide con @page) */
+                margin: 0 auto !important;
+                background-color: white !important;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5) !important;
+                border: 1px solid #ddd !important;
+                text-align: left;
+                
+                /* Tipografía exacta de impresión */
+                font-family: "Times New Roman", Times, serif !important;
                 font-size: 12pt !important;
-                min-height: 400px !important;
-                max-height: 600px !important;
-                overflow-y: auto !important;
-                padding: 2cm 1.5cm !important;
-                line-height: 1.6 !important;
-                background: white !important;
-                color: #000000 !important;
+                line-height: 1.6 !important; /* Coincide con impresión */
+                color: #000 !important;
             }
 
-            .contrato-lectura .ck-content h1 {
-                font-size: 28pt !important;
-                font-weight: bold;
-                margin-top: 16pt;
-                margin-bottom: 8pt;
-                color: #1a1a1a;
-                line-height: 1.3;
+            /* Mejoras de renderizado de texto */
+            .ck-content p {
+                margin-bottom: 1em !important; /* Standard spacing */
+                margin-top: 0 !important;
+                text-indent: 0;
             }
-
-            .contrato-lectura .ck-content h2 {
-                font-size: 22pt !important;
-                font-weight: bold;
-                margin-top: 14pt;
-                margin-bottom: 7pt;
-                color: #1a1a1a;
-                line-height: 1.3;
-            }
-
-            .contrato-lectura .ck-content h3 {
-                font-size: 18pt !important;
-                font-weight: bold;
+            
+            .ck-content h1, .ck-content h2, .ck-content h3 {
                 margin-top: 12pt;
                 margin-bottom: 6pt;
-                color: #1a1a1a;
-                line-height: 1.3;
             }
 
-            .contrato-lectura .ck-content h4 {
-                font-size: 16pt !important;
-                font-weight: bold;
-                margin-top: 10pt;
-                margin-bottom: 5pt;
-                color: #1a1a1a;
-            }
-
-            .contrato-lectura .ck-content h5 {
-                font-size: 14pt !important;
-                font-weight: bold;
-                margin-top: 8pt;
-                margin-bottom: 4pt;
-                color: #1a1a1a;
-            }
-
-            .contrato-lectura .ck-content h6 {
-                font-size: 12pt !important;
-                font-weight: bold;
-                margin-top: 6pt;
-                margin-bottom: 3pt;
-                color: #1a1a1a;
-            }
-
-            .contrato-lectura .ck-content p {
-                margin-top: 0;
-                margin-bottom: 10pt;
+            /* Optimización para justificado en Firefox */
+            .ck-content [style*="text-align:justify"] {
                 text-align: justify;
+                text-justify: inter-word;
             }
 
-            .contrato-lectura .ck-content ul,
-            .contrato-lectura .ck-content ol {
-                padding-left: 1.5em;
-                margin-bottom: 10pt;
-            }
 
-            .contrato-lectura .ck-content li {
-                margin-bottom: 5pt;
-            }
-
-            .contrato-lectura .ck-content blockquote {
-                border-left: 4px solid #3b82f6;
-                padding-left: 16px;
-                margin: 16px 0;
-                font-style: italic;
-                color: #4b5563;
-            }
-
-            .contrato-lectura .ck-content a {
-                color: #2563eb;
-                text-decoration: underline;
-            }
-
-            .contrato-lectura .ck-content a:hover {
-                color: #1d4ed8;
-            }
-
-            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar {
-                width: 12px;
-            }
-
-            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar-track {
-                background: #f1f5f9;
-            }
-
-            .contrato-lectura .ck-editor__main > .ck-editor__editable::-webkit-scrollbar-thumb {
-                background: #94a3b8;
-                border-radius: 6px;
-            }
         </style>
     @endpush
 
@@ -215,20 +147,6 @@
         <script>
             let editorVistaContrato;
             const tituloVentanaContrato = @json("Contrato - {$contrato->clie_apellido}, {$contrato->clie_nombre}");
-            const estilosImpresionContrato = `
-                body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.6; padding: 2cm; margin: 0; color: #000000; }
-                h1 { font-size: 28pt !important; font-weight: bold; margin-top: 16pt; margin-bottom: 8pt; color: #1a1a1a; line-height: 1.3; }
-                h2 { font-size: 22pt !important; font-weight: bold; margin-top: 14pt; margin-bottom: 7pt; color: #1a1a1a; line-height: 1.3; }
-                h3 { font-size: 18pt !important; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; color: #1a1a1a; line-height: 1.3; }
-                h4 { font-size: 16pt !important; font-weight: bold; margin-top: 10pt; margin-bottom: 5pt; color: #1a1a1a; }
-                h5 { font-size: 14pt !important; font-weight: bold; margin-top: 8pt; margin-bottom: 4pt; color: #1a1a1a; }
-                h6 { font-size: 12pt !important; font-weight: bold; margin-top: 6pt; margin-bottom: 3pt; color: #1a1a1a; }
-                p { margin-top: 0; margin-bottom: 10pt; text-align: justify; }
-                ul, ol { padding-left: 1.5em; margin-bottom: 10pt; }
-                li { margin-bottom: 5pt; }
-                blockquote { border-left: 4px solid #3b82f6; padding-left: 16px; margin: 16px 0; font-style: italic; color: #4b5563; }
-                a { color: #2563eb; text-decoration: underline; }
-            `;
 
             document.addEventListener('DOMContentLoaded', function() {
                 if (!window.CKEDITOR_CONFIG || !window.CKEDITOR_CONTRATO) {
@@ -267,25 +185,69 @@
             });
 
             window.imprimirContrato = function imprimirContrato() {
-                const campoContenido = document.getElementById('contenido_contrato_vista');
-                const contenidoHTML = editorVistaContrato?.getData() || (campoContenido?.value || '');
+                // Obtener el contenido del editor
+                const contenidoHTML = editorVistaContrato?.getData() || 
+                    document.getElementById('contenido_contrato_vista')?.value || '';
 
-                const ventanaImpresion = window.open('', '', 'width=800,height=600');
-                if (!ventanaImpresion) {
-                    alert('No se pudo abrir la ventana de impresión. Verifique que el bloqueador de ventanas emergentes esté desactivado.');
+                // Estilos simples y directos para impresión
+                const estilosImpresion = `
+                    @page { size: A4; margin: 2cm; }
+                    body { 
+                        font-family: "Times New Roman", Times, serif; 
+                        font-size: 12pt; 
+                        line-height: 1.6; 
+                        color: #000; 
+                        background: #fff;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    p {
+                        margin-bottom: 1em;
+                        margin-top: 0;
+                    }
+                    h1, h2, h3 {
+                        margin-top: 12pt;
+                        margin-bottom: 6pt;
+                        line-height: 1.2;
+                    }
+                    h1, h2, h3, h4, h5, h6 { font-weight: bold; margin: 10pt 0 6pt 0; }
+                    h1 { font-size: 16pt; text-align: center; text-decoration: underline; }
+                    h2 { font-size: 14pt; }
+                    h3 { font-size: 13pt; }
+                    h4, h5, h6 { font-size: 12pt; }
+                    p { margin: 0 0 8pt 0; text-align: justify; }
+                    ul, ol { padding-left: 20pt; margin: 0 0 8pt 0; }
+                    li { margin-bottom: 4pt; }
+                    table { width: 100%; border-collapse: collapse; margin: 8pt 0; }
+                    th, td { border: 1px solid #000; padding: 4pt 6pt; text-align: left; }
+                    th { background: #f0f0f0; font-weight: bold; }
+                    img { max-width: 100%; height: auto; }
+                    strong, b { font-weight: bold; }
+                    em, i { font-style: italic; }
+                    u { text-decoration: underline; }
+                `;
+
+                const ventana = window.open('', 'ImprimirContrato', 'width=800,height=600');
+                if (!ventana) {
+                    alert('Por favor, permita ventanas emergentes para imprimir.');
                     return;
                 }
 
-                const documento = ventanaImpresion.document;
-                documento.open();
-                documento.write(`<html><head><title>${tituloVentanaContrato}</title><style>${estilosImpresionContrato}</style></head><body>${contenidoHTML}</body></html>`);
-                documento.close();
+                ventana.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${tituloVentanaContrato}</title>
+    <style>${estilosImpresion}</style>
+</head>
+<body>${contenidoHTML}</body>
+</html>`);
+                ventana.document.close();
 
-                setTimeout(() => {
-                    ventanaImpresion.focus();
-                    ventanaImpresion.print();
-                    ventanaImpresion.close();
-                }, 250);
+                // Dar tiempo para renderizar y luego imprimir
+                setTimeout(function() {
+                    ventana.print();
+                }, 500);
             };
         </script>
     @endpush

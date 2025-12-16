@@ -75,7 +75,7 @@
                                 'style' => 'display:none;'
                             ]) !!}
 
-                            <!-- Contenedor del editor con altura controlada -->
+                            <!-- Contenedor del editor con formato de hoja -->
                             <div class="editor-wrap">
                                 <!-- Mensaje de carga -->
                                 <div id="editor-loading" class="text-center p-5 editor-loading">
@@ -87,8 +87,8 @@
                                     </p>
                                 </div>
 
-                                <!-- Editor -->
-                                <div id="editor-contrato-wrapper" class="contrato-editor d-none">
+                                <!-- Editor con estilo de hoja de papel -->
+                                <div id="editor-contrato-wrapper" class="editor-hoja-papel d-none">
                                     <div id="editor-contrato"></div>
                                 </div>
                             </div>
@@ -129,57 +129,82 @@
 
                     {!! Form::close() !!}
 
+
                 </div>
             </div>
         </div>
     </div>
 
     @push('page_css')
+
         <style>
+            /* Contenedor del editor (Escritorio) */
             .editor-wrap {
-                max-height: 600px;
-                position: relative;
-                overflow: visible;
+                background-color: #525659;
+                padding: 40px 0;
+                overflow-x: auto;
+                text-align: center;
+                border: 1px solid #ccc;
             }
 
             .editor-loading {
                 border: 1px solid #d1d5db;
                 border-radius: 6px;
                 background: #f9fafb;
+                margin: 20px;
             }
 
-            .contrato-editor .ck.ck-editor {
-                background: white;
-                border-radius: 6px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                overflow: visible;
-                margin-bottom: 30px;
-                position: relative;
-                z-index: 1;
-            }
-
-            .contrato-editor .ck.ck-toolbar {
+            /* Toolbar pegajosa y centrada */
+            .ck.ck-toolbar {
+                position: sticky !important;
+                top: 0;
+                z-index: 1000;
                 border: none !important;
-                border-bottom: 2px solid #e5e7eb !important;
-                background: linear-gradient(to bottom, #f9fafb 0%, #f3f4f6 100%) !important;
-                padding: 12px 15px !important;
-                border-radius: 6px 6px 0 0 !important;
+                border-bottom: 1px solid #c4c4c4 !important;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                width: 21cm !important; /* Ancho igual a la hoja */
+                margin: 0 auto !important;
+                border-radius: 0 !important;
             }
 
-            .contrato-editor .ck-editor__main > .ck-editor__editable {
-                border: none !important;
-                font-family: 'Times New Roman', Times, serif !important;
+            /* Estilos de la Hoja A4 */
+            .ck-editor__editable {
+                width: 21cm !important;
+                min-height: 29.7cm !important;
+                padding: 2cm 2cm !important;
+                margin: 0 auto !important;
+                background-color: white !important;
+                box-shadow: 0 0 15px rgba(0,0,0,0.3) !important;
+                border: none !important; /* El borde lo da el shadow */
+                text-align: left; /* Reset del center del padre */
+                
+                /* Tipografía exacta de impresión */
+                font-family: "Times New Roman", Times, serif !important;
                 font-size: 12pt !important;
-                min-height: 400px !important;
-                max-height: 500px !important;
-                overflow-y: auto !important;
-                padding: 2cm 1.5cm !important;
-                line-height: 1.6 !important;
-                background: white !important;
+                line-height: 1.6 !important; /* Coincide con impresión */
+                color: #000 !important;
             }
 
-            .contrato-editor .ck.ck-editor__main {
-                border-radius: 0 0 6px 6px;
+            /* Fix para tablas en modo editor: Evita que se vean deformes o con doble espaciado */
+            .ck-content table {
+                border-collapse: collapse !important; 
+            }
+
+            /* Ajustes finos para el contenido */
+            .ck-content p {
+                margin-bottom: 1em !important; /* Coincide con impresión */
+                text-indent: 0;
+            }
+            
+            .ck-content h1, .ck-content h2, .ck-content h3 {
+                margin-top: 12pt;
+                margin-bottom: 6pt;
+            }
+
+            /* Optimización para justificado en Firefox */
+            .ck-content [style*="text-align:justify"] {
+                text-align: justify;
+                text-justify: inter-word;
             }
 
             .card-footer {
@@ -187,6 +212,8 @@
                 z-index: 10 !important;
                 background: white !important;
             }
+
+
         </style>
     @endpush
 

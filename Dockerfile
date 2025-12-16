@@ -133,12 +133,15 @@ if [ ! -L /var/www/html/public/storage ]; then\n\
     php artisan storage:link 2>/dev/null || true\n\
 fi\n\
 \n\
-# Warm-up de caché de Laravel\n\
+# Limpiar vistas compiladas antiguas para evitar problemas de permisos\n\
+rm -rf /var/www/html/storage/framework/views/*.php 2>/dev/null || true\n\
+\n\
+# Warm-up de caché de Laravel (ejecutar como www-data para permisos correctos)\n\
 echo "Generando caché de Laravel..."\n\
 cd /var/www/html\n\
-php artisan config:cache 2>/dev/null || true\n\
-php artisan route:cache 2>/dev/null || true\n\
-php artisan view:cache 2>/dev/null || true\n\
+su -s /bin/bash www-data -c "php artisan config:cache" 2>/dev/null || true\n\
+su -s /bin/bash www-data -c "php artisan route:cache" 2>/dev/null || true\n\
+su -s /bin/bash www-data -c "php artisan view:cache" 2>/dev/null || true\n\
 \n\
 echo "Configuración completada. Iniciando servicios..."\n\
 exec "$@"' > /usr/local/bin/docker-entrypoint.sh \

@@ -130,6 +130,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
+            page-break-inside: avoid;
         }
 
         .contenido table,
@@ -140,13 +141,55 @@
 
         .contenido th,
         .contenido td {
-            padding: 6px;
+            padding: 8px 10px;
             text-align: left;
+            vertical-align: top;
+        }
+        
+        .contenido th {
+            background-color: #f0f0f0;
+            font-weight: bold;
         }
 
         .contenido img {
             max-width: 100%;
             height: auto;
+            display: block;
+        }
+        
+        .contenido figure {
+            margin: 15px 0;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+        
+        .contenido figcaption {
+            font-size: 10pt;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        /* Estilos de imagen de CKEditor */
+        .contenido .image-style-side {
+            float: right;
+            margin-left: 1.5em;
+            max-width: 50%;
+        }
+        
+        .contenido .image-style-align-left {
+            float: left;
+            margin-right: 1.5em;
+        }
+        
+        .contenido .image-style-align-center {
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .contenido .image-style-align-right {
+            float: right;
+            margin-left: 1.5em;
         }
 
         .footer {
@@ -160,6 +203,15 @@
 
         @page {
             margin: 2cm;
+        }
+        
+        /* Reglas de impresión */
+        h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid;
+        }
+        
+        table, figure, img {
+            page-break-inside: avoid;
         }
     </style>
 </head>

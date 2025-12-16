@@ -48,7 +48,8 @@ const getToolbarConfig = () => ({
         'heading', '|',
         'fontSize', 'fontFamily', '|',
         'bold', 'italic', 'underline', 'strikethrough', '|',
-        'alignment', 'blockQuote', '|',
+        'alignment', '|',
+        'blockQuote', '|',
         'numberedList', 'bulletedList', '|',
         'indent', 'outdent', '|',
         'link', 'insertImage', 'uploadImage', '|',
@@ -57,6 +58,10 @@ const getToolbarConfig = () => ({
         'sourceEditing'
     ],
     shouldNotGroupWhenFull: true
+});
+
+const getAlignmentConfig = () => ({
+    options: ['left', 'center', 'right', 'justify']
 });
 
 const getFontSizeConfig = () => ({
@@ -133,6 +138,7 @@ const buildContratoEditorConfig = (overrides = {}) => {
         fontSize,
         fontFamily,
         heading,
+        alignment,
         image,
         link,
         table,
@@ -149,6 +155,7 @@ const buildContratoEditorConfig = (overrides = {}) => {
         fontSize: fontSize || getFontSizeConfig(),
         fontFamily: fontFamily || getFontFamilyConfig(),
         heading: heading || getHeadingConfig(),
+        alignment: alignment || getAlignmentConfig(),
         image: image ? { ...getImageConfig(), ...image } : getImageConfig(),
         link: link ? { ...getLinkConfig(), ...link } : getLinkConfig(),
         table: table || getTableConfig(),

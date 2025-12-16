@@ -63,13 +63,18 @@
 <!-- Contenido Plantilla Field -->
 <div class="form-group col-sm-12">
     {!! Form::label('contenido_plantilla', 'Contenido de la Plantilla:') !!}
-    {!! Form::textarea('contenido_plantilla', null, ['class' => 'form-control', 'id' => 'contenido_plantilla']) !!}
+    
+    <!-- Contenedor del editor con estilo de hoja -->
+    <div id="editor-plantilla-wrapper" class="editor-hoja-papel">
+        {!! Form::textarea('contenido_plantilla', null, ['class' => 'form-control', 'id' => 'contenido_plantilla']) !!}
+    </div>
 
     <small class="form-text text-muted mt-2">
         <i class="fas fa-question-circle"></i>
         Use las palabras clave haciendo clic en ellas para que sean reemplazadas automáticamente.
     </small>
 </div>
+
 
 <style>
     .palabras-clave-list code {
@@ -85,14 +90,6 @@
         background-color: #0066cc;
         color: white;
         transform: scale(1.05);
-    }
-
-    .ck-editor__editable {
-        min-height: 400px;
-        max-height: 600px;
-        font-family: 'Times New Roman', Times, serif !important;
-        font-size: 12pt !important;
-        line-height: 1.6 !important;
     }
 
     @keyframes fadeIn {

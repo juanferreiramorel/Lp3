@@ -593,6 +593,22 @@ class PlantillaContratoController extends AppBaseController
     }
 
     /**
+     * Editor OnlyOffice para contrato generado
+     */
+    public function editorOnlyOffice($idContratoGenerado)
+    {
+        $contrato = ContratoGenerado::with(['plantilla', 'cliente', 'usuario'])
+            ->find($idContratoGenerado);
+
+        if (!$contrato) {
+            Alert::error('Error', 'Contrato no encontrado.');
+            return redirect()->route('plantillas_contratos.contratos_generados');
+        }
+
+        return view('plantillas_contratos.onlyoffice_editor')->with('contrato', $contrato);
+    }
+
+    /**
      * Actualizar contrato generado
      */
     public function actualizarContrato(Request $request, $idContratoGenerado)
