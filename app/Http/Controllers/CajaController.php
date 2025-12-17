@@ -21,48 +21,60 @@ class CajaController extends AppBaseController
 
     public function index(Request $request)
     {
-        // Obtener el término de búsqueda
+        // Obtener parámetros de búsqueda
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter'); // nuevo: filtro de estado del dropdown
+        $sucursalFilter = $request->get('sucursal_filter'); // nuevo: filtro de sucursal
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // Construir la query base con subconsulta para columna calculada estado
+        $query = 'SELECT * FROM (
+            SELECT c.*, s.descripcion as sucursal, 
+            CASE WHEN c.activo = true THEN \'Activo\' ELSE \'Inactivo\' END as estado 
+            FROM cajas c
+            JOIN sucursales s ON c.id_sucursal = s.id_sucursal
+        ) AS cajas_con_estado WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado si existe (dropdown tiene prioridad)
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $estadoValue = ($estadoFilter === '1' || $estadoFilter === 'true') ? 'Activo' : 'Inactivo';
+            $query .= ' AND estado = ?';
+            $params[] = $estadoValue;
+        }
+
+        // Aplicar filtro de sucursal si existe
+        if ($sucursalFilter !== null && $sucursalFilter !== '') {
+            $query .= ' AND id_sucursal = ?';
+            $params[] = (int)$sucursalFilter;
+        }
+
+        // Aplicar búsqueda por texto
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $cajas = DB::select(
-                    'SELECT c.*, s.descripcion as sucursal
-                    FROM cajas c
-                    JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-                    WHERE c.id_caja = ?
-                    ORDER BY c.id_caja DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND id_caja = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
-                // Búsqueda múltiple en todos los campos
+                // Búsqueda por descripción, ID o estado (con OR para que sea opcional)
                 $buscarTerm = $searchConfig['term'];
-                $cajas = DB::select(
-                    'SELECT c.*, s.descripcion as sucursal
-                    FROM cajas c
-                    JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-                    WHERE c.descripcion ILIKE ?
-                    OR s.descripcion ILIKE ?
-                    OR cast(c.punto_expedicion as text) ILIKE ?
-                    OR cast(c.ultima_factura_impresa as text) ILIKE ?
-                    OR cast(c.id_caja as text) ILIKE ?
-                    ORDER BY c.id_caja DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (descripcion ILIKE ? OR sucursal ILIKE ? OR cast(punto_expedicion as text) ILIKE ? OR cast(ultima_factura_impresa as text) ILIKE ? OR cast(id_caja as text) ILIKE ? OR estado ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            $cajas = DB::select(
-                'SELECT c.*, s.descripcion as sucursal
-                FROM cajas c
-                JOIN sucursales s ON c.id_sucursal = s.id_sucursal
-                ORDER BY c.id_caja DESC'
-            );
         }
+
+        $query .= ' ORDER BY id_caja DESC';
+
+        // Ejecutar la consulta
+        $cajas = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -84,12 +96,19 @@ class CajaController extends AppBaseController
             ]
         );
 
+        // Obtener lista de sucursales para el filtro
+        $sucursales = $this->getSucursalesPermitidas();
+
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
             return view('cajas.table')->with('cajas', $cajas);
         }
 
-        return view('cajas.index')->with('cajas', $cajas);
+        return view('cajas.index')
+            ->with('cajas', $cajas)
+            ->with('estadoFilter', $estadoFilter)
+            ->with('sucursalFilter', $sucursalFilter)
+            ->with('sucursales', $sucursales);
     }
     public function create()
     {
@@ -217,18 +236,34 @@ class CajaController extends AppBaseController
     public function destroy($id)
     {
         //Validar si la caja existe
-        $cajas = DB::selectOne('SELECT * FROM cajas WHERE id_caja = ?', [$id]);
-        if (empty($cajas)) {
+        $caja = DB::selectOne('SELECT * FROM cajas WHERE id_caja = ?', [$id]);
+        if (empty($caja)) {
             Alert::toast('Caja no encontrada', 'error');
             return redirect()->route('cajas.index');
         }
 
+        // Si se intenta inactivar, verificar que no tenga una apertura activa
+        if ($caja->activo) {
+            $apertura_activa = DB::selectOne(
+                "SELECT * FROM apertura_cierre_cajas WHERE id_caja = ? AND estado = 'ABIERTA'",
+                [$id]
+            );
+
+            if ($apertura_activa) {
+                Alert::error('Error', 'No se puede inactivar esta caja porque tiene una apertura activa. Debe cerrar la caja primero.');
+                return redirect()->route('cajas.index');
+            }
+        }
+
         try {
-            //Eliminar la caja de la base de datos
-            DB::delete('DELETE FROM cajas WHERE id_caja = ?', [$id]);
-            Alert::toast('Caja eliminada con éxito', 'success');
+            // Cambiar el estado activo (toggle)
+            $nuevoEstado = !$caja->activo;
+            DB::update('UPDATE cajas SET activo = ? WHERE id_caja = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Caja activada correctamente.' : 'Caja inactivada correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se puede eliminar esta caja porque está siendo utilizada en otros registros.');
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('cajas.index'));

@@ -41,7 +41,7 @@
                                 @if($cliente->activo)
                                     {!! Form::button('<i class="fas fa-ban"></i>', [
                                         'type' => 'submit',
-                                        'class' => 'btn btn-warning btn-xs alert-toggle',
+                                        'class' => 'btn btn-danger btn-xs alert-toggle',
                                         'data-title' => 'Inactivar Cliente',
                                         'data-mensage' => 'Desea inactivar el cliente: ' . $cliente->clie_nombre . ' ' . $cliente->clie_apellido . '?',
                                         'title' => 'Inactivar cliente'
