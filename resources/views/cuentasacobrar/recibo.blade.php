@@ -27,8 +27,7 @@
             position: relative;
         }
 
-        @if($anulado)
-        .recibo-container::before {
+        .recibo-container.anulado::before {
             content: "ANULADO";
             position: absolute;
             top: 50%;
@@ -40,7 +39,6 @@
             z-index: 1;
             pointer-events: none;
         }
-        @endif
 
         .header {
             text-align: center;
@@ -240,48 +238,53 @@
         </button>
     </div>
 
-    <div class="recibo-container">
+    @php
+        $cobrosList = isset($cobros) ? $cobros : [$cobro];
+    @endphp
+
+    @foreach($cobrosList as $index => $c)
+    <div class="recibo-container {{ $c->cobro_estado == 'ANULADO' ? 'anulado' : '' }}" style="{{ $index < count($cobrosList) - 1 ? 'page-break-after: always;' : '' }}">
         <div class="header">
             <h1>RECIBO DE PAGO</h1>
-            <h2>{{ $cobro->sucursal ?? 'Sistema de Gestión' }}</h2>
-            @if($cobro->sucursal_direccion)
-                <p style="color: #666; margin-top: 5px;">{{ $cobro->sucursal_direccion }}</p>
+            <h2>{{ $c->sucursal ?? 'Sistema de Gestión' }}</h2>
+            @if($c->sucursal_direccion)
+                <p style="color: #666; margin-top: 5px;">{{ $c->sucursal_direccion }}</p>
             @endif
-            @if($cobro->sucursal_telefono)
-                <p style="color: #666;">Tel: {{ $cobro->sucursal_telefono }}</p>
+            @if($c->sucursal_telefono)
+                <p style="color: #666;">Tel: {{ $c->sucursal_telefono }}</p>
             @endif
         </div>
 
-        @if($anulado)
+        @if($c->cobro_estado == 'ANULADO')
         <div class="estado-anulado">
             *** RECIBO ANULADO ***
         </div>
         @endif
 
         <div class="comprobante-numero">
-            N° DE COMPROBANTE: {{ str_pad($cobro->id_cobro, 8, '0', STR_PAD_LEFT) }}
+            N° DE COMPROBANTE: {{ str_pad($c->id_cobro, 8, '0', STR_PAD_LEFT) }}
         </div>
 
         <div class="info-section">
             <h3>INFORMACIÓN DEL CLIENTE</h3>
             <div class="info-row">
                 <div class="info-label">Nombre:</div>
-                <div class="info-value">{{ $cobro->cliente_nombre }}</div>
+                <div class="info-value">{{ $c->cliente_nombre }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">CI/RUC:</div>
-                <div class="info-value">{{ $cobro->cliente_ci }}</div>
+                <div class="info-value">{{ $c->cliente_ci }}</div>
             </div>
-            @if($cobro->cliente_telefono)
+            @if($c->cliente_telefono)
             <div class="info-row">
                 <div class="info-label">Teléfono:</div>
-                <div class="info-value">{{ $cobro->cliente_telefono }}</div>
+                <div class="info-value">{{ $c->cliente_telefono }}</div>
             </div>
             @endif
-            @if($cobro->cliente_direccion)
+            @if($c->cliente_direccion)
             <div class="info-row">
                 <div class="info-label">Dirección:</div>
-                <div class="info-value">{{ $cobro->cliente_direccion }}</div>
+                <div class="info-value">{{ $c->cliente_direccion }}</div>
             </div>
             @endif
         </div>
@@ -290,16 +293,16 @@
             <h3>DETALLE DEL PAGO</h3>
             <div class="info-row">
                 <div class="info-label">Fecha de Pago:</div>
-                <div class="info-value">{{ \Carbon\Carbon::parse($cobro->cobro_fecha)->format('d/m/Y') }}</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($c->cobro_fecha)->format('d/m/Y') }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Método de Pago:</div>
-                <div class="info-value">{{ $cobro->metodo_pago }}</div>
+                <div class="info-value">{{ $c->metodo_pago }}</div>
             </div>
-            @if($cobro->nro_voucher)
+            @if($c->nro_voucher)
             <div class="info-row">
                 <div class="info-label">N° Voucher:</div>
-                <div class="info-value">{{ $cobro->nro_voucher }}</div>
+                <div class="info-value">{{ $c->nro_voucher }}</div>
             </div>
             @endif
         </div>
@@ -308,40 +311,40 @@
             <h3>INFORMACIÓN DE LA CUOTA</h3>
             <div class="info-row">
                 <div class="info-label">Factura N°:</div>
-                <div class="info-value">{{ $cobro->factura_nro }}</div>
+                <div class="info-value">{{ $c->factura_nro }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Fecha de Venta:</div>
-                <div class="info-value">{{ \Carbon\Carbon::parse($cobro->fecha_venta)->format('d/m/Y') }}</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($c->fecha_venta)->format('d/m/Y') }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">N° Cuenta:</div>
-                <div class="info-value">{{ $cobro->id_cta }}</div>
+                <div class="info-value">{{ $c->id_cta }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">N° Cuota:</div>
-                <div class="info-value">{{ $cobro->nro_cuota }}</div>
+                <div class="info-value">{{ $c->nro_cuota }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Importe Cuota:</div>
-                <div class="info-value">₲ {{ number_format($cobro->importe_cuota, 0, ',', '.') }}</div>
+                <div class="info-value">₲ {{ number_format($c->importe_cuota, 0, ',', '.') }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Vencimiento:</div>
-                <div class="info-value">{{ \Carbon\Carbon::parse($cobro->vencimiento)->format('d/m/Y') }}</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($c->vencimiento)->format('d/m/Y') }}</div>
             </div>
         </div>
 
         <div class="monto-total">
             <div class="label">MONTO PAGADO</div>
-            <div class="valor">₲ {{ number_format($cobro->cobro_importe, 0, ',', '.') }}</div>
+            <div class="valor">₲ {{ number_format($c->cobro_importe, 0, ',', '.') }}</div>
         </div>
 
         <div class="info-section">
             <h3>INFORMACIÓN ADICIONAL</h3>
             <div class="info-row">
                 <div class="info-label">Usuario que registró:</div>
-                <div class="info-value">{{ $cobro->usuario_registro }}</div>
+                <div class="info-value">{{ $c->usuario_registro }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Fecha de emisión:</div>
@@ -354,6 +357,7 @@
             <p>Conserve este recibo para futuras referencias</p>
         </div>
     </div>
+    @endforeach
 
     <script>
         // Auto-imprimir al cargar la página (opcional)

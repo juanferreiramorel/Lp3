@@ -58,39 +58,24 @@
                         if (estadoMostrar === 'PENDIENTE') {
                             estadoBadge = '<span class="badge badge-warning">PENDIENTE</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-success btn-pagar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-success">' +
+                                    '<i class="fas fa-dollar-sign"></i> Pagar</a>';
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
                         } else if (estadoMostrar === 'VENCIDO') {
                             estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-warning btn-pagar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-warning">' +
+                                    '<i class="fas fa-dollar-sign"></i> Pagar</a>';
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
                         } else if (estadoMostrar === 'PARCIAL') {
                             estadoBadge = '<span class="badge badge-info">PARCIAL</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-primary btn-pagar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar Saldo</button>';
+                                botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-primary">' +
+                                    '<i class="fas fa-dollar-sign"></i> Pagar Saldo</a>';
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
@@ -201,39 +186,24 @@
                             if (estadoMostrar === 'PENDIENTE') {
                                 estadoBadge = '<span class="badge badge-warning">PENDIENTE</span>';
                                 if (canCreate) {
-                                    botonPagar = '<button class="btn btn-sm btn-success btn-pagar-cuenta" ' +
-                                        'data-id-cta="' + item.nro_cuenta + '" ' +
-                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                        'data-importe="' + item.importe + '" ' +
-                                        'data-saldo="' + item.saldo + '" ' +
-                                        'data-vencimiento="' + fechaFormateada + '">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                    botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-success">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar</a>';
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
                             } else if (estadoMostrar === 'VENCIDO') {
                                 estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                                 if (canCreate) {
-                                    botonPagar = '<button class="btn btn-sm btn-warning btn-pagar-cuenta" ' +
-                                        'data-id-cta="' + item.nro_cuenta + '" ' +
-                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                        'data-importe="' + item.importe + '" ' +
-                                        'data-saldo="' + item.saldo + '" ' +
-                                        'data-vencimiento="' + fechaFormateada + '">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                    botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-warning">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar</a>';
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
                             } else if (estadoMostrar === 'PARCIAL') {
                                 estadoBadge = '<span class="badge badge-info">PARCIAL</span>';
                                 if (canCreate) {
-                                    botonPagar = '<button class="btn btn-sm btn-primary btn-pagar-cuenta" ' +
-                                        'data-id-cta="' + item.nro_cuenta + '" ' +
-                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                        'data-importe="' + item.importe + '" ' +
-                                        'data-saldo="' + item.saldo + '" ' +
-                                        'data-vencimiento="' + fechaFormateada + '">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar Saldo</button>';
+                                    botonPagar = '<a href="{{ url("cuentasapagar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-primary">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar Saldo</a>';
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
@@ -505,10 +475,12 @@
                         var html = '';
                         $.each(data, function(index, item) {
                             // Formatear fecha
-                            var fecha = new Date(item.pago_fecha);
-                            var fechaFormateada = ('0' + fecha.getDate()).slice(-2) + '/' +
-                                                ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' +
-                                                fecha.getFullYear();
+                            // Formatear fecha (evitando timezone offset)
+                            // Formatear fecha (evitando timezone offset) - V2
+                            console.log('Procesando fecha AP:', item.pago_fecha);
+                            var fechaStr = String(item.pago_fecha).split(' ')[0];
+                            var partesFecha = fechaStr.split('-');
+                            var fechaFormateada = partesFecha[2] + '/' + partesFecha[1] + '/' + partesFecha[0];
 
                             // Formatear importe
                             var importeFormateado = Number(item.pago_importe).toLocaleString('es-PY');

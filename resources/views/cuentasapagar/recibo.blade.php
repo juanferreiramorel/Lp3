@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo de Pago #{{ $pago->id_pago }}</title>
+    <title>Recibo de Pago #{{ $pagos[0]->id_pago }}</title>
     <style>
         * {
             margin: 0;
@@ -27,8 +27,7 @@
             position: relative;
         }
 
-        @if($anulado)
-        .recibo-container::before {
+        .recibo-container.anulado::before {
             content: "ANULADO";
             position: absolute;
             top: 50%;
@@ -40,7 +39,6 @@
             z-index: 1;
             pointer-events: none;
         }
-        @endif
 
         .header {
             text-align: center;
@@ -240,7 +238,8 @@
         </button>
     </div>
 
-    <div class="recibo-container">
+    @foreach($pagos as $index => $pago)
+    <div class="recibo-container {{ $pago->pago_estado === 'ANULADO' ? 'anulado' : '' }}" style="{{ !$loop->last ? 'page-break-after: always;' : '' }}">
         <div class="header">
             <h1>RECIBO DE PAGO</h1>
             <h2>{{ $pago->sucursal ?? 'Sistema de Gestión' }}</h2>
@@ -251,12 +250,6 @@
                 <p style="color: #666;">Tel: {{ $pago->sucursal_telefono }}</p>
             @endif
         </div>
-
-        @if($anulado)
-        <div class="estado-anulado">
-            *** RECIBO ANULADO ***
-        </div>
-        @endif
 
         <div class="comprobante-numero">
             N° DE COMPROBANTE: {{ str_pad($pago->id_pago, 8, '0', STR_PAD_LEFT) }}
@@ -350,6 +343,7 @@
             <p>Conserve este recibo para futuras referencias</p>
         </div>
     </div>
+    @endforeach
 
     <script>
         // Auto-imprimir al cargar la página (opcional)

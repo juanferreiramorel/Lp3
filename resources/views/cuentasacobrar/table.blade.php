@@ -11,6 +11,7 @@
                         <th>Total Cuotas</th>
                         <th>Cuotas Pendientes</th>
                         <th>Cuotas Pagadas</th>
+                        <th>Cuotas Vencidas</th>
                         <th>Rango Vencimientos</th>
                         <th>Acciones</th>
                     </tr>
@@ -34,6 +35,13 @@
                             <td>
                                 @if ($fila->cuotas_pagadas > 0)
                                     <span class="badge badge-success">{{ $fila->cuotas_pagadas }}</span>
+                                @else
+                                    <span class="badge badge-secondary">0</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($fila->cuotas_vencidas_count > 0)
+                                    <span class="badge badge-danger">{{ $fila->cuotas_vencidas_count }}</span>
                                 @else
                                     <span class="badge badge-secondary">0</span>
                                 @endif

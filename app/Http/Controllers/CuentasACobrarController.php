@@ -105,6 +105,7 @@ class CuentasACobrarController extends AppBaseController
                 v.total AS monto_total,
                 COUNT(ca.id_cta) AS total_cuotas,
                 SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS cuotas_pendientes,
+                SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END) AS cuotas_vencidas_count,
                 SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END) AS cuotas_pagadas,
                 MIN(ca.vencimiento) AS primer_vencimiento,
                 MAX(ca.vencimiento) AS ultimo_vencimiento
@@ -439,55 +440,207 @@ class CuentasACobrarController extends AppBaseController
         }
     }
 
-    public function imprimirRecibo($id_cobro)
+    public function formCobrar($id_cta)
+    {
+        // Obtener la cuenta con datos relacionados
+        $cuenta = DB::table('cuentas_a_cobrar')
+            ->where('id_cta', $id_cta)
+            ->first();
+
+        if (!$cuenta) {
+            Alert::error('Error', 'Cuenta no encontrada');
+            return redirect()->back();
+        }
+
+        // Validar que no existan cuotas anteriores pendientes
+        $cuotasAnterioresPendientes = DB::table('cuentas_a_cobrar')
+            ->where('id_venta', $cuenta->id_venta)
+            ->where('nro_cuota', '<', $cuenta->nro_cuota)
+            ->where('estado', '!=', 'PAGADO') // Asumimos que PARCIAL también bloquea la siguiente? O solo PENDIENTE? 
+                                              // Generalmente se exige tener al día la anterior. 
+                                              // Si tiene saldo pendiente (PARCIAL), no debería poder pagar la siguiente.
+            ->exists();
+
+        if ($cuotasAnterioresPendientes) {
+            Alert::error('Error', 'Debe pagar las cuotas anteriores antes de proceder con esta cuota.');
+            return redirect()->back();
+        }
+
+        $venta = DB::table('ventas')->where('id_venta', $cuenta->id_venta)->first();
+        $cliente = DB::table('clientes')->where('id_cliente', $venta->id_cliente)->first();
+
+        $saldo_pendiente = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
+
+        // Obtener métodos de pago
+        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+
+        return view('cuentasacobrar.pagar', compact('cuenta', 'venta', 'cliente', 'saldo_pendiente', 'metodos_pago'));
+    }
+
+    public function procesarMultiple(Request $request)
+    {
+        $request->validate([
+            'id_cta' => 'required|exists:cuentas_a_cobrar,id_cta',
+            'fecha_cobro' => 'required|date',
+            'pagos' => 'required|array',
+            'pagos.*.id_metodo_pago' => 'required|exists:metodo_pagos,id_metodo_pago',
+            'pagos.*.monto' => 'required',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $id_cta = $request->id_cta;
+            $fecha_cobro = $request->fecha_cobro;
+            $pagos = $request->pagos;
+
+            $cuenta = DB::table('cuentas_a_cobrar')->where('id_cta', $id_cta)->lockForUpdate()->first();
+            
+            // Validar nuevamente cuotas anteriores por seguridad
+            $cuotasAnterioresPendientes = DB::table('cuentas_a_cobrar')
+                ->where('id_venta', $cuenta->id_venta)
+                ->where('nro_cuota', '<', $cuenta->nro_cuota)
+                ->where('estado', '!=', 'PAGADO')
+                ->exists();
+
+            if ($cuotasAnterioresPendientes) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Existen cuotas anteriores pendientes de pago.'], 400);
+            }
+
+            $saldo_actual = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
+
+            $total_pagado_request = 0;
+            $cobros_ids = [];
+
+            foreach ($pagos as $pago) {
+                $monto = (float)str_replace('.', '', $pago['monto']);
+                if ($monto > 0) {
+                    $total_pagado_request += $monto;
+
+                    // Insertar Cobro
+                    $id_cobro = DB::table('cobros')->insertGetId([
+                        'id_cta' => $id_cta,
+                        'id_venta' => $cuenta->id_venta,
+                        'user_id' => auth()->id(),
+                        'id_metodo_pago' => $pago['id_metodo_pago'],
+                        'cobro_fecha' => $fecha_cobro,
+                        'cobro_importe' => $monto,
+                        'cobro_estado' => 'COBRADO',
+                        'nro_voucher' => $pago['nro_voucher'] ?? null,
+                    ], 'id_cobro');
+                    
+                    $cobros_ids[] = $id_cobro;
+                }
+            }
+
+            if ($total_pagado_request > $saldo_actual) {
+                // Permitir pequeño margen de error o rechazar estricto? Rechazamos estricto por ahora.
+                // Aunque front valida, back debe validar.
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'El monto total supera el saldo pendiente.'], 400);
+            }
+
+            $nuevo_pagado = ($cuenta->importe_pagado ?? 0) + $total_pagado_request;
+            
+             // Determinar el nuevo estado
+            if ($nuevo_pagado >= $cuenta->importe) {
+                $nuevo_estado = 'PAGADO';
+            } else {
+                $nuevo_estado = 'PARCIAL';
+            }
+
+            DB::table('cuentas_a_cobrar')->where('id_cta', $id_cta)->update([
+                'importe_pagado' => $nuevo_pagado,
+                'estado' => $nuevo_estado
+            ]);
+
+            DB::commit();
+
+            // Generar URL para recibos. Si es uno, link normal. Si son varios, podrías pasar ?ids=1,2,3
+            $ids_param = implode(',', $cobros_ids);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Cobro procesado correctamente',
+                'recibo_url' => route('cuentasacobrar.recibo', ['id' => $cobros_ids[0], 'ids' => $ids_param]) 
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($e);
+            return response()->json(['success' => false, 'message' => 'Error en el servidor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function imprimirRecibo(Request $request, $id_cobro)
     {
         try {
-            // Obtener datos del cobro con toda la información relacionada
-            $cobro = DB::selectOne(
-                'SELECT
-                    c.id_cobro,
-                    c.cobro_fecha,
-                    c.cobro_importe,
-                    c.nro_voucher,
-                    c.cobro_estado,
-                    ca.id_cta,
-                    ca.nro_cuota,
-                    ca.importe as importe_cuota,
-                    ca.vencimiento,
-                    v.id_venta,
-                    v.factura_nro,
-                    v.fecha_venta,
-                    v.total as total_venta,
-                    CONCAT(cl.clie_nombre, \' \', cl.clie_apellido) as cliente_nombre,
-                    cl.clie_ci as cliente_ci,
-                    cl.clie_telefono as cliente_telefono,
-                    cl.clie_direccion as cliente_direccion,
-                    mp.descripcion as metodo_pago,
-                    u.name as usuario_registro,
-                    s.descripcion as sucursal,
-                    s.direccion as sucursal_direccion,
-                    s.telefono as sucursal_telefono
-                FROM cobros c
-                INNER JOIN cuentas_a_cobrar ca ON ca.id_cta = c.id_cta
-                INNER JOIN ventas v ON v.id_venta = ca.id_venta
-                INNER JOIN clientes cl ON cl.id_cliente = v.id_cliente
-                LEFT JOIN metodo_pagos mp ON mp.id_metodo_pago = c.id_metodo_pago
-                LEFT JOIN users u ON u.id = c.user_id
-                LEFT JOIN sucursales s ON s.id_sucursal = v.id_sucursal
-                WHERE c.id_cobro = ?',
-                [$id_cobro]
-            );
+            $ids = $request->query('ids');
+            
+            if ($ids) {
+                $ids_array = explode(',', $ids);
+            } else {
+                $ids_array = [$id_cobro];
+            }
 
-            if (empty($cobro)) {
+            $cobros = [];
+            foreach ($ids_array as $id) {
+                $cobro = DB::selectOne(
+                    'SELECT
+                        c.id_cobro,
+                        c.cobro_fecha,
+                        c.cobro_importe,
+                        c.nro_voucher,
+                        c.cobro_estado,
+                        ca.id_cta,
+                        ca.nro_cuota,
+                        ca.importe as importe_cuota,
+                        ca.vencimiento,
+                        v.id_venta,
+                        v.factura_nro,
+                        v.fecha_venta,
+                        v.total as total_venta,
+                        CONCAT(cl.clie_nombre, \' \', cl.clie_apellido) as cliente_nombre,
+                        cl.clie_ci as cliente_ci,
+                        cl.clie_telefono as cliente_telefono,
+                        cl.clie_direccion as cliente_direccion,
+                        mp.descripcion as metodo_pago,
+                        u.name as usuario_registro,
+                        s.descripcion as sucursal,
+                        s.direccion as sucursal_direccion,
+                        s.telefono as sucursal_telefono
+                    FROM cobros c
+                    INNER JOIN cuentas_a_cobrar ca ON ca.id_cta = c.id_cta
+                    INNER JOIN ventas v ON v.id_venta = ca.id_venta
+                    INNER JOIN clientes cl ON cl.id_cliente = v.id_cliente
+                    LEFT JOIN metodo_pagos mp ON mp.id_metodo_pago = c.id_metodo_pago
+                    LEFT JOIN users u ON u.id = c.user_id
+                    LEFT JOIN sucursales s ON s.id_sucursal = v.id_sucursal
+                    WHERE c.id_cobro = ?',
+                    [$id]
+                );
+                if ($cobro) {
+                    $cobros[] = $cobro;
+                }
+            }
+
+            if (empty($cobros)) {
                 abort(404, 'Recibo no encontrado');
             }
 
-            // Verificar si el cobro está anulado
-            if ($cobro->cobro_estado === 'ANULADO') {
-                return view('cuentasacobrar.recibo')->with('cobro', $cobro)->with('anulado', true);
-            }
-
-            return view('cuentasacobrar.recibo')->with('cobro', $cobro)->with('anulado', false);
+            // Usar la vista existente pero pasando array de cobros. 
+            // Posiblemente necesitemos adaptar la vista recibo. 
+            // Por compatibilidad, si es uno solo pasamos 'cobro', si son varios pasamos 'cobros'.
+            // O mejor, adaptamos la vista para que itere si hay 'cobros', o si hay 'cobro' lo trate como tal.
+            
+            // Asumiremos que la vista actual solo muestra uno. Para impresión múltiple rápida,
+            // podemos simplemente pasar el primero como principal y una lista de "pagos_realizados" extra?
+            // O mejor: si hay multiples, retornamos una vista nueva o modificada?
+            // "lo que quiero ... es al darle pagar imprimira el recibo automaticamente"
+            
+            // Vamos a pasar $cobros y adaptar la vista recibo ligeramente para que soporte bucle si existe.
+            
+            return view('cuentasacobrar.recibo')->with('cobros', $cobros)->with('cobro', $cobros[0]);
 
         } catch (\Exception $e) {
             Log::error('Error al imprimir recibo: ' . $e->getMessage());

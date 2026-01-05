@@ -104,6 +104,7 @@ class CuentasAPagarController extends AppBaseController
                 c.total AS monto_total,
                 COUNT(ca.id_cta) AS total_cuotas,
                 SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS cuotas_pendientes,
+                SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END) AS cuotas_vencidas_count,
                 SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END) AS cuotas_pagadas,
                 MIN(ca.vencimiento) AS primer_vencimiento,
                 MAX(ca.vencimiento) AS ultimo_vencimiento
@@ -467,12 +468,27 @@ class CuentasAPagarController extends AppBaseController
         }
     }
 
-    public function imprimirRecibo($id_pago)
+    public function imprimirRecibo(Request $request, $id_pago = null)
     {
         try {
-            // Obtener datos del pago con toda la información relacionada
-            $pago = DB::selectOne(
-                'SELECT
+            // Determinar los IDs a imprimir
+            $ids = [];
+            if ($request->has('ids')) {
+                $ids = explode(',', $request->ids);
+            } elseif ($id_pago) {
+                $ids = [$id_pago];
+            }
+
+            if (empty($ids)) {
+               abort(404, 'No se especificaron pagos para imprimir');
+            }
+
+            // Obtener datos de los pagos con toda la información relacionada
+            // Usamos whereIn para traer todos
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            
+            $pagos = DB::select(
+                "SELECT
                     p.id_pago,
                     p.pago_fecha,
                     p.pago_importe,
@@ -501,24 +517,161 @@ class CuentasAPagarController extends AppBaseController
                 LEFT JOIN metodo_pagos mp ON mp.id_metodo_pago = p.id_metodo_pago
                 LEFT JOIN users u ON u.id = p.user_id
                 LEFT JOIN sucursales s ON s.id_sucursal = c.id_sucursal
-                WHERE p.id_pago = ?',
-                [$id_pago]
+                WHERE p.id_pago IN ($placeholders)
+                ORDER BY p.id_pago ASC",
+                $ids
             );
 
-            if (empty($pago)) {
+            if (empty($pagos)) {
                 abort(404, 'Recibo no encontrado');
             }
 
-            // Verificar si el pago está anulado
-            if ($pago->pago_estado === 'ANULADO') {
-                return view('cuentasapagar.recibo')->with('pago', $pago)->with('anulado', true);
-            }
-
-            return view('cuentasapagar.recibo')->with('pago', $pago)->with('anulado', false);
+            return view('cuentasapagar.recibo')->with('pagos', $pagos);
 
         } catch (\Exception $e) {
             Log::error('Error al imprimir recibo: ' . $e->getMessage());
             abort(500, 'Error al generar el recibo');
         }
+    }    public function formPagar($id_cta)
+    {
+        // Obtener la cuenta con datos relacionados
+        $cuenta = DB::table('cuentas_a_pagar')
+            ->where('id_cta', $id_cta)
+            ->first();
+
+        if (!$cuenta) {
+            Alert::error('Error', 'Cuenta no encontrada');
+            return redirect()->back();
+        }
+
+        // Validar que no existan cuotas anteriores pendientes (Validación Secuencial)
+        $cuotasAnterioresPendientes = DB::table('cuentas_a_pagar')
+            ->where('id_compra', $cuenta->id_compra)
+            ->where('nro_cuota', '<', $cuenta->nro_cuota)
+            ->where('estado', '!=', 'PAGADO')
+            ->exists();
+
+        if ($cuotasAnterioresPendientes) {
+            Alert::error('Error', 'Debe pagar las cuotas anteriores antes de proceder con esta cuota.');
+            return redirect()->back();
+        }
+
+        $compra = DB::table('compras')->where('id_compra', $cuenta->id_compra)->first();
+        $proveedor = DB::table('proveedores')->where('id_proveedor', $compra->id_proveedor)->first();
+
+        $saldo_pendiente = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
+
+        // Obtener métodos de pago
+        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+
+        return view('cuentasapagar.pagar', compact('cuenta', 'compra', 'proveedor', 'saldo_pendiente', 'metodos_pago'));
+    }
+
+    public function procesarMultiple(Request $request)
+    {
+        // Validar request básico
+        $request->validate([
+            'id_cta' => 'required|exists:cuentas_a_pagar,id_cta',
+            'fecha_pago' => 'required|date',
+            'pagos' => 'required|array|min:1',
+            'pagos.*.id_metodo_pago' => 'required|exists:metodo_pagos,id_metodo_pago',
+            'pagos.*.monto' => 'required|numeric|min:1'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $id_cta = $request->id_cta;
+            $fecha_pago = $request->fecha_pago;
+            $pagos = $request->pagos;
+
+            $cuenta = DB::table('cuentas_a_pagar')->where('id_cta', $id_cta)->lockForUpdate()->first();
+
+             // Validar nuevamente cuotas anteriores por seguridad
+             $cuotasAnterioresPendientes = DB::table('cuentas_a_pagar')
+             ->where('id_compra', $cuenta->id_compra)
+             ->where('nro_cuota', '<', $cuenta->nro_cuota)
+             ->where('estado', '!=', 'PAGADO')
+             ->exists();
+ 
+             if ($cuotasAnterioresPendientes) {
+                 DB::rollBack();
+                 return response()->json(['success' => false, 'message' => 'Existen cuotas anteriores pendientes de pago.'], 400);
+             }
+
+            $saldo_actual = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
+
+            $total_pagado_request = 0;
+            foreach ($pagos as $p) {
+                $total_pagado_request += $p['monto'];
+            }
+
+            // Validar que no pague más del saldo (con un pequeño margen de error por decimales si fuera necesario, aunque aquí trabajamos enteros guaranies)
+            if ($total_pagado_request > $saldo_actual) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El monto total a pagar (' . number_format($total_pagado_request, 0, ',', '.') . ') supera el saldo pendiente (' . number_format($saldo_actual, 0, ',', '.') . ').'
+                ], 400);
+            }
+
+            $ids_pagos = [];
+
+            foreach ($pagos as $pago) {
+                $monto = $pago['monto'];
+                $id_metodo = $pago['id_metodo_pago'];
+                $nro_voucher = $pago['nro_voucher'] ?? null;
+
+                // Insertar Pago
+                 DB::insert(
+                    'INSERT INTO pagos(id_cta, id_compra, user_id, id_metodo_pago, pago_fecha, pago_importe, pago_estado, nro_voucher, created_at, updated_at)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+                    [
+                        $id_cta,
+                        $cuenta->id_compra,
+                        auth()->user()->id,
+                        $id_metodo,
+                        $fecha_pago,
+                        $monto,
+                        'PAGADO',
+                        $nro_voucher
+                    ]
+                );
+
+                $id_pago_generado = DB::getPdo()->lastInsertId();
+                $ids_pagos[] = $id_pago_generado;
+            }
+
+            // Actualizar Cuenta a Pagar
+            $nuevo_importe_pagado = ($cuenta->importe_pagado ?? 0) + $total_pagado_request;
+            $nuevo_estado = 'PARCIAL';
+            if ($nuevo_importe_pagado >= $cuenta->importe) {
+                $nuevo_estado = 'PAGADO';
+            }
+
+            DB::update(
+                'UPDATE cuentas_a_pagar SET importe_pagado = ?, estado = ? WHERE id_cta = ?',
+                [$nuevo_importe_pagado, $nuevo_estado, $id_cta]
+            );
+
+            DB::commit();
+
+            // Retornar URL para imprimir recibos
+            // Generamos una URL que acepte múltiples IDs, o el primero si es uno solo.
+            // Para simplicidad, si hay varios, pasamos ?ids=1,2,3
+            $ids_str = implode(',', $ids_pagos);
+            $url_recibo = route('cuentasapagar.recibo', ['id' => $ids_pagos[0]]) . '?ids=' . $ids_str;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pagos registrados correctamente.',
+                'url_recibo' => $url_recibo
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($e);
+            return response()->json(['success' => false, 'message' => 'Error al procesar pagos: ' . $e->getMessage()], 500);
+        }
     }
 }
+
