@@ -31,6 +31,9 @@ class User extends Authenticatable
         'estado',
         'role_id',
         'id_sucursal',
+        'avatar_url',
+        'shortcut_mode',
+        'shortcuts',
     ];
 
     /**

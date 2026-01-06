@@ -101,6 +101,7 @@
             }
 
             $("#cerrar").on("click", function(e) {
+                console.log('Botón Cerrar Caja clickeado');
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -122,8 +123,15 @@
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                             throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
                     .then(res => {
+                        console.log('Data received:', res);
                         /** recuperar valores y mostrarlos */
                         // Si la respuesta es success True proceso el resultado devuelto por la funcion
                         if (res.success) {
@@ -138,8 +146,76 @@
 
                             // url para cerrar caja y enviar los datos a la funcion cerrar_caja del controlador aperturacierre
                             const formUrl = "{{ url('apertura_cierre/cerrar_caja') }}/" + id;
-                            // Asignar la URL del formulario al modal para que redireccione al método PATCH de la API de cierre de caja
-                            modalRef.querySelector('#form-apertura').setAttribute("action", formUrl);
+                            document.getElementById("form-cierre").setAttribute("action", formUrl); // Keep action for validation but handle via JS
+
+                            // Eliminar handlers anteriores para evitar duplicados
+                            $('#btn-confirmar-cierre').off('click').on('click', function(e) {
+                                e.preventDefault();
+                                
+                                // Obtener el formulario usando getElementById para asegurar que es el correcto
+                                let formElement = document.getElementById('form-cierre');
+                                let formData = new FormData(formElement);
+                                
+                                // Deshabilitar botón para evitar doble click
+                                let $btn = $(this);
+                                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Procesando...');
+
+                                fetch(formUrl, {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    }
+                                })
+                                .then(response => {
+                                    console.log('Response status:', response.status);
+                                    if (!response.ok) {
+                                         throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    console.log('Data received:', data);
+                                    if (data.success) {
+                                        // Open PDF in new tab
+                                        const pdfUrl = "{{ url('apertura_cierre/imprimir_cierre') }}/" + data.id_apertura;
+                                        window.open(pdfUrl, '_blank');
+                                        
+                                        // Reload page to update UI
+                                        Swal.fire({
+                                            title: 'Éxito',
+                                            text: data.message,
+                                            icon: 'success',
+                                            confirmButtonText: 'Ok'
+                                        }).then(() => {
+                                            location.reload();
+                                        });
+                                        
+                                        $("#cerrar-caja").modal("hide");
+                                    } else {
+                                        Swal.fire({
+                                            title: 'Error!',
+                                            text: data.message,
+                                            icon: 'error',
+                                            confirmButtonText: 'Ok'
+                                        });
+                                        $btn.prop('disabled', false).html('Cerrar');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    Swal.fire({
+                                        title: 'Error!',
+                                        text: 'Hubo un problema al procesar la solicitud.',
+                                        icon: 'error',
+                                        confirmButtonText: 'Ok'
+                                    });
+                                    $btn.prop('disabled', false).html('Cerrar');
+                                });
+                            });
+
                             $("#cerrar-caja").modal("show"); //mostrar  el  modal
                         } else {
                             Swal.fire({
@@ -178,7 +254,7 @@
         // Botón Exportar Excel
         $('#btn-export-excel-ventas').on('click', function(e) {
             e.preventDefault();
-            let url = '{{ url('ventas') }}';
+            let url = "{{ url('ventas') }}";
             let params = new URLSearchParams(window.location.search);
             params.set('exportar', 'excel');
             window.open(url + '?' + params.toString(), '_blank');

@@ -103,6 +103,8 @@ Route::resource('ayuda', HelpTopicController::class)
     ->parameters(['ayuda' => 'ayuda']);
 // Rutas específicas para cuentas a cobrar (ANTES del resource)
 Route::get('cuentasacobrar/{id}/detalle', [App\Http\Controllers\CuentasACobrarController::class, 'detalle'])->name('cuentasacobrar.detalle');
+Route::post('cuentasacobrar/procesar-multi', [App\Http\Controllers\CuentasACobrarController::class, 'procesarMultiple'])->name('cuentasacobrar.procesar_multi');
+Route::get('cuentasacobrar/{id}/pagar', [App\Http\Controllers\CuentasACobrarController::class, 'formCobrar'])->name('cuentasacobrar.pagar');
 Route::post('cuentasacobrar/{id}/cobrar', [App\Http\Controllers\CuentasACobrarController::class, 'cobrar'])->name('cuentasacobrar.cobrar');
 Route::get('cuentasacobrar/cobros/{id}', [App\Http\Controllers\CuentasACobrarController::class, 'obtenerHistorialCobros'])->name('cuentasacobrar.historial');
 Route::post('cuentasacobrar/cobros/{id}/anular', [App\Http\Controllers\CuentasACobrarController::class, 'anularCobro'])->name('cuentasacobrar.anular');
@@ -110,7 +112,9 @@ Route::get('cuentasacobrar/recibo/{id}', [App\Http\Controllers\CuentasACobrarCon
 Route::resource('cuentasacobrar', App\Http\Controllers\CuentasACobrarController::class);
 // Rutas específicas para cuentas a pagar (ANTES del resource)
 Route::get('cuentasapagar/{id}/detalle', [App\Http\Controllers\CuentasAPagarController::class, 'detalle'])->name('cuentasapagar.detalle');
-Route::post('cuentasapagar/{id}/pagar', [App\Http\Controllers\CuentasAPagarController::class, 'pagar'])->name('cuentasapagar.pagar');
+Route::post('cuentasapagar/procesar-multi', [App\Http\Controllers\CuentasAPagarController::class, 'procesarMultiple'])->name('cuentasapagar.procesar_multi');
+Route::get('cuentasapagar/{id}/pagar', [App\Http\Controllers\CuentasAPagarController::class, 'formPagar'])->name('cuentasapagar.pagar');
+Route::post('cuentasapagar/{id}/pagar', [App\Http\Controllers\CuentasAPagarController::class, 'pagar'])->name('cuentasapagar.pagar_old'); // Renamed old route to avoid conflict if needed, or just keep it
 Route::get('cuentasapagar/pagos/{id}', [App\Http\Controllers\CuentasAPagarController::class, 'obtenerHistorialPagos'])->name('cuentasapagar.historial');
 Route::post('cuentasapagar/pagos/{id}/anular', [App\Http\Controllers\CuentasAPagarController::class, 'anularPago'])->name('cuentasapagar.anular');
 Route::get('cuentasapagar/recibo/{id}', [App\Http\Controllers\CuentasAPagarController::class, 'imprimirRecibo'])->name('cuentasapagar.recibo');
@@ -118,7 +122,8 @@ Route::resource('cuentasapagar', App\Http\Controllers\CuentasAPagarController::c
 // Rutas específicas para recibos simples (ANTES del resource)
 Route::get('recibossimples/{id}/imprimir', [App\Http\Controllers\ReciboSimpleController::class, 'imprimir'])->name('recibossimples.imprimir');
 Route::resource('recibossimples', App\Http\Controllers\ReciboSimpleController::class);
-Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil']);
+Route::get('perfil', [App\Http\Controllers\UserController::class, 'perfil'])->name('users.profile');
+Route::post('users/perfil/update', [App\Http\Controllers\UserController::class, 'updatePerfil'])->name('users.updatePerfil');
 Route::post('users/perfil/cambiar-password', [App\Http\Controllers\UserController::class, 'cambiarPassword']);
 
 // Buscadores
@@ -157,8 +162,12 @@ Route::get('apertura_cierre/editCierre/{id}',
 [App\Http\Controllers\AperturaCierreCajaController::class, 'editCierre']);
 
 ## Ruta para guardar caja cerrada
-Route::get('apertura_cierre/cerrar_caja/{id}',
+Route::post('apertura_cierre/cerrar_caja/{id}',
 [App\Http\Controllers\AperturaCierreCajaController::class, 'cerrar_caja']);
+
+## Ruta para imprimir cierre de caja
+Route::get('apertura_cierre/imprimir_cierre/{id}', 
+[App\Http\Controllers\AperturaCierreCajaController::class, 'imprimir_cierre']);
 
 
 ## Ruta para exportar cargos a excel Ejemplo

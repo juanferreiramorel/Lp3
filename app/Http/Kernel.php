@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetPgAppUserId::class,
             \App\Http\Middleware\LogRequests::class,
+            \App\Http\Middleware\LogRecentAccess::class,
         ],
 
         'api' => [

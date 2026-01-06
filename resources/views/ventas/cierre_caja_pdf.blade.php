@@ -1,135 +1,161 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>Cierre Caja</title>
+    <meta charset="utf-8">
+    <title>Arqueo de Caja #{{ $cierre_caja->id_apertura }}</title>
     <style>
-        @page {
-            margin: 0cm 0cm;
-            margin-bottom: 2cm;
+        @page { margin: 2cm; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; color: #333; line-height: 1.4; }
+        
+        .header-table { width: 100%; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; }
+        .company-name { font-size: 20px; font-weight: bold; text-transform: uppercase; color: #2c3e50; }
+        .doc-title { font-size: 24px; font-weight: bold; text-transform: uppercase; text-align: right; color: #2c3e50; }
+        .doc-subtitle { font-size: 14px; text-align: right; color: #7f8c8d; }
+
+        .info-box { width: 100%; margin-bottom: 20px; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table td { padding: 5px; vertical-align: top; }
+        .label { font-weight: bold; color: #555; width: 120px; }
+        .status-badge { 
+            padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;
+            background-color: {{ $cierre_caja->estado == 'ABIERTA' ? '#28a745' : '#6c757d' }};
+            color: white; 
         }
 
-        body {
-            margin-top: 1cm;
-            margin-left: 1cm;
-            margin-right: 1cm;
-            margin-bottom: 1cm;
-        }
+        .section-title { font-size: 14px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 5px; color: #2c3e50; text-transform: uppercase; }
 
-        .tabla {
-            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-            border-collapse: collapse;
-            width: 100%;
-            border: 1px solid black;
-        }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .data-table th { background-color: #f8f9fa; color: #333; font-weight: bold; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; }
+        .data-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .data-table tr:last-child td { border-bottom: none; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .total-row td { background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #ddd; font-size: 13px; }
 
-        .tabla td,
-        .tabla th {
-            border: 1px solid #ddd;
-            padding: 2px;
-        }
+        .summary-box { background-color: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 30px; }
+        .summary-table { width: 100%; }
+        .summary-table td { padding: 5px; }
+        .summary-value { text-align: right; font-weight: bold; font-size: 13px; }
 
-        .tabla tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        .tabla tr:hover {
-            background-color: #ddd;
-        }
-
-        .tabla th {
-            padding-top: 3px;
-            padding-bottom: 3px;
-            /*text-align: left;*/
-            background-color: #f6efef;
-            color: black;
-        }
-
-        tr.was-replaced td {
-            text-decoration: line-through;
-        }
-
-        th {
-            font-size: 12px;
-            font-weight: bold;
-            padding-left: 5px;
-            padding-bottom: 2px;
-        }
-
-        td {
-            font-size: 12px;
-            padding-left: 5px;
-            padding-bottom: 2px;
-        }
-
-        .center {
-            text-align: center;
-        }
+        .signatures { margin-top: 80px; width: 100%; }
+        .signature-line { border-top: 1px solid #333; width: 40%; display: inline-block; margin-right: 5%; text-align: center; padding-top: 5px; }
     </style>
 </head>
-
 <body>
-    <div class="box box-primary">
-        <p style="text-align: center;">
-            <b>Cierre Caja<b>
-        </p>
-        <br>
-        <div class="box-body">
-            <table class="tabla">
-                <thead>
-                    @php
-                        ##definir variables
-                        $totales = 0;
-                    @endphp
-                    <tr>
-                        <td colspan="2"><b>Fecha:</b>
-                            {{ \Carbon\Carbon::parse($cierre_caja->fecha_apertura)->format('d/m/Y') }}
-                        </td>
-                        <td><b>Usuario:</b> {{ $cierre_caja->usuario }}</td>
-                        <td><b>Sucursal:</b> {{ $cierre_caja->sucursal }}</td>
-                        <td><b>Caja:</b> {{ $cierre_caja->caja }}</td>
-                    </tr>
-                </thead>
-            </table>
+
+    <!-- Header -->
+    <table class="header-table">
+        <tr>
+            <td width="50%" valign="top">
+                <div class="company-name">{{ config('app.name', 'EMPRESA') }}</div>
+                <div>RUC: 80023456-1</div>
+                <div>Dirección: Av. Principal 123</div>
+                <div>Teléfono: (0981) 123-456</div>
+            </td>
+            <td width="50%" valign="top">
+                <div class="doc-title">Arqueo de Caja</div>
+                <div class="doc-subtitle">Nro: {{ str_pad($cierre_caja->id_apertura, 6, '0', STR_PAD_LEFT) }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Info General -->
+    <div class="info-box">
+        <table class="info-table">
+            <tr>
+                <td class="label">Fecha Apertura:</td>
+                <td>{{ \Carbon\Carbon::parse($cierre_caja->fecha_apertura)->format('d/m/Y') }}</td>
+                <td class="label">Usuario:</td>
+                <td>{{ $cierre_caja->usuario }}</td>
+            </tr>
+            <tr>
+                <td class="label">Sucursal:</td>
+                <td>{{ $cierre_caja->sucursal }}</td>
+                <td class="label">Caja:</td>
+                <td>{{ $cierre_caja->caja }}</td>
+            </tr>
+            <tr>
+                <td class="label">Estado:</td>
+                <td><span class="status-badge">{{ $cierre_caja->estado }}</span></td>
+                <td class="label">Generado:</td>
+                <td>{{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Detalle de Cobros -->
+    <div class="section-title">Detalle de Cobros por Forma de Pago</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Forma de Pago</th>
+                <th class="text-right">Total Cobrado (GS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $total_cobrado = 0; @endphp
+            @foreach ($totales_forma_pago as $pago)
+                @php $total_cobrado += $pago->total_cobro; @endphp
+                <tr>
+                    <td>{{ $pago->forma_pago }}</td>
+                    <td class="text-right">{{ number_format($pago->total_cobro, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr class="total-row">
+                <td>TOTAL RECAUDADO</td>
+                <td class="text-right">{{ number_format($total_cobrado, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Resumen General -->
+    <div class="section-title">Resumen de Caja</div>
+    <div class="summary-box">
+        <table class="summary-table">
+            <tr>
+                <td>Monto Apertura (Fondo Fijo):</td>
+                <td class="summary-value">{{ number_format($cierre_caja->monto_apertura, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>(+) Total Ventas (Sistema):</td>
+                <td class="summary-value">{{ number_format($total_cobrado, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td style="border-top: 1px solid #ccc; padding-top: 5px;"><strong>(=) Total Esperado en Caja:</strong></td>
+                <td class="summary-value" style="border-top: 1px solid #ccc; padding-top: 5px;">
+                    {{ number_format($cierre_caja->monto_apertura + $total_cobrado, 0, ',', '.') }}
+                </td>
+            </tr>
+            @if($cierre_caja->estado == 'CERRADA')
+            <tr>
+                <td style="padding-top: 10px;"><strong>Monto Cierre (Declarado):</strong></td>
+                <td class="summary-value" style="padding-top: 10px; color: #007bff;">
+                    {{ number_format($cierre_caja->monto_cierre, 0, ',', '.') }}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Diferencia:</strong></td>
+                @php $diferencia = $cierre_caja->monto_cierre - ($cierre_caja->monto_apertura + $total_cobrado); @endphp
+                <td class="summary-value" style="color: {{ $diferencia < 0 ? 'red' : ($diferencia > 0 ? 'green' : 'black') }};">
+                    {{ number_format($diferencia, 0, ',', '.') }}
+                </td>
+            </tr>
+            @endif
+        </table>
+    </div>
+
+    <!-- Firmas -->
+    <div class="signatures">
+        <div class="signature-line">
+            {{ $cierre_caja->usuario }}<br>
+            <strong>Cajero/a</strong>
+        </div>
+        <div class="signature-line">
             <br>
-            <table class="tabla">
-                <thead>
-                    <tr>
-                        <th colspan="2" class="center">Totales por Forma de Pago</th>
-                    </tr>
-                    
-                    <tr>
-                        <td><b>FORMA DE PAGOS</b></td>
-                        <td class="center"><b>COBRADO</b></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($totales_forma_pago as $value)
-                        <!-- calcular el total de los totales por forma de pago -->
-                        @php
-                            $totales += $value->total_cobro;
-                        @endphp
-                        <tr>
-                            <td>{{ $value->forma_pago }}</td>
-                            <td class="center">{{ number_format($value->total_cobro, 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-
-                    <tfoot>
-                        <tr>
-                            <th>TOTAL</th>
-                            <th>{{ number_format($totales, 0, ',', '.') }}</th>
-                        </tr>
-                    </tfoot>
-                </tbody>
-            </table>
-
-            <div style="margin-top: 20px;"></div>
-                <p>Cajero:   ...................................... </p>
-                <p>Administración:  ...............................</p>
-            </div>
-
+            <strong>Verificado por</strong>
         </div>
     </div>
-</body>
 
+</body>
 </html>

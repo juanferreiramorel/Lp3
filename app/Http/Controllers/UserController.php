@@ -390,8 +390,94 @@ class UserController extends AppBaseController
 
     public function perfil()
     {
+        // Lista de rutas disponibles para accesos directos
+        $availableShortcuts = [
+            'ventas.index' => 'Ventas',
+            'apertura-cierre-caja.index' => 'Arqueo de Caja',
+            'pedidos.index' => 'Pedidos',
+            'clientes.index' => 'Clientes',
+            'cuentasacobrar.index' => 'Cuentas a Cobrar',
+            'recibossimples.index' => 'Recibos Simples',
+            'compras.index' => 'Compras',
+            'ordencompra.index' => 'Ordenes de Compra',
+            'proveedores.index' => 'Proveedores',
+            'cuentasapagar.index' => 'Cuentas a Pagar',
+            'productos.index' => 'Productos',
+            'stock.index' => 'Stock',
+            'marcas.index' => 'Marcas',
+            'plantillas_contratos.index' => 'Plantillas Contratos',
+            'users.index' => 'Usuarios',
+            'sucursales.index' => 'Sucursales',
+        ];
+
         // Mostrar el perfil del usuario autenticado
-        return view('users.profile');
+        return view('users.profile', compact('availableShortcuts'));
+    }
+
+    public function updatePerfil(Request $request)
+    {
+        $user = auth()->user();
+        $input = $request->all();
+
+        $validator = Validator::make($input, [
+            'name' => 'required',
+            'email' => 'required|unique:users,email,' . $user->id,
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'shortcut_mode' => 'required|in:automatic,manual',
+            'shortcuts' => 'nullable|array|max:5',
+        ], [
+            'name.required' => 'El nombre es obligatorio.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.unique' => 'El correo electrónico ya está registrado.',
+            'avatar.image' => 'El archivo debe ser una imagen.',
+            'avatar.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg, gif.',
+            'avatar.max' => 'La imagen no debe pesar más de 2048 kilobytes.',
+            'shortcuts.max' => 'No puedes seleccionar más de 5 accesos directos.',
+        ]);
+
+        if ($validator->fails()) {
+            Alert::error('Error', 'Error de validación');
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Update basic info
+        $user->name = $input['name'];
+        $user->email = $input['email'];
+        $user->direccion = $input['direccion'] ?? null;
+        $user->telefono = $input['telefono'] ?? null;
+        
+        // Handle Avatar Deletion
+        if ($request->has('delete_avatar') && $request->delete_avatar == '1') {
+            if ($user->avatar_url) {
+                // Determine file path from keys or URL logic if needed. 
+                // Since we store full URL, we might need to parse it or just rely on new upload overwriting.
+                // ideally we delete the old file.
+                $oldPath = public_path('avatars/' . basename($user->avatar_url));
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+                $user->avatar_url = null;
+            }
+        }
+
+        // Handle Avatar Upload
+        if ($request->hasFile('avatar')) {
+            $imageName = time() . '.' . $request->avatar->extension();
+            $request->avatar->move(public_path('avatars'), $imageName);
+            $user->avatar_url = asset('avatars/' . $imageName);
+        }
+
+        // Handle Shortcuts
+        $user->shortcut_mode = $input['shortcut_mode'];
+        
+        if ($input['shortcut_mode'] === 'manual') {
+            $user->shortcuts = isset($input['shortcuts']) ? json_encode($input['shortcuts']) : null;
+        }
+
+        $user->save();
+
+        Alert::toast('Perfil actualizado correctamente', 'success');
+        return redirect()->back();
     }
 
     public function cambiarPassword(Request $request)

@@ -34,6 +34,48 @@
                             <span class="navbar-text ml-2">@yield('content_header')</span>
                         </li>
                     @endif
+
+                    @php
+                        $user = auth()->user();
+                        $shortcuts = [];
+                        $modeText = 'Recientes';
+
+                        if ($user && $user->shortcut_mode === 'manual') {
+                            $modeText = 'Accesos Directos';
+                            $savedShortcuts = json_decode($user->shortcuts) ?? [];
+                            // Re-map titles for manual shortcuts (could be optimized)
+                            $titles = [
+                                'ventas.index' => 'Ventas',
+                                'apertura-cierre-caja.index' => 'Arqueo de Caja',
+                                'pedidos.index' => 'Pedidos',
+                                'clientes.index' => 'Clientes',
+                                'cuentasacobrar.index' => 'Cuentas a Cobrar',
+                                'recibossimples.index' => 'Recibos Simples',
+                                'compras.index' => 'Compras',
+                                'ordencompra.index' => 'Ordenes de Compra',
+                                'proveedores.index' => 'Proveedores',
+                                'cuentasapagar.index' => 'Cuentas a Pagar',
+                                'productos.index' => 'Productos',
+                                'stock.index' => 'Stock',
+                                'marcas.index' => 'Marcas',
+                                'plantillas_contratos.index' => 'Plantillas Contratos',
+                                'users.index' => 'Usuarios',
+                                'sucursales.index' => 'Sucursales',
+                            ];
+                            
+                            foreach ($savedShortcuts as $route) {
+                                if (Route::has($route)) {
+                                    $shortcuts[] = [
+                                        'url' => route($route),
+                                        'title' => $titles[$route] ?? $route
+                                    ];
+                                }
+                            }
+                        } else {
+                            $shortcuts = session('recent_access', []);
+                        }
+                    @endphp
+
                 </ul>
 
                 <!-- SEARCH -->
@@ -48,6 +90,19 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- Shortcuts (After Search) -->
+                @if(count($shortcuts) > 0)
+                    <ul class="navbar-nav ml-2">
+                        @foreach($shortcuts as $access)
+                            <li class="nav-item d-none d-md-block mr-1">
+                                <a href="{{ $access['url'] }}" class="navbar-btn-icon" title="{{ $access['title'] }}">
+                                    <span>{{ $access['title'] }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
 
                 <!-- Right -->
                 <ul class="navbar-nav ml-auto align-items-center">

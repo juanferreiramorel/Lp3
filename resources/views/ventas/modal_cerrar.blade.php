@@ -9,7 +9,7 @@
             </div>
             <!-- Modal body -->
             <div class="modal-body">
-                <form method="GET" action="" id="form-apertura">
+                <form method="GET" action="" id="form-cierre">
                     @csrf
                     <input type="hidden" name="_method">
                     <div class="row">
@@ -52,7 +52,7 @@
 
                     <!-- Modal footer -->
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Cerrar</button>
+                        <button type="button" id="btn-confirmar-cierre" class="btn btn-primary">Cerrar</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
                     </div>
                 </form>

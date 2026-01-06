@@ -1,109 +1,181 @@
 @php
-    $isReportOpen = Request::is('reporte-*') || Request::is('auditoria*'); ;
+    $isReportOpen = Request::is('reporte-*') || Request::is('auditoria*');
     $isConfigOpen = Request::is('users*')
         || Request::is('cargos*')
         || Request::is('departamentos*')
-        || Request::is('proveedores*')
         || Request::is('ciudades*')
         || Request::is('sucursales*')
         || Request::is('empresas*')
         || Request::is('timbrados*')
-        || Request::is('marcas*')
         || Request::is('taxes*')
         || Request::is('permissions*')
         || Request::is('cajas*')
         || Request::is('roles*')
         || Request::is('ayuda*');
+
+    $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*');
+    $isComprasOpen = Request::is('compras*') || Request::is('ordencompra*') || Request::is('proveedores*') || Request::is('cuentasapagar*');
+    $isInventarioOpen = Request::is('productos*') || Request::is('stock*') || Request::is('marcas*');
 @endphp
 
-{{-- Productos --}}
-@can('productos index')
-<li class="nav-item">
-    <a href="{{ route('productos.index') }}" class="nav-link {{ Request::is('productos*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-box-open"></i>
-        <p>Productos</p>
+{{-- MODULO VENTAS --}}
+@if(auth()->user()->can('ventas index') || auth()->user()->can('pedidos index') || auth()->user()->can('clientes index'))
+<li class="nav-item {{ $isVentasOpen ? 'menu-is-opening menu-open' : '' }}">
+    <a href="#" class="nav-link">
+        <i class="nav-icon fas fa-cash-register"></i>
+        <p>
+            Ventas
+            <i class="right fas fa-angle-left"></i>
+        </p>
     </a>
-</li>
-@endcan
+    <ul class="nav nav-treeview">
+        @can('ventas index')
+        <li class="nav-item">
+            <a href="{{ route('ventas.index') }}" class="nav-link {{ Request::is('ventas*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-receipt"></i>
+                <p>Ventas</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Ventas --}}
-@can('ventas index')
-<li class="nav-item">
-    <a href="{{ route('ventas.index') }}" class="nav-link {{ Request::is('ventas*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-receipt"></i>
-        <p>Ventas</p>
-    </a>
-</li>
-@endcan
-{{-- Cuentas A Cobrar --}}
-@can('cuentasacobrar index')
-<li class="nav-item">
-    <a href="{{ route('cuentasacobrar.index') }}" class="nav-link {{ Request::is('cuentasacobrar*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-file-invoice-dollar"></i>
-        <p>Cuentas A Cobrar</p>
-    </a>
-</li>
-@endcan
+        @can('aperturacierrecaja index')
+        <li class="nav-item">
+            <a href="{{ route('apertura-cierre-caja.index') }}" class="nav-link {{ Request::is('apertura-cierre-caja*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                <p>Arqueo de Caja</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Cuentas A Pagar --}}
-@can('cuentasapagar index')
-<li class="nav-item">
-    <a href="{{ route('cuentasapagar.index') }}" class="nav-link {{ Request::is('cuentasapagar*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-hand-holding-usd"></i>
-        <p>Cuentas A Pagar</p>
-    </a>
-</li>
-@endcan
+        @can('pedidos index')
+        <li class="nav-item">
+            <a href="{{ route('pedidos.index') }}" class="nav-link {{ Request::is('pedidos*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-clipboard-check"></i>
+                <p>Pedidos</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Ordenes De Compra --}}
-@can('ordencompra index')
-<li class="nav-item">
-    <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordencompra*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-file-signature"></i>
-        <p>Ordenes De Compra</p>
-    </a>
-</li>
-@endcan
+        @can('clientes index')
+        <li class="nav-item">
+            <a href="{{ route('clientes.index') }}" class="nav-link {{ Request::is('clientes*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-user-friends"></i>
+                <p>Clientes</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Pedidos --}}
-@can('pedidos index')
-<li class="nav-item">
-    <a href="{{ route('pedidos.index') }}" class="nav-link {{ Request::is('pedidos*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-clipboard-check"></i>
-        <p>Pedidos</p>
-    </a>
-</li>
-@endcan
+        @can('cuentasacobrar index')
+        <li class="nav-item">
+            <a href="{{ route('cuentasacobrar.index') }}" class="nav-link {{ Request::is('cuentasacobrar*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-hand-holding-usd"></i>
+                <p>Cuentas A Cobrar</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Recibos Simples --}}
-@can('recibossimples index')
-<li class="nav-item">
-    <a href="{{ route('recibossimples.index') }}" class="nav-link {{ Request::is('recibossimples*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-file-invoice"></i>
-        <p>Recibos Simples</p>
-    </a>
+        @can('recibossimples index')
+        <li class="nav-item">
+            <a href="{{ route('recibossimples.index') }}" class="nav-link {{ Request::is('recibossimples*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-invoice"></i>
+                <p>Recibos Simples</p>
+            </a>
+        </li>
+        @endcan
+    </ul>
 </li>
-@endcan
+@endif
 
-{{-- Compras --}}
-@can('compras index')
-<li class="nav-item">
-    <a href="{{ route('compras.index') }}" class="nav-link {{ Request::is('compras*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-cart-arrow-down"></i>
-        <p>Compras</p>
+{{-- MODULO COMPRAS --}}
+@if(auth()->user()->can('compras index') || auth()->user()->can('ordencompra index') || auth()->user()->can('proveedores index'))
+<li class="nav-item {{ $isComprasOpen ? 'menu-is-opening menu-open' : '' }}">
+    <a href="#" class="nav-link">
+        <i class="nav-icon fas fa-shopping-cart"></i>
+        <p>
+            Compras
+            <i class="right fas fa-angle-left"></i>
+        </p>
     </a>
-</li>
-@endcan
+    <ul class="nav nav-treeview">
+        @can('compras index')
+        <li class="nav-item">
+            <a href="{{ route('compras.index') }}" class="nav-link {{ Request::is('compras*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-cart-arrow-down"></i>
+                <p>Compras</p>
+            </a>
+        </li>
+        @endcan
 
-{{-- Clientes --}}
-@can('clientes index')
-<li class="nav-item">
-    <a href="{{ route('clientes.index') }}" class="nav-link {{ Request::is('clientes*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-user-friends"></i>
-        <p>Clientes</p>
-    </a>
+        @can('ordencompra index')
+        <li class="nav-item">
+            <a href="{{ route('ordencompra.index') }}" class="nav-link {{ Request::is('ordencompra*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-signature"></i>
+                <p>Ordenes De Compra</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('proveedores index')
+        <li class="nav-item">
+            <a href="{{ route('proveedores.index') }}" class="nav-link {{ Request::is('proveedores*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-truck"></i>
+                <p>Proveedores</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('cuentasapagar index')
+        <li class="nav-item">
+            <a href="{{ route('cuentasapagar.index') }}" class="nav-link {{ Request::is('cuentasapagar*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-money-bill-wave"></i>
+                <p>Cuentas A Pagar</p>
+            </a>
+        </li>
+        @endcan
+    </ul>
 </li>
-@endcan
+@endif
+
+{{-- MODULO INVENTARIO --}}
+@if(auth()->user()->can('productos index') || auth()->user()->can('stock index') || auth()->user()->can('marcas index'))
+<li class="nav-item {{ $isInventarioOpen ? 'menu-is-opening menu-open' : '' }}">
+    <a href="#" class="nav-link">
+        <i class="nav-icon fas fa-boxes"></i>
+        <p>
+            Inventario
+            <i class="right fas fa-angle-left"></i>
+        </p>
+    </a>
+    <ul class="nav nav-treeview">
+        @can('productos index')
+        <li class="nav-item">
+            <a href="{{ route('productos.index') }}" class="nav-link {{ Request::is('productos*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-box-open"></i>
+                <p>Productos</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('stock index')
+        <li class="nav-item">
+            <a href="{{ route('stock.index') }}" class="nav-link {{ Request::is('stock*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-warehouse"></i>
+                <p>Stock</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('marcas index')
+        <li class="nav-item">
+            <a href="{{ route('marcas.index') }}" class="nav-link {{ Request::is('marcas*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-tags"></i>
+                <p>Marcas</p>
+            </a>
+        </li>
+        @endcan
+    </ul>
+</li>
+@endif
 
 {{-- Plantillas de Contratos --}}
 @can('plantillas_contratos index')
@@ -214,12 +286,9 @@
     auth()->user()->can('sucursales index') ||
     auth()->user()->can('empresas index') ||
     auth()->user()->can('timbrados index') ||
-    auth()->user()->can('stock index') ||
     auth()->user()->can('cajas index') ||
     auth()->user()->can('cargos index') ||
-    auth()->user()->can('marcas index') ||
     auth()->user()->can('taxes index') ||
-    auth()->user()->can('proveedores index') ||
     auth()->user()->can('users index') ||
     auth()->user()->can('permissions index') ||
     auth()->user()->can('roles index') ||
@@ -273,15 +342,7 @@
             </a>
         </li>
         @endcan
-        {{-- Stock --}}
-        @can('stock index')
-        <li class="nav-item">
-            <a href="{{ route('stock.index') }}" class="nav-link {{ Request::is('stock*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-warehouse"></i>
-                <p>Stock</p>
-            </a>
-        </li>
-        @endcan
+        
         @can('cajas index')
         <li class="nav-item">
             <a href="{{ route('cajas.index') }}" class="nav-link {{ Request::is('cajas*') ? 'active' : '' }}">
@@ -300,29 +361,11 @@
         </li>
         @endcan
 
-        @can('marcas index')
-        <li class="nav-item">
-            <a href="{{ route('marcas.index') }}" class="nav-link {{ Request::is('marcas*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-tags"></i>
-                <p>Marcas</p>
-            </a>
-        </li>
-        @endcan
-
         @can('taxes index')
         <li class="nav-item">
             <a href="{{ route('taxes.index') }}" class="nav-link {{ Request::is('taxes*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-percentage"></i>
                 <p>Impuestos</p>
-            </a>
-        </li>
-        @endcan
-
-        @can('proveedores index')
-        <li class="nav-item">
-            <a href="{{ route('proveedores.index') }}" class="nav-link {{ Request::is('proveedores*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-truck"></i>
-                <p>Proveedores</p>
             </a>
         </li>
         @endcan
