@@ -38,6 +38,15 @@
         </li>
         @endcan
 
+        @can('ventas index')
+        <li class="nav-item">
+            <a href="{{ route('notas_debito.index') }}" class="nav-link {{ Request::is('notas_debito*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                <p>Notas de Débito</p>
+            </a>
+        </li>
+        @endcan
+
         @can('aperturacierrecaja index')
         <li class="nav-item">
             <a href="{{ route('apertura-cierre-caja.index') }}" class="nav-link {{ Request::is('apertura-cierre-caja*') ? 'active' : '' }}">

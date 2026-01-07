@@ -80,6 +80,10 @@ Route::post('plantillas-contratos/ckeditor/upload', [App\Http\Controllers\Planti
 
 Route::resource('plantillas-contratos', App\Http\Controllers\PlantillaContratoController::class)->names('plantillas_contratos');
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
+Route::get('notas_debito/buscar-productos', [App\Http\Controllers\NotaDebitoController::class, 'buscarProductosJson'])->name('notas_debito.buscar_productos');
+Route::get('notas_debito/buscar-ventas', [App\Http\Controllers\NotaDebitoController::class, 'buscarVentasJson'])->name('notas_debito.buscar_ventas');
+Route::get('notas_debito/{id}/pdf', [App\Http\Controllers\NotaDebitoController::class, 'pdf'])->name('notas_debito.pdf');
+Route::resource('notas_debito', App\Http\Controllers\NotaDebitoController::class);
 Route::resource('cajas', App\Http\Controllers\CajaController::class);
 Route::resource('pedidos', App\Http\Controllers\PedidosController::class);
 // Rutas específicas de compras (ANTES del resource)

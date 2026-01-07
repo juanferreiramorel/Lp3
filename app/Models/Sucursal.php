@@ -22,4 +22,9 @@ class Sucursal extends Model
         'id_ciudad',
         'id_empresa',
     ];
+
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class, 'id_empresa', 'id_empresa');
+    }
 }
