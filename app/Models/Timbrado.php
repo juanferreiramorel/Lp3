@@ -15,6 +15,7 @@ class Timbrado extends Model
 
     protected $fillable = [
         'id_empresa',
+        'id_tipo_timbrado',
         'numero_timbrado',
         'fecha_inicio',
         'fecha_vencimiento',
@@ -44,6 +45,14 @@ class Timbrado extends Model
     }
 
     /**
+     * Relación con Tipo Timbrado
+     */
+    public function tipotimbrado()
+    {
+        return $this->belongsTo(TipoTimbrado::class, 'id_tipo_timbrado', 'id_tipo_timbrado');
+    }
+
+    /**
      * Relación con Ventas
      */
     public function ventas()
@@ -67,6 +76,22 @@ class Timbrado extends Model
     public function scopePorEmpresa($query, $idEmpresa)
     {
         return $query->where('id_empresa', $idEmpresa);
+    }
+
+    /**
+     * Scope para facturas
+     */
+    public function scopeFacturas($query)
+    {
+        return $query->where('id_tipo_timbrado', TipoTimbrado::FACTURA);
+    }
+
+    /**
+     * Scope para notas de debito
+     */
+    public function scopeNotasDebito($query)
+    {
+        return $query->where('id_tipo_timbrado', TipoTimbrado::NOTA_DEBITO);
     }
 
     /**

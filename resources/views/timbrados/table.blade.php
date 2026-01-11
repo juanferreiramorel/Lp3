@@ -5,6 +5,7 @@
                 <tr>
                     <th>#</th>
                     <th>Empresa</th>
+                    <th>Tipo</th>
                     <th>Nro. Timbrado</th>
                     <th>Vigencia</th>
                     <th>Rango</th>
@@ -18,6 +19,10 @@
                     <tr>
                         <td>{{ $timbrado->id_timbrado }}</td>
                         <td>{{ $timbrado->empresa->razon_social ?? 'N/A' }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ $timbrado->tipotimbrado->descripcion ?? 'N/A' }}</span>
+                        </td>
+
                         <td>
                             <strong>{{ $timbrado->numero_timbrado }}</strong><br>
                             <small class="text-muted">

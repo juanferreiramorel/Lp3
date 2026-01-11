@@ -13,6 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 use Luecano\NumeroALetras\NumeroALetras;
 use App\Models\Timbrado;
+use App\Models\TipoTimbrado;
 use App\Models\Empresa;
 use App\Exports\VentasExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -126,10 +127,11 @@ class VentaController extends AppBaseController
 
         $ventas = DB::select(
             "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
-            users.name as usuario
+            users.name as usuario, s.descripcion as sucursal
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
+                JOIN sucursales s ON v.id_sucursal = s.id_sucursal
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
             ORDER BY v.fecha_venta DESC"
         );
@@ -257,6 +259,7 @@ class VentaController extends AppBaseController
             $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [auth()->user()->id_sucursal]);
             if ($sucursal && $sucursal->id_empresa) {
                 $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                    ->facturas()
                     ->vigentes()
                     ->orderBy('fecha_vencimiento', 'asc')
                     ->get();
@@ -1107,6 +1110,7 @@ class VentaController extends AppBaseController
                     $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [$sucursalParaTimbrado]);
                     if ($sucursal && $sucursal->id_empresa) {
                         $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                            ->facturas()
                             ->vigentes()
                             ->orderBy('fecha_vencimiento', 'asc')
                             ->get();

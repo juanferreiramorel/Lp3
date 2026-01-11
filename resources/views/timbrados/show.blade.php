@@ -197,7 +197,7 @@
                                 @foreach($timbrado->ventas()->orderBy('fecha_venta', 'desc')->limit(10)->get() as $venta)
                                 <tr>
                                     <td>{{ $venta->numero_factura_display }}</td>
-                                    <td>{{ $venta->cliente->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $venta->cliente->nombre_completo ?? 'N/A' }}</td>
                                     <td>{{ $venta->fecha_venta->format('d/m/Y') }}</td>
                                     <td>{{ number_format($venta->total, 0, ',', '.') }}</td>
                                     <td>

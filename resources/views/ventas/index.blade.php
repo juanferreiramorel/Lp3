@@ -46,16 +46,14 @@
                         </a>
                     @endif
 
-                    <!-- Boton Cerrar Caja -->
-                    <!-- Verificar si la caja esta abierta y es del dia actual entonces muestro el boton cerrar caja -->
+                    <!-- Boton Ver Caja (Dashboard) -->
+                    <!-- Verificar si la caja esta abierta y es del dia actual entonces muestro el boton ver caja -->
                     @if (
                         !empty($caja_abierta) &&
                             \Carbon\Carbon::parse($caja_abierta->fecha_apertura)->format('Y-m-d') <= \Carbon\Carbon::now()->format('Y-m-d'))
-                        <a class="btn btn-success float-right mr-2" href="#"
-                            id="cerrar"
-                            data-id="{{ isset($caja_abierta) ? $caja_abierta->id_apertura : null }}">
-                            <i class="fas fa-cart-plus"></i>
-                            Cerrar Caja
+                        <a class="btn btn-warning float-right mr-2" href="{{ route('apertura-cierre-caja.show', [$caja_abierta->id_apertura]) }}">
+                            <i class="fas fa-cash-register"></i>
+                            Ver Caja
                         </a>
                     @endif
                 </div>

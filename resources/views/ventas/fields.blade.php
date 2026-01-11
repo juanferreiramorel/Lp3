@@ -93,7 +93,10 @@ $(document).ready(function() {
             $.ajax({
                 url: '{{ route("timbrados.vigentesEmpresaPorSucursal") }}',
                 type: 'GET',
-                data: { id_sucursal: sucursalId },
+                data: { 
+                    id_sucursal: sucursalId,
+                    id_tipo_timbrado: {{ \App\Models\TipoTimbrado::FACTURA }}
+                },
                 success: function(response) {
                     if (response.success && response.timbrados) {
                         // Limpiar y repoblar el select

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Timbrado;
 use App\Models\Empresa;
+use App\Models\TipoTimbrado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
+use Carbon\Carbon;
 
 class TimbradoController extends Controller
 {
@@ -17,11 +19,18 @@ class TimbradoController extends Controller
     {
         $this->middleware('permission:timbrados index');
 
-        $query = Timbrado::with('empresa');
+        $this->middleware('permission:timbrados index');
+
+        $query = Timbrado::with(['empresa', 'tipotimbrado']);
 
         // Filtro por empresa
         if ($request->filled('id_empresa')) {
             $query->where('id_empresa', $request->id_empresa);
+        }
+
+        // Filtro por tipo de timbrado
+        if ($request->filled('id_tipo_timbrado')) {
+            $query->where('id_tipo_timbrado', $request->id_tipo_timbrado);
         }
 
         // Filtro por estado
@@ -50,8 +59,9 @@ class TimbradoController extends Controller
         }
 
         $empresas = Empresa::orderBy('razon_social')->get();
+        $tipos = TipoTimbrado::all();
 
-        return view('timbrados.index', compact('timbrados', 'empresas'));
+        return view('timbrados.index', compact('timbrados', 'empresas', 'tipos'));
     }
 
     /**
@@ -62,8 +72,9 @@ class TimbradoController extends Controller
         $this->middleware('permission:timbrados create');
 
         $empresas = Empresa::orderBy('razon_social')->get();
+        $tipos = TipoTimbrado::all();
 
-        return view('timbrados.create', compact('empresas'));
+        return view('timbrados.create', compact('empresas', 'tipos'));
     }
 
     /**
@@ -75,7 +86,22 @@ class TimbradoController extends Controller
 
         $validated = $request->validate([
             'id_empresa' => 'required|exists:empresas,id_empresa',
-            'numero_timbrado' => 'required|string|max:50|unique:timbrados,numero_timbrado',
+            'id_tipo_timbrado' => 'required|exists:tipos_timbrados,id_tipo_timbrado',
+            // Unique compuesto se valida manualmente o con Rule::unique->where...
+            // Por simplicidad, validamos numero si existe para ese tipo
+            'numero_timbrado' => [
+                'required',
+                'string',
+                'max:50',
+                function ($attribute, $value, $fail) use ($request) {
+                    $exists = Timbrado::where('numero_timbrado', $value)
+                                    ->where('id_tipo_timbrado', $request->id_tipo_timbrado)
+                                    ->exists();
+                    if ($exists) {
+                        $fail('El número de timbrado ya existe para este tipo de documento.');
+                    }
+                },
+            ],
             'fecha_inicio' => 'required|date',
             'fecha_vencimiento' => 'required|date|after:fecha_inicio',
             'rango_inicio' => 'required|integer|min:1',
@@ -119,7 +145,7 @@ class TimbradoController extends Controller
     {
         $this->middleware('permission:timbrados index');
 
-        $timbrado = Timbrado::with(['empresa', 'ventas'])->findOrFail($id);
+        $timbrado = Timbrado::with(['empresa', 'ventas.cliente'])->findOrFail($id);
         $timbrado->actualizarEstado();
 
         // Estadísticas de uso
@@ -143,14 +169,15 @@ class TimbradoController extends Controller
 
         $timbrado = Timbrado::findOrFail($id);
         $empresas = Empresa::orderBy('razon_social')->get();
+        $tipos = TipoTimbrado::all();
 
-        // No permitir editar si ya tiene facturas asociadas
-        if ($timbrado->ventas()->count() > 0) {
-            Alert::warning('Advertencia', 'No se puede editar un timbrado que ya tiene facturas asociadas');
-            return redirect()->route('timbrados.show', $id);
-        }
+        // No permitir editar si ya tiene facturas asociadas -> AHORA SI SE PERMITE CON RESTRICCIONES
+        // if ($timbrado->ventas()->count() > 0) {
+        //     Alert::warning('Advertencia', 'No se puede editar un timbrado que ya tiene facturas asociadas');
+        //     return redirect()->route('timbrados.show', $id);
+        // }
 
-        return view('timbrados.edit', compact('timbrado', 'empresas'));
+        return view('timbrados.edit', compact('timbrado', 'empresas', 'tipos'));
     }
 
     /**
@@ -162,15 +189,73 @@ class TimbradoController extends Controller
 
         $timbrado = Timbrado::findOrFail($id);
 
-        // No permitir editar si ya tiene facturas asociadas
-        if ($timbrado->ventas()->count() > 0) {
-            Alert::error('Error', 'No se puede editar un timbrado que ya tiene facturas asociadas');
-            return redirect()->route('timbrados.show', $id);
+        // Validar si tiene documentos asociados para aplicar restricciones
+        $tieneDocumentos = false;
+        $minDocumento = null;
+        $maxDocumento = null;
+        $minFecha = null;
+        $maxFecha = null;
+
+        // Determinar tipo de documento y buscar existentes
+        if ($timbrado->id_tipo_timbrado == TipoTimbrado::FACTURA) {
+            $tieneDocumentos = $timbrado->ventas()->exists();
+            if ($tieneDocumentos) {
+                 // Extraer numeros de factura (formato 001-001-0000001) para comparar rangos
+                 // Asumimos que los numeros son secuenciales y el formato es estricto
+                 $ventas = $timbrado->ventas()->get();
+                 foreach($ventas as $venta) {
+                     $parts = explode('-', $venta->factura_nro);
+                     if(count($parts) == 3) {
+                         $num = (int)$parts[2];
+                         $minDocumento = is_null($minDocumento) ? $num : min($minDocumento, $num);
+                         $maxDocumento = is_null($maxDocumento) ? $num : max($maxDocumento, $num);
+                     }
+                     
+                     $fecha = Carbon::parse($venta->fecha_venta);
+                     $minFecha = is_null($minFecha) ? $fecha : ($fecha->lt($minFecha) ? $fecha : $minFecha);
+                     $maxFecha = is_null($maxFecha) ? $fecha : ($fecha->gt($maxFecha) ? $fecha : $maxFecha);
+                 }
+            }
+        } elseif ($timbrado->id_tipo_timbrado == TipoTimbrado::NOTA_DEBITO) {
+             // Verificar notas de debito (asumiendo relacion o tabla manual)
+             // Como no tenemos relacion directa en modelo aun, usamos Query Builder
+             $notas = DB::table('notas_debito')->where('id_timbrado', $id)->where('estado', '!=', 'ANULADO')->get();
+             if ($notas->count() > 0) {
+                 $tieneDocumentos = true;
+                 foreach($notas as $nota) {
+                     $parts = explode('-', $nota->nro_nota);
+                     if(count($parts) == 3) {
+                         $num = (int)$parts[2];
+                         $minDocumento = is_null($minDocumento) ? $num : min($minDocumento, $num);
+                         $maxDocumento = is_null($maxDocumento) ? $num : max($maxDocumento, $num);
+                     }
+
+                     $fecha = Carbon::parse($nota->fecha_emision);
+                     $minFecha = is_null($minFecha) ? $fecha : ($fecha->lt($minFecha) ? $fecha : $minFecha);
+                     $maxFecha = is_null($maxFecha) ? $fecha : ($fecha->gt($maxFecha) ? $fecha : $maxFecha);
+                 }
+             }
         }
+
+        // if ($timbrado->ventas()->count() > 0) { ... } -> REMOVIDO
 
         $validated = $request->validate([
             'id_empresa' => 'required|exists:empresas,id_empresa',
-            'numero_timbrado' => 'required|string|max:50|unique:timbrados,numero_timbrado,' . $id . ',id_timbrado',
+            'id_tipo_timbrado' => 'required|exists:tipos_timbrados,id_tipo_timbrado',
+            'numero_timbrado' => [
+                'required',
+                'string',
+                'max:50',
+                function ($attribute, $value, $fail) use ($request, $id) {
+                    $exists = Timbrado::where('numero_timbrado', $value)
+                                    ->where('id_tipo_timbrado', $request->id_tipo_timbrado)
+                                    ->where('id_timbrado', '!=', $id)
+                                    ->exists();
+                    if ($exists) {
+                        $fail('El número de timbrado ya existe para este tipo de documento.');
+                    }
+                },
+            ],
             'fecha_inicio' => 'required|date',
             'fecha_vencimiento' => 'required|date|after:fecha_inicio',
             'rango_inicio' => 'required|integer|min:1',
@@ -190,8 +275,32 @@ class TimbradoController extends Controller
             'rango_fin.required' => 'El rango final es obligatorio',
             'rango_fin.gt' => 'El rango final debe ser mayor al rango inicial',
             'estado.required' => 'El estado es obligatorio',
+            'rango_fin.gt' => 'El rango final debe ser mayor al rango inicial',
+            'estado.required' => 'El estado es obligatorio',
             'estado.in' => 'Estado inválido',
         ]);
+
+        // VALIDACIÓN ADICIONAL DE INTEGRIDAD
+        if ($tieneDocumentos) {
+            // 1. Validar Rango
+            if ($request->rango_inicio > $minDocumento) {
+                 return back()->withInput()->withErrors(['rango_inicio' => "El rango inicial ({$request->rango_inicio}) no puede ser mayor al menor número de documento ya emitido ({$minDocumento})."]);
+            }
+            if ($request->rango_fin < $maxDocumento) {
+                 return back()->withInput()->withErrors(['rango_fin' => "El rango final ({$request->rango_fin}) no puede ser menor al mayor número de documento ya emitido ({$maxDocumento})."]);
+            }
+
+            // 2. Validar Fechas (Fecha Inicio <= Menor Fecha Emision) y (Fecha Vencimiento >= Mayor Fecha Emision)
+            $reqFechaInicio = Carbon::parse($request->fecha_inicio);
+            $reqFechaVenc = Carbon::parse($request->fecha_vencimiento);
+
+            if ($reqFechaInicio->gt($minFecha)) {
+                 return back()->withInput()->withErrors(['fecha_inicio' => "La fecha de inicio no puede ser posterior a la fecha del primer documento emitido (" . $minFecha->format('d/m/Y') . ")."]);
+            }
+            if ($reqFechaVenc->lt($maxFecha)) {
+                 return back()->withInput()->withErrors(['fecha_vencimiento' => "La fecha de vencimiento no puede ser anterior a la fecha del último documento emitido (" . $maxFecha->format('d/m/Y') . ")."]);
+            }
+        }
 
         try {
             $timbrado->update($validated);
@@ -302,8 +411,13 @@ class TimbradoController extends Controller
         }
 
         // Obtener timbrados vigentes de la empresa
-        $timbrados = Timbrado::where('id_empresa', $sucursal->id_empresa)
-                            ->vigentes()
+        $query = Timbrado::where('id_empresa', $sucursal->id_empresa);
+
+        if ($request->filled('id_tipo_timbrado')) {
+            $query->where('id_tipo_timbrado', $request->id_tipo_timbrado);
+        }
+
+        $timbrados = $query->vigentes()
                             ->orderBy('fecha_vencimiento', 'asc')
                             ->get()
                             ->map(function($t) {

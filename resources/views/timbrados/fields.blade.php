@@ -4,6 +4,12 @@
     {!! Form::select('id_empresa', $empresas->pluck('razon_social', 'id_empresa'), null, ['class' => 'form-control', 'required', 'placeholder' => 'Seleccione una empresa']) !!}
 </div>
 
+<!-- Tipo Timbrado Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('id_tipo_timbrado', 'Tipo de Documento:') !!}
+    {!! Form::select('id_tipo_timbrado', $tipos->pluck('descripcion', 'id_tipo_timbrado'), null, ['class' => 'form-control', 'required', 'placeholder' => 'Seleccione el tipo']) !!}
+</div>
+
 <!-- Número de Timbrado Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('numero_timbrado', 'Número de Timbrado:') !!}
@@ -14,13 +20,13 @@
 <!-- Fecha Inicio Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('fecha_inicio', 'Fecha de Inicio:') !!}
-    {!! Form::date('fecha_inicio', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::date('fecha_inicio', isset($timbrado) && $timbrado->fecha_inicio ? $timbrado->fecha_inicio->format('Y-m-d') : null, ['class' => 'form-control', 'required']) !!}
 </div>
 
 <!-- Fecha Vencimiento Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('fecha_vencimiento', 'Fecha de Vencimiento:') !!}
-    {!! Form::date('fecha_vencimiento', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::date('fecha_vencimiento', isset($timbrado) && $timbrado->fecha_vencimiento ? $timbrado->fecha_vencimiento->format('Y-m-d') : null, ['class' => 'form-control', 'required']) !!}
     <small class="form-text text-muted">Debe ser posterior a la fecha de inicio</small>
 </div>
 

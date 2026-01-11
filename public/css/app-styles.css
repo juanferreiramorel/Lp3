@@ -244,6 +244,20 @@
     border-radius: 8px;
     margin: 4px 8px 8px 8px;
     padding: 8px 0;
+    transition: none !important; /* Evita saltos de animación al colapsar/expandir */
+}
+
+/* Fix sidebar breaking when closed with open menu */
+body.sidebar-collapse .modern-sidebar .nav-treeview {
+    display: none !important;
+}
+
+body.sidebar-collapse .modern-sidebar:hover .nav-treeview {
+    display: none; /* Por defecto oculto incluso en hover, JS lo maneja */
+}
+
+body.sidebar-collapse .modern-sidebar:hover .nav-item.menu-open > .nav-treeview {
+    display: block !important; /* Solo mostrar si tiene la clase menu-open */
 }
 
 .modern-sidebar .nav-treeview .nav-link {
@@ -315,23 +329,83 @@
     }
 }
 
-/* Ocultar el buscador cuando el sidebar esta colapsado en escritorio */
+/* Mostrar buscador simplificado cuando el sidebar esta colapsado */
 @media (min-width: 992px) {
     body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper {
-        opacity: 0;
-        visibility: hidden;
-        height: 0;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: 0;
-        overflow: hidden;
-        pointer-events: none;
-        transition: opacity 0.2s ease;
+        padding: 8px !important;
+        margin-bottom: 5px !important;
+        display: flex;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input,
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input input {
+        display: none; /* Ocultar el input */
+    }
+
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input .input-group-append {
+        margin: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input .input-group-text {
+        border: none;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.08); /* Fondo sutil por defecto */
+        border-radius: 8px; /* Redondeado igual que los items */
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .sidebar-search-input .input-group-text:hover {
+        background: #5cd0ff; /* Color de acento al hover */
+        color: #1a1d29; /* Texto oscuro para contraste */
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(92, 208, 255, 0.3);
+    }
+
     body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .sidebar-search-wrapper .search-results-dropdown {
         display: none !important;
+    }
+
+    /* Estilo del item activo colapsado */
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .nav-sidebar .nav-link.active {
+        background: transparent !important; /* Quitar fondo grande */
+        box-shadow: none !important;
+        width: auto;
+        margin: 4px 8px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .nav-sidebar .nav-link.active i {
+        color: #5cd0ff !important;
+        background: rgba(92, 208, 255, 0.15);
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(92, 208, 255, 0.2);
+    }
+
+    body.sidebar-collapse:not(.sidebar-open) .main-sidebar:not(:hover) .nav-sidebar .nav-link.active::before {
+        display: none; /* Quitar indicador lateral */
     }
 }
 

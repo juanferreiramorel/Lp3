@@ -12,6 +12,7 @@ use Luecano\NumeroALetras\NumeroALetras;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Models\Timbrado;
+use App\Models\TipoTimbrado;
 use App\Models\NotaDebito;
 use App\Models\DetalleNotaDebito;
 use App\Models\Venta;
@@ -151,6 +152,7 @@ class NotaDebitoController extends AppBaseController
         $sucursal = DB::selectOne('SELECT id_empresa FROM sucursales WHERE id_sucursal = ?', [auth()->user()->id_sucursal]);
         if ($sucursal && $sucursal->id_empresa) {
             $timbrados_vigentes = Timbrado::where('id_empresa', $sucursal->id_empresa)
+                ->notasDebito()
                 ->vigentes()
                 ->orderBy('fecha_vencimiento', 'asc')
                 ->get();
@@ -464,10 +466,12 @@ class NotaDebitoController extends AppBaseController
                 ->where(function($query) use ($nota) {
                     $query->where(function($q) {
                          $q->where('fecha_vencimiento', '>=', now())
-                           ->whereColumn('rango_fin', '>', 'numero_actual');
+                           ->whereColumn('rango_fin', '>', 'numero_actual')
+                           ->where('estado', 'VIGENTE');
                     })
                     ->orWhere('id_timbrado', $nota->id_timbrado);
                 })
+                ->notasDebito()
                 ->orderBy('fecha_vencimiento', 'asc')
                 ->get();
         }

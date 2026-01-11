@@ -9,6 +9,7 @@
                     <th>Fecha Venta</th>
                     <th>Factura Nro</th>
                     <th>Condición Venta</th>
+                    <th>Sucursal</th>
                     <th>Total</th>
                     <th>Usuario</th>
                     <th>Estado</th>
@@ -24,6 +25,7 @@
                         <td>{{ \Carbon\Carbon::parse($venta->fecha_venta)->format('d/m/Y') }}</td>
                         <td>{{ $venta->factura_nro }}</td>
                         <td>{{ $venta->condicion_venta }}</td>
+                        <td>{{ $venta->sucursal }}</td>
                         <td>{{ number_format($venta->total, 0, ',', '.') }}</td>
                         <td>{{ $venta->usuario }}</td>
                         <td>

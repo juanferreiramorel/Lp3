@@ -107,6 +107,16 @@ class CobroController extends Controller
                 // Actualizar el estado de la venta a PAGADO si el total de cobros es igual al total de la venta
                 DB::update("UPDATE ventas SET estado = 'PAGADO' WHERE id_venta = ?", [$ventas->id_venta]);
 
+                // --- NUEVO: Actualizar la venta para que corresponda a la CAJA ACTUAL ---
+                // Buscamos la apertura de caja ABIERTA del usuario actual
+                $apertura_actual = DB::selectOne("SELECT id_apertura FROM apertura_cierre_cajas WHERE user_id = ? AND estado = 'ABIERTA' ORDER BY id_apertura DESC LIMIT 1", [auth()->user()->id]);
+                
+                if ($apertura_actual) {
+                    // Actualizamos el id_apertura de la venta para que el dinero entre en la caja actual
+                    DB::update("UPDATE ventas SET id_apertura = ? WHERE id_venta = ?", [$apertura_actual->id_apertura, $ventas->id_venta]);
+                }
+                // -----------------------------------------------------------------------
+
                 DB::commit();
             }
         } catch (\Exception $e) {

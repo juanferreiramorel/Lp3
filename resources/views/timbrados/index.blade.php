@@ -42,6 +42,20 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
+                                <label>Tipo de Documento</label>
+                                <select name="id_tipo_timbrado" class="form-control">
+                                    <option value="">Todos</option>
+                                    @foreach($tipos as $tipo)
+                                        <option value="{{ $tipo->id_tipo_timbrado }}"
+                                            {{ request('id_tipo_timbrado') == $tipo->id_tipo_timbrado ? 'selected' : '' }}>
+                                            {{ $tipo->descripcion }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
                                 <label>Estado</label>
                                 <select name="estado" class="form-control">
                                     <option value="">Todos</option>

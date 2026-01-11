@@ -167,11 +167,11 @@ Route::get('apertura_cierre/editCierre/{id}',
 
 ## Ruta para guardar caja cerrada
 Route::post('apertura_cierre/cerrar_caja/{id}',
-[App\Http\Controllers\AperturaCierreCajaController::class, 'cerrar_caja']);
+[App\Http\Controllers\AperturaCierreCajaController::class, 'cerrar_caja'])->name('apertura_cierre.cerrar_caja');
 
 ## Ruta para imprimir cierre de caja
 Route::get('apertura_cierre/imprimir_cierre/{id}', 
-[App\Http\Controllers\AperturaCierreCajaController::class, 'imprimir_cierre']);
+[App\Http\Controllers\AperturaCierreCajaController::class, 'imprimir_cierre'])->name('imprimir_cierre_caja');
 
 
 ## Ruta para exportar cargos a excel Ejemplo

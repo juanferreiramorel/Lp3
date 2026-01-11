@@ -239,22 +239,114 @@ class AperturaCierreCajaController extends Controller
         }
 
         // obtener los totales por forma de pago segun cobros
+        // obtener los totales por forma de pago segun cobros (Ventas + Notas de Débito)
         $totales_forma_pago = DB::select(
-            "SELECT fp.descripcion as forma_pago, coalesce(sum(c.cobro_importe), 0) as total_cobro
+            "SELECT forma_pago, SUM(total_cobro) as total_cobro
+            FROM (
+                SELECT fp.descripcion as forma_pago, c.cobro_importe as total_cobro
                 FROM cobros c
                 JOIN metodo_pagos fp ON fp.id_metodo_pago = c.id_metodo_pago
                 JOIN ventas ve on ve.id_venta = c.id_venta 
-                    WHERE ve.id_apertura = ? and ve.estado = ?
-                GROUP BY fp.id_metodo_pago",
+                WHERE ve.id_apertura = ? AND ve.estado = 'PAGADO'
+
+                UNION ALL
+
+                SELECT fp.descripcion as forma_pago, c.cobro_importe as total_cobro
+                FROM cobros c
+                JOIN metodo_pagos fp ON fp.id_metodo_pago = c.id_metodo_pago
+                JOIN notas_debito nd on nd.id_nota_debito = c.id_nota_debito
+                WHERE nd.user_id = ? 
+                  AND nd.fecha_emision = ? 
+                  AND nd.estado != 'ANULADO'
+            ) as combined
+            GROUP BY forma_pago",
             [
                 $id_apertura,
-                'PAGADO'
+                $cierre_caja->user_id,
+                $cierre_caja->fecha_apertura
             ]
         );
 
         // retornar vista con los datos del cierre de caja en pdf
         $pdf = Pdf::loadView('ventas.cierre_caja_pdf', compact('cierre_caja', 'totales_forma_pago'));
         return $pdf->stream('cierre_caja_' . Carbon::now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function show($id)
+    {
+        $apertura = DB::selectOne(
+            'SELECT ape.*, s.descripcion as sucursal, c.descripcion as caja, u.name as usuario
+            FROM apertura_cierre_cajas ape
+            JOIN cajas c ON c.id_caja = ape.id_caja
+            JOIN users u ON u.id = ape.user_id
+            JOIN sucursales s ON s.id_sucursal = c.id_sucursal
+            WHERE ape.id_apertura = ?',
+            [$id]
+        );
+
+        if (!$apertura) {
+            Alert::error('Error', 'Apertura de caja no encontrada');
+            return redirect()->route('ventas.index');
+        }
+
+        // 1. Totales de Ventas (Agrupado por forma de pago)
+        $ventas_totales = DB::select(
+            "SELECT fp.descripcion as forma_pago, COALESCE(SUM(c.cobro_importe), 0) as total
+            FROM cobros c
+            JOIN metodo_pagos fp ON fp.id_metodo_pago = c.id_metodo_pago
+            JOIN ventas ve ON ve.id_venta = c.id_venta
+            WHERE ve.id_apertura = ? AND ve.estado = 'PAGADO'
+            GROUP BY fp.descripcion, fp.id_metodo_pago
+            ORDER BY fp.id_metodo_pago",
+            [$id]
+        );
+
+        // 2. Totales de Notas de Débito (Agrupado por forma de pago) - Filtrado por fecha/usuario
+        // Nota: Las notas de débito no tienen id_apertura, usamos fecha y usuario.
+        $notas_totales = DB::select(
+            "SELECT fp.descripcion as forma_pago, COALESCE(SUM(c.cobro_importe), 0) as total
+            FROM cobros c
+            JOIN metodo_pagos fp ON fp.id_metodo_pago = c.id_metodo_pago
+            JOIN notas_debito nd ON nd.id_nota_debito = c.id_nota_debito
+            WHERE nd.user_id = ? 
+              AND nd.fecha_emision = ? 
+              AND nd.estado != 'ANULADO'
+            GROUP BY fp.descripcion, fp.id_metodo_pago
+            ORDER BY fp.id_metodo_pago",
+            [$apertura->user_id, $apertura->fecha_apertura]
+        );
+
+        // 3. Consolidar Totales (Ventas + Notas)
+        $totales_consolidados = [];
+        $total_general_recaudado = 0;
+
+        foreach ($ventas_totales as $v) {
+            if (!isset($totales_consolidados[$v->forma_pago])) {
+                $totales_consolidados[$v->forma_pago] = 0;
+            }
+            $totales_consolidados[$v->forma_pago] += $v->total;
+            $total_general_recaudado += $v->total;
+        }
+
+        foreach ($notas_totales as $n) {
+            if (!isset($totales_consolidados[$n->forma_pago])) {
+                $totales_consolidados[$n->forma_pago] = 0;
+            }
+            $totales_consolidados[$n->forma_pago] += $n->total;
+            $total_general_recaudado += $n->total;
+        }
+
+        // Total Esperado: Apertura + Recaudación
+        $total_esperado = $apertura->monto_apertura + $total_general_recaudado;
+
+        return view('apertura_cierre.show', compact(
+            'apertura',
+            'ventas_totales', // Solo ventas para desglose si se quiere
+            'notas_totales',  // Solo notas para desglose
+            'totales_consolidados', // Total real por medio de pago
+            'total_general_recaudado',
+            'total_esperado'
+        ));
     }
 
     public function editCierre($id_apertura)
@@ -270,14 +362,28 @@ class AperturaCierreCajaController extends Controller
             ]);
         }
 
-        // sumamos los totales de las ventas realizadas en la caja abierta segun estado de ventas COMPLETADAS
+        // sumamos los totales de las ventas y notas de débito realizadas en la caja abierta
         $total_ventas = DB::selectOne(
-            "SELECT coalesce(sum(c.cobro_importe), 0)as total_cobro
-            FROM cobros c
+            "SELECT SUM(total_cobro) as total_cobro
+            FROM (
+                SELECT coalesce(sum(c.cobro_importe), 0) as total_cobro
+                FROM cobros c
                 JOIN ventas ve on ve.id_venta = c.id_venta 
-            WHERE ve.id_apertura = ? and ve.estado = 'PAGADO' ",
+                WHERE ve.id_apertura = ? and ve.estado = 'PAGADO'
+
+                UNION ALL
+
+                SELECT coalesce(sum(c.cobro_importe), 0) as total_cobro
+                FROM cobros c
+                JOIN notas_debito nd on nd.id_nota_debito = c.id_nota_debito
+                WHERE nd.user_id = ? 
+                  AND nd.fecha_emision = ? 
+                  AND nd.estado != 'ANULADO'
+            ) as combined",
             [
                 $apertura->id_apertura,
+                $apertura->user_id,
+                $apertura->fecha_apertura
             ]
         );
 

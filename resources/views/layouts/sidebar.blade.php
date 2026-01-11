@@ -140,6 +140,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    // Expandir sidebar al hacer clic en el icono de búsqueda cuando está colapsado
+    const searchIconWrapper = document.querySelector('.sidebar-search-input .input-group-text');
+    if (searchIconWrapper) {
+        searchIconWrapper.addEventListener('click', function() {
+            // Solo enfocar el input, el hover ya expande el sidebar visualmente
+            setTimeout(() => searchInput.focus(), 100);
+        });
+    }
 });
 </script>
 @endpush
