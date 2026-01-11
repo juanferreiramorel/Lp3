@@ -10,6 +10,7 @@ use App\Models\Sucursal;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\DetalleNotaDebito;
+use App\Models\Cobro;
 
 class NotaDebito extends Model
 {
@@ -94,5 +95,13 @@ class NotaDebito extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleNotaDebito::class, 'id_nota_debito', 'id_nota_debito');
+    }
+
+    /**
+     * Relación con Cobros
+     */
+    public function cobros()
+    {
+        return $this->hasMany(Cobro::class, 'id_nota_debito', 'id_nota_debito');
     }
 }

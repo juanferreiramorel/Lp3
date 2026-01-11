@@ -85,47 +85,79 @@
                 </div>
 
                 <!-- Detalles Table -->
-                <h4>Items</h4>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Producto</th>
-                                <th class="text-center">Cantidad</th>
-                                <th class="text-right">Precio Unit.</th>
-                                <th class="text-right">Exenta</th>
-                                <th class="text-right">5%</th>
-                                <th class="text-right">10%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($nota->detalles as $detalle)
-                            <tr>
-                                <td>{{ $detalle->producto->id_producto ?? '' }}</td>
-                                <td>{{ $detalle->producto->descripcion ?? 'Producto no encontrado' }}</td>
-                                <td class="text-center">{{ number_format($detalle->cantidad, 2, ',', '.') }}</td>
-                                <td class="text-right">{{ number_format($detalle->precio, 0, ',', '.') }}</td>
-                                
-                                <td class="text-right">
-                                    @if($detalle->id_tax == 1) {{-- Exento --}} 
-                                        {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
-                                    @else 0 @endif
-                                </td>
-                                <td class="text-right">
-                                    @if($detalle->id_tax == 2) {{-- 5% --}}
-                                        {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
-                                    @else 0 @endif
-                                </td>
-                                <td class="text-right">
-                                    @if($detalle->id_tax == 3 || $detalle->id_tax == null) {{-- 10% defaults --}}
-                                        {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
-                                    @else 0 @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="row mt-4">
+                    <div class="col-md-7">
+                        <h4>Items</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cant.</th>
+                                        <th class="text-right">Precio</th>
+                                        <th class="text-right">Exenta</th>
+                                        <th class="text-right">5%</th>
+                                        <th class="text-right">10%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($nota->detalles as $detalle)
+                                    <tr>
+                                        <td>{{ $detalle->producto->id_producto ?? '' }}</td>
+                                        <td>{{ $detalle->producto->descripcion ?? 'Producto no encontrado' }}</td>
+                                        <td class="text-center">{{ number_format($detalle->cantidad, 2, ',', '.') }}</td>
+                                        <td class="text-right">{{ number_format($detalle->precio, 0, ',', '.') }}</td>
+                                        
+                                        <td class="text-right">
+                                            @if($detalle->id_tax == 1) {{-- Exento --}} 
+                                                {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
+                                            @else 0 @endif
+                                        </td>
+                                        <td class="text-right">
+                                            @if($detalle->id_tax == 2) {{-- 5% --}}
+                                                {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
+                                            @else 0 @endif
+                                        </td>
+                                        <td class="text-right">
+                                            @if($detalle->id_tax == 3 || $detalle->id_tax == null) {{-- 10% defaults --}}
+                                                {{ number_format($detalle->cantidad * $detalle->precio, 0, ',', '.') }}
+                                            @else 0 @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-5">
+                        <h4>Formas de Pago</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="bg-success text-white">
+                                    <tr>
+                                        <th>Metodo de Pago</th>
+                                        <th class="text-right">Monto</th>
+                                        <th>Voucher/Ref</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($pagos as $pago)
+                                    <tr>
+                                        <td>{{ $pago->metodo_pago }}</td>
+                                        <td class="text-right">{{ number_format($pago->cobro_importe, 0, ',', '.') }} Gs.</td>
+                                        <td>{{ $pago->nro_voucher ?? '-' }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No se registraron pagos</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Desglose de Impuestos -->

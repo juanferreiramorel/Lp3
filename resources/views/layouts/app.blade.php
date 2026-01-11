@@ -337,11 +337,12 @@
                 $(document).on('click', '.alert-delete', function(event) {
                     var form = $(this).closest("form");
                     event.preventDefault();
-                    let valor = $(this).data("mensaje") ||
-                    "este registro"; // Valor por defecto si no hay data-mensaje
+                    let valor = $(this).data("mensaje") || "este registro";
+                    let accion = $(this).data("accion") || "borrar";
+                    
                     Swal.fire({
                             title: "Atención",
-                            text: `Desea borrar ${valor}?`, // valor recibido de data-mensaje del boton borrar
+                            text: `¿Desea ${accion} ${valor}?`,
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonText: "Confirmar",

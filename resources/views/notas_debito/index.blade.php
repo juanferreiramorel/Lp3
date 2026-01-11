@@ -20,6 +20,12 @@
     <div class="content px-3">
         @include('adminlte-templates::common.errors')
 
+        @includeIf('notas_debito.filtros', [
+            'clientes' => $clientes,
+            'sucursales' => $sucursales,
+            'estados' => $estados
+        ])
+
         <div class="card tabla-container">
             @include('notas_debito.table')
         </div>

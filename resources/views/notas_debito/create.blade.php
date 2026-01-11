@@ -158,17 +158,9 @@
                 <!-- Totales Hidden -->
                 {!! Form::hidden('total', 0, ['id' => 'total']) !!}
 
-                <div class="row mt-3">
-                     <div class="col-md-8"></div>
-                     <div class="col-md-4">
-                        <table class="table table-sm table-borderless">
-                             <tr>
-                                 <td><strong>Total General:</strong></td>
-                                 <td class="text-right"><strong id="total_display">0 Gs.</strong></td>
-                             </tr>
-                        </table>
+                     <div class="col-md-12 mt-3">
+                        @include('components.tax_totals')
                      </div>
-                </div>
 
             </div>
 
@@ -211,13 +203,66 @@
 
     window.calcularTotal = function() {
         let total = 0;
-        $('.subtotal-input').each(function() {
-            total += parseFloat($(this).val().replace(/\./g, '')) || 0;
+        let totalExenta = 0;
+        
+        let base5 = 0;
+        let iva5 = 0;
+        
+        let base10 = 0;
+        let iva10 = 0;
+
+        $('#selectedProducts tr').each(function() {
+            let row = $(this);
+            let cant = parseFloat(row.find('.cantidad-input').val()) || 0;
+            // Price usually includes Tax in this system logic
+            let precio = parseFloat(row.find('.precio-input').val().replace(/\./g, '')) || 0;
+            let taxPercent = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
+
+            let subtotal = cant * precio;
+            
+            // Calculate Tax Part
+            let precioSinIva = 0;
+            let montoIva = 0;
+
+            if (taxPercent > 0) {
+                 precioSinIva = subtotal / (1 + (taxPercent / 100));
+                 montoIva = subtotal - precioSinIva;
+            } else {
+                 precioSinIva = subtotal;
+            }
+            
+            // Accumulate Global Total
+            total += subtotal;
+
+            if (taxPercent == 0) {
+                totalExenta += subtotal;
+            } else if (taxPercent == 5) {
+                base5 += precioSinIva;
+                iva5 += montoIva;
+            } else if (taxPercent == 10) {
+                base10 += precioSinIva;
+                iva10 += montoIva;
+            }
         });
+
+        const totalIva = iva5 + iva10;
+
         $('#total').val(total);
         $('#lbl_total_general').text(window.formatMoney(total));
         $('#total_display').text(window.formatMoney(total) + ' Gs.');
         
+        // Update Tax Component Labels
+        $('#lbl_total_exenta').text(window.formatMoney(totalExenta));
+        
+        $('#lbl_base_5').text(window.formatMoney(base5));
+        $('#lbl_total_5').text(window.formatMoney(iva5)); // IVA 5% label
+        
+        $('#lbl_base_10').text(window.formatMoney(base10));
+        $('#lbl_total_10').text(window.formatMoney(iva10)); // IVA 10% label
+        
+        $('#lbl_total_iva').text(window.formatMoney(totalIva));
+        $('#lbl_total_general_footer').text(window.formatMoney(total));
+
         window.actualizarTotalesPago();
     };
 
@@ -418,25 +463,39 @@
                 return;
             }
 
+            // Tax Calculation for new row
+            let subtotal = price * 1;
+            let montoIvaRow = 0;
+            if (iva > 0) {
+                 // Formula: Tax Amount = Total - (Total / (1 + rate))
+                 montoIvaRow = subtotal - (subtotal / (1 + (iva / 100)));
+            }
+
             // Add row
             const newRow = `
             <tr>
                 <td class="text-center">
-                    <input class="text-center form-control" type="text" name="codigo[]" readonly style="text-align: center" value="${id}">
+                    <input class="text-center form-control form-control-sm" type="text" name="codigo[]" readonly style="text-align: center" value="${id}">
                 </td>
                 <td>
-                    <input type="text" class="form-control" name="producto[]" readonly value="${desc} - ${codbarra}">
+                    <input type="text" class="form-control form-control-sm" name="producto[]" readonly value="${desc} - ${codbarra}">
                     <input type="hidden" name="id_producto[]" value="${id}">
                     <input type="hidden" name="tax_porcentaje[]" value="${iva}">
                 </td>
                 <td class="text-center">
-                    <input class="text-center form-control cantidad-input" type="number" min="1" name="cantidad[]" style="text-align: center" value="1">
+                    <input class="text-center form-control form-control-sm cantidad-input" type="number" min="1" name="cantidad[]" style="text-align: center" value="1">
                 </td>
                 <td class="text-center">
-                    <input class="text-center form-control precio-input" type="text" name="precio[]" style="text-align: center" value="${window.formatMoney(price)}">
+                    <input class="text-center form-control form-control-sm precio-input" type="text" name="precio[]" style="text-align: center" value="${window.formatMoney(price)}">
+                </td>
+                 <td class="text-center">
+                     <input class="text-center form-control form-control-sm tax-percent-input" type="text" readonly value="${iva}%" style="text-align: center; background-color: #eee;">
                 </td>
                 <td class="text-center">
-                    <input class="text-center form-control subtotal-input" type="text" name="subtotal[]" readonly value="${window.formatMoney(price)}" style="text-align: center">
+                     <input class="text-center form-control form-control-sm tax-amount-input" type="text" readonly value="${window.formatMoney(montoIvaRow)}" style="text-align: center; background-color: #eee;">
+                </td>
+                <td class="text-center">
+                    <input class="text-center form-control form-control-sm subtotal-input" type="text" name="subtotal[]" readonly value="${window.formatMoney(price)}" style="text-align: center">
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button>
@@ -469,7 +528,18 @@
              let row = $(this).closest('tr');
              let cant = parseFloat(row.find('.cantidad-input').val()) || 0;
              let precio = parseFloat(row.find('.precio-input').val().replace(/\./g, '')) || 0;
-             row.find('.subtotal-input').val(window.formatMoney(cant * precio));
+             let subtotal = cant * precio;
+
+             // Recalculate Row Tax Amount
+             let taxPercent = parseFloat(row.find('input[name="tax_porcentaje[]"]').val()) || 0;
+             let montoIvaRow = 0;
+             if (taxPercent > 0) {
+                  montoIvaRow = subtotal - (subtotal / (1 + (taxPercent / 100)));
+             }
+
+             row.find('.subtotal-input').val(window.formatMoney(subtotal));
+             row.find('.tax-amount-input').val(window.formatMoney(montoIvaRow));
+
              window.calcularTotal();
         });
 

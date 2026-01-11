@@ -24,12 +24,14 @@
                 <table class="table item-table detalle-venta">
                     <thead>
                         <tr>
-                            <th style="width:10%;">#</th>
-                            <th style="width:40%;min-width:200px;">Producto</th>
-                            <th class="text-center" style="width:12%;">Cantidad</th>
-                            <th class="text-center" style="width:18%;">Precio Unit</th>
-                            <th class="text-center" style="width:18%;">Subtotal</th>
-                            <th style="width:2%;"></th>
+                            <th style="width:3%;">#</th>
+                            <th style="width:22%;min-width:150px;">Producto</th>
+                            <th class="text-center" style="width:7%;">Cantidad</th>
+                            <th class="text-center" style="width:15%;">Precio Unit</th>
+                            <th class="text-center" style="width:8%;">IVA %</th>
+                            <th class="text-center" style="width:15%;">Monto IVA</th>
+                            <th class="text-center" style="width:25%;">Subtotal</th>
+                            <th style="width:5%;"></th>
                         </tr>
                     </thead>
                     <tbody id="selectedProducts">

@@ -6,6 +6,7 @@
                     <th>#</th>
                     <th>Ci/Ruc</th>
                     <th>Cliente</th>
+                    <th>Sucursal</th>
                     <th>Fecha Emisión</th>
                     <th>Nro Nota</th>
                     <th>Total</th>
@@ -20,6 +21,7 @@
                         <td>{{ $nota->id_nota_debito }}</td>
                         <td>{{ $nota->clie_ci }}</td>
                         <td>{{ $nota->cliente }}</td>
+                        <td>{{ $nota->sucursal }}</td>
                         <td>{{ \Carbon\Carbon::parse($nota->fecha_emision)->format('d/m/Y') }}</td>
                         <td>{{ $nota->nro_nota }}</td>
                         <td>{{ number_format($nota->total, 0, ',', '.') }}</td>
@@ -38,7 +40,17 @@
                                 <a href="{{ route('notas_debito.pdf', [$nota->id_nota_debito]) }}" class='btn btn-success btn-xs' target="_blank" title="Imprimir">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('¿Está seguro de eliminar este registro?')"]) !!}
+                                @if ($nota->estado != 'ANULADO')
+                                    <a href="{{ route('notas_debito.edit', [$nota->id_nota_debito]) }}" class='btn btn-default btn-xs' title="Editar">
+                                        <i class="far fa-edit"></i>
+                                    </a>
+                                @endif
+                                {!! Form::button('<i class="far fa-trash-alt"></i>', [
+                                    'type' => 'submit',
+                                    'class' => 'btn btn-danger btn-xs alert-delete',
+                                    'data-mensaje' => 'la nota de débito nro:'. $nota->id_nota_debito,
+                                    'data-accion' => 'anular'
+                                ]) !!}
                             </div>
                             {!! Form::close() !!}
                         </td>

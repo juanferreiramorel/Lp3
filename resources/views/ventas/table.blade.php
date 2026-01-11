@@ -63,7 +63,8 @@
                                     {!! Form::button('<i class="far fa-trash-alt"></i>', [
                                         'type' => 'submit',
                                         'class' => 'btn btn-danger btn-xs alert-delete',
-                                        'data-mensaje' => 'la venta nro:'. $venta->id_venta
+                                        'data-mensaje' => 'la venta nro:'. $venta->id_venta,
+                                        'data-accion' => 'anular'
                                     ]) !!}
                                 @endif
                             </div>
