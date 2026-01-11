@@ -339,13 +339,17 @@ class AperturaCierreCajaController extends Controller
         // Total Esperado: Apertura + Recaudación
         $total_esperado = $apertura->monto_apertura + $total_general_recaudado;
 
+        // Capturar return_url si existe
+        $return_url = request()->get('return_url');
+
         return view('apertura_cierre.show', compact(
             'apertura',
             'ventas_totales', // Solo ventas para desglose si se quiere
             'notas_totales',  // Solo notas para desglose
             'totales_consolidados', // Total real por medio de pago
             'total_general_recaudado',
-            'total_esperado'
+            'total_esperado',
+            'return_url'
         ));
     }
 

@@ -156,10 +156,18 @@ class VentaController extends AppBaseController
             ]
         );
 
+        // Validar que el usuario tenga una caja abierta en la fecha actual
+        // Lo movemos antes del response ajax para poder enviarlo tambien a la vista partial
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'",
+            [auth()->user()->id]
+        );
+
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         if ($request->ajax()) {
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('ventas.table')->with('ventas', $ventas);
+            return view('ventas.table')->with('ventas', $ventas)->with('caja_abierta', $caja_abierta);
         }
 
         // Consulta para recuperar cajas
@@ -167,12 +175,7 @@ class VentaController extends AppBaseController
             ->where('id_sucursal', auth()->user()->id_sucursal) // filtrar por sucursal del usuario
             ->pluck('descripcion', 'id_caja');
 
-        // Validar que el usuario no tenga una caja abierta en la fecha actual
-        $caja_abierta = DB::selectOne(
-            "SELECT * FROM apertura_cierre_cajas
-            WHERE user_id = ? AND estado = 'ABIERTA'",
-            [auth()->user()->id]
-        );
+
 
         // OBTENER DATOS PARA COMBOS DE FILTROS
         $clientes = DB::table('clientes')
@@ -240,6 +243,12 @@ class VentaController extends AppBaseController
             c.ultima_factura_impresa",
             [auth()->user()->id]
         );
+
+        // Validar que exista una caja abierta
+        if (empty($apertura_caja)) {
+            Alert::toast('Debe realizar una apertura de caja para realizar una venta', 'error');
+            return redirect()->route('ventas.index');
+        }
 
         // validar que no exista una caja abierta para el usuario en la fecha pasada
         if (

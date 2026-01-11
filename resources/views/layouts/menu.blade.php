@@ -13,7 +13,7 @@
         || Request::is('roles*')
         || Request::is('ayuda*');
 
-    $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*');
+    $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*') || Request::is('notas_debito*');
     $isComprasOpen = Request::is('compras*') || Request::is('ordencompra*') || Request::is('proveedores*') || Request::is('cuentasapagar*');
     $isInventarioOpen = Request::is('productos*') || Request::is('stock*') || Request::is('marcas*');
 @endphp

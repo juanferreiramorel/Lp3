@@ -129,11 +129,35 @@ class NotaDebitoController extends AppBaseController
             'ANULADO' => 'ANULADO'
         ];
 
-        return view('notas_debito.index', compact('notas', 'clientes', 'sucursales', 'estados'));
+        // Cajas para apertura (si la caja está cerrada)
+        $cajas = DB::table('cajas')
+            ->where('id_sucursal', auth()->user()->id_sucursal)
+            ->pluck('descripcion', 'id_caja');
+
+        // Verificar si caja está abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'",
+            [auth()->user()->id]
+        );
+
+        return view('notas_debito.index', compact('notas', 'clientes', 'sucursales', 'estados', 'cajas', 'caja_abierta'));
     }
 
     public function create()
     {
+        // Validar que el usuario tenga una caja abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'",
+            [auth()->user()->id]
+        );
+
+        if (empty($caja_abierta)) {
+            Alert::toast('Debe abrir una caja para crear notas de débito', 'error');
+            return redirect()->route('notas_debito.index');
+        }
+
         // Clientes activos
         $clientes = DB::table('clientes')
             ->where('activo', true)
@@ -185,6 +209,17 @@ class NotaDebitoController extends AppBaseController
 
         DB::beginTransaction();
         try {
+            // Recuperar caja abierta nuevamente para asegurar la transaccion
+            $caja_abierta = DB::selectOne(
+                "SELECT id_apertura FROM apertura_cierre_cajas
+                WHERE user_id = ? AND estado = 'ABIERTA'",
+                [auth()->user()->id]
+            );
+
+            if (empty($caja_abierta)) {
+                throw new \Exception("Su caja ha sido cerrada. No se puede guardar la nota.");
+            }
+
             $timbrado = Timbrado::find($input['id_timbrado']);
             
             // Generar número
@@ -207,6 +242,7 @@ class NotaDebitoController extends AppBaseController
                 'estado' => 'COMPLETADO',
                 'user_id' => auth()->id(),
                 'motivo' => $input['motivo'] ?? null,
+                'id_apertura' => $caja_abierta->id_apertura,
                 'created_at' => now(),
                 'updated_at' => now(),
             ], 'id_nota_debito');
@@ -290,13 +326,6 @@ class NotaDebitoController extends AppBaseController
 
             $timbrado->incrementarUso();
 
-            DB::update(
-                'UPDATE notas_debito SET total = ?, total_exento = ?, total_gravado_5 = ?, total_gravado_10 = ?, total_iva_5 = ?, total_iva_10 = ?, total_iva = ? WHERE id_nota_debito = ?',
-                [$subtotal, $total_exento, $total_gravado_5, $total_gravado_10, $total_iva_5, $total_iva_10, $total_iva, $id_nota]
-            );
-
-            $timbrado->incrementarUso();
-
             // PROCESAR PAGOS (SPLIT PAYMENTS)
             $total_pagado = 0;
             if ($request->has('pagos') && is_array($request->pagos)) {
@@ -312,7 +341,8 @@ class NotaDebitoController extends AppBaseController
                             'cobro_importe' => $monto_pago,
                             'cobro_estado' => 'COBRADO',
                             'nro_voucher' => $pago['nro_voucher'] ?? null,
-                            'id_cta' => null 
+                            'id_cta' => null,
+                            'id_apertura' => $caja_abierta->id_apertura
                         ]);
                         $total_pagado += $monto_pago;
                     }
@@ -439,7 +469,30 @@ class NotaDebitoController extends AppBaseController
 
     public function edit($id)
     {
+        // Validar que el usuario tenga una caja abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'",
+            [auth()->user()->id]
+        );
+
+        if (empty($caja_abierta)) {
+            Alert::toast('Debe abrir una caja para editar notas de débito', 'error');
+            return redirect()->route('notas_debito.index');
+        }
+
         $nota = NotaDebito::with(['detalles.producto', 'venta.cliente', 'cobros'])->find($id);
+
+        if (empty($nota)) {
+            Alert::error('Error', 'Nota de Débito no encontrada.');
+            return redirect()->route('notas_debito.index');
+        }
+
+        // VALIDACIÓN ESTRICTA: Solo permitir editar si la nota pertenece a la apertura actual
+        if ($nota->id_apertura != $caja_abierta->id_apertura) {
+            Alert::error('Acceso Denegado', 'Solo puede editar Notas de Débito creadas en su sesión de caja actual.');
+            return redirect()->route('notas_debito.index');
+        }
 
         if (empty($nota)) {
             Alert::error('Error', 'Nota de Débito no encontrada.');

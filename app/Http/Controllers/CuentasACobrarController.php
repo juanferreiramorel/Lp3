@@ -156,12 +156,26 @@ class CuentasACobrarController extends AppBaseController
             'PAGADO' => 'PAGADO'
         ];
 
+        // Validar que el usuario tenga una caja abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'",
+            [auth()->user()->id]
+        );
+
+        // Cajas para apertura (si la caja está cerrada)
+        $cajas = DB::table('cajas')
+            ->where('id_sucursal', auth()->user()->id_sucursal)
+            ->pluck('descripcion', 'id_caja');
+
         return view('cuentasacobrar.index')
             ->with('cuentasacobrar', $cuentasacobrar)
             ->with('metodos_pago', $metodos_pago)
             ->with('clientes', $clientes)
             ->with('sucursales', $sucursales)
-            ->with('estados_cuota', $estados_cuota);
+            ->with('caja_abierta', $caja_abierta)
+            ->with('estados_cuota', $estados_cuota)
+            ->with('cajas', $cajas);
     }
 
     public function detalle($id_venta)
@@ -200,6 +214,21 @@ class CuentasACobrarController extends AppBaseController
             'fecha_cobro' => 'required|date',
             'nro_voucher' => 'nullable|string'
         ]);
+
+        // Validar que el usuario tenga una caja abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'
+            AND fecha_apertura = CURRENT_DATE",
+            [auth()->user()->id]
+        );
+
+        if (empty($caja_abierta)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes una caja abierta para realizar cobros.'
+            ], 403);
+        }
 
         DB::beginTransaction();
         try {
@@ -442,6 +471,19 @@ class CuentasACobrarController extends AppBaseController
 
     public function formCobrar($id_cta)
     {
+        // Validar que el usuario tenga una caja abierta
+        $caja_abierta = DB::selectOne(
+            "SELECT * FROM apertura_cierre_cajas
+            WHERE user_id = ? AND estado = 'ABIERTA'
+            AND fecha_apertura = CURRENT_DATE",
+            [auth()->user()->id]
+        );
+
+        if (empty($caja_abierta)) {
+            Alert::error('Error', 'No tienes una caja abierta para realizar cobros.');
+            return redirect()->back();
+        }
+
         // Obtener la cuenta con datos relacionados
         $cuenta = DB::table('cuentas_a_cobrar')
             ->where('id_cta', $id_cta)

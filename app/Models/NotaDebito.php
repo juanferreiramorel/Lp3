@@ -36,6 +36,9 @@ class NotaDebito extends Model
         'estado',
         'user_id',
         'motivo',
+        'created_at',
+        'updated_at',
+        'id_apertura'
     ];
 
     protected $casts = [

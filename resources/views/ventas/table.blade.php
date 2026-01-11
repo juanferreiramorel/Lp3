@@ -37,8 +37,9 @@
                             {!! Form::open(['route' => ['ventas.destroy', $venta->id_venta], 'method' => 'delete']) !!}
                             <div class='btn-group'>
                                 <!-- boton cobros -->
-                                @if($venta->estado <> 'ANULADO' && $venta->estado <> 'PAGADO' && $venta->condicion_venta == 'CONTADO')<!-- validacion para mostrar el boton de cobros si la venta no es anulada ni pagada -->
-                                    <a href="{{ route('cobros.index', ["id_venta" => $venta->id_venta]) }}" class='btn btn-warning btn-xs'>
+                                <!-- boton cobros -->
+                                @if($venta->estado <> 'ANULADO' && $venta->estado <> 'PAGADO' && $venta->condicion_venta == 'CONTADO' && !empty($caja_abierta))<!-- validacion para mostrar el boton de cobros si la venta no es anulada ni pagada y caja abierta -->
+                                    <a href="{{ route('cobros.index', ["id_venta" => $venta->id_venta]) }}" class='btn btn-warning btn-xs' title="Cobrar">
                                         <i class="far fa-money-bill-alt"></i>
                                     </a>
                                 @endif

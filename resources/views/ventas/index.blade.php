@@ -51,7 +51,7 @@
                     @if (
                         !empty($caja_abierta) &&
                             \Carbon\Carbon::parse($caja_abierta->fecha_apertura)->format('Y-m-d') <= \Carbon\Carbon::now()->format('Y-m-d'))
-                        <a class="btn btn-warning float-right mr-2" href="{{ route('apertura-cierre-caja.show', [$caja_abierta->id_apertura]) }}">
+                        <a class="btn btn-warning float-right mr-2" href="{{ route('apertura-cierre-caja.show', [$caja_abierta->id_apertura]) }}?return_url=ventas.index">
                             <i class="fas fa-cash-register"></i>
                             Ver Caja
                         </a>
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Modal Apertura Caja y compartir la variable cajas-->
-    @includeIf('ventas.modal_apertura', ['cajas' => $cajas])
+    <x-modal_apertura_caja :cajas="$cajas" />
 
     <!-- llamar a modal cerrar -->
     @include('ventas.modal_cerrar', ['cajas' => $cajas])

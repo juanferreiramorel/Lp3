@@ -8,8 +8,16 @@
                     <h1><i class="fas fa-cash-register"></i> Gestión de Caja</h1>
                 </div>
                 <div class="col-sm-6">
-                    <a class="btn btn-default float-right" href="{{ route('ventas.index') }}">
-                        <i class="fas fa-arrow-left"></i> Volver a Ventas
+                    @php
+                        $backRoute = !empty($return_url) ? route($return_url) : route('ventas.index');
+                        $backLabel = match ($return_url ?? '') {
+                            'notas_debito.index' => 'Volver a Notas de Débito',
+                            'cuentasacobrar.index' => 'Volver a Cuentas a Cobrar',
+                            default => 'Volver a Ventas',
+                        };
+                    @endphp
+                    <a class="btn btn-default float-right" href="{{ $backRoute }}">
+                        <i class="fas fa-arrow-left"></i> {{ $backLabel }}
                     </a>
                 </div>
             </div>

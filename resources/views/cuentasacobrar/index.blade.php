@@ -7,6 +7,23 @@
                 <div class="col-sm-6">
                     <h1>Cuentas a Cobrar</h1>
                 </div>
+                <!-- Botones de Caja -->
+                <div class="col-sm-6">
+                    <!-- Boton Abrir Caja -->
+                    @if (empty($caja_abierta))
+                        <a class="btn btn-default float-right" data-toggle="modal" data-target="#apertura" href="#">
+                            <i class="fas fa-cart-plus"></i> Abrir Caja
+                        </a>
+                    @endif
+
+                    <!-- Boton Ver Caja -->
+                    @if (!empty($caja_abierta) && \Carbon\Carbon::parse($caja_abierta->fecha_apertura)->format('Y-m-d') <= \Carbon\Carbon::now()->format('Y-m-d'))
+                        <a class="btn btn-warning float-right"
+                            href="{{ route('apertura-cierre-caja.show', [$caja_abierta->id_apertura]) }}?return_url=cuentasacobrar.index">
+                            <i class="fas fa-cash-register"></i> Ver Caja
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
     </section>
@@ -26,6 +43,8 @@
     </div>
 
     @include('cuentasacobrar.modals')
+    <!-- Modal Apertura Caja -->
+    <x-modal_apertura_caja :cajas="$cajas" />
 @endsection
 
 @push('scripts')
@@ -33,6 +52,7 @@
         // Permisos del usuario
         var canCreate = {{ auth()->user()->can('cuentasacobrar create') ? 'true' : 'false' }};
         var canDelete = {{ auth()->user()->can('cuentasacobrar destroy') ? 'true' : 'false' }};
+        var cajaAbierta = @json(!empty($caja_abierta));
 
         // Función para actualizar el detalle de cuentas
         function actualizarDetalleCuentas(idVenta) {
@@ -58,39 +78,51 @@
                         if (estadoMostrar === 'PENDIENTE') {
                             estadoBadge = '<span class="badge badge-warning">PENDIENTE</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-success btn-cobrar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                if (cajaAbierta) {
+                                    botonPagar = '<button class="btn btn-sm btn-success btn-cobrar-cuenta" ' +
+                                        'data-id-cta="' + item.nro_cuenta + '" ' +
+                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
+                                        'data-importe="' + item.importe + '" ' +
+                                        'data-saldo="' + item.saldo + '" ' +
+                                        'data-vencimiento="' + fechaFormateada + '">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                } else {
+                                    botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                }
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
                         } else if (estadoMostrar === 'VENCIDO') {
                             estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-warning btn-cobrar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                if (cajaAbierta) {
+                                    botonPagar = '<button class="btn btn-sm btn-warning btn-cobrar-cuenta" ' +
+                                        'data-id-cta="' + item.nro_cuenta + '" ' +
+                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
+                                        'data-importe="' + item.importe + '" ' +
+                                        'data-saldo="' + item.saldo + '" ' +
+                                        'data-vencimiento="' + fechaFormateada + '">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar</button>';
+                                } else {
+                                    botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                }
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
                         } else if (estadoMostrar === 'PARCIAL') {
                             estadoBadge = '<span class="badge badge-info">PARCIAL</span>';
                             if (canCreate) {
-                                botonPagar = '<button class="btn btn-sm btn-primary btn-cobrar-cuenta" ' +
-                                    'data-id-cta="' + item.nro_cuenta + '" ' +
-                                    'data-nro-cuota="' + item.nro_cuota + '" ' +
-                                    'data-importe="' + item.importe + '" ' +
-                                    'data-saldo="' + item.saldo + '" ' +
-                                    'data-vencimiento="' + fechaFormateada + '">' +
-                                    '<i class="fas fa-dollar-sign"></i> Pagar Saldo</button>';
+                                if (cajaAbierta) {
+                                    botonPagar = '<button class="btn btn-sm btn-primary btn-cobrar-cuenta" ' +
+                                        'data-id-cta="' + item.nro_cuenta + '" ' +
+                                        'data-nro-cuota="' + item.nro_cuota + '" ' +
+                                        'data-importe="' + item.importe + '" ' +
+                                        'data-saldo="' + item.saldo + '" ' +
+                                        'data-vencimiento="' + fechaFormateada + '">' +
+                                        '<i class="fas fa-dollar-sign"></i> Pagar Saldo</button>';
+                                } else {
+                                    botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                }
                             } else {
                                 botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                             }
@@ -201,24 +233,36 @@
                             if (estadoMostrar === 'PENDIENTE') {
                                 estadoBadge = '<span class="badge badge-warning">PENDIENTE</span>';
                                 if (canCreate) {
-                                    botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-success btn-pagar-redirect">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar</a>';
+                                    if (cajaAbierta) {
+                                        botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-success btn-pagar-redirect">' +
+                                            '<i class="fas fa-dollar-sign"></i> Pagar</a>';
+                                    } else {
+                                        botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                    }
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
                             } else if (estadoMostrar === 'VENCIDO') {
                                 estadoBadge = '<span class="badge badge-danger">VENCIDO</span>';
                                 if (canCreate) {
-                                    botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-warning btn-pagar-redirect">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar</a>';
+                                    if (cajaAbierta) {
+                                        botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-warning btn-pagar-redirect">' +
+                                            '<i class="fas fa-dollar-sign"></i> Pagar</a>';
+                                    } else {
+                                        botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                    }
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
                             } else if (estadoMostrar === 'PARCIAL') {
                                 estadoBadge = '<span class="badge badge-info">PARCIAL</span>';
                                 if (canCreate) {
-                                    botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-primary btn-pagar-redirect">' +
-                                        '<i class="fas fa-dollar-sign"></i> Pagar Saldo</a>';
+                                    if (cajaAbierta) {
+                                        botonPagar = '<a href="{{ url("cuentasacobrar") }}/' + item.nro_cuenta + '/pagar" class="btn btn-sm btn-primary btn-pagar-redirect">' +
+                                            '<i class="fas fa-dollar-sign"></i> Pagar Saldo</a>';
+                                    } else {
+                                        botonPagar = '<span class="text-danger" title="Debe abrir una caja"><i class="fas fa-lock"></i> Caja Cerrada</span>';
+                                    }
                                 } else {
                                     botonPagar = '<span class="text-muted"><i class="fas fa-lock"></i> Sin permiso</span>';
                                 }
