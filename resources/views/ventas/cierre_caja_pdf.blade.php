@@ -33,13 +33,14 @@
         .font-bold { font-weight: bold; }
         .total-row td { background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #ddd; font-size: 13px; }
 
-        .summary-box { background-color: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 30px; }
+        .summary-box { background-color: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 30px; page-break-inside: avoid; }
+        .summary-section { page-break-inside: avoid; page-break-before: auto; }
         .summary-table { width: 100%; }
         .summary-table td { padding: 5px; }
         .summary-value { text-align: right; font-weight: bold; font-size: 13px; }
 
-        .signatures { margin-top: 80px; width: 100%; }
-        .signature-line { border-top: 1px solid #333; width: 40%; display: inline-block; margin-right: 5%; text-align: center; padding-top: 5px; }
+        .signatures { margin-top: 80px; width: 100%; page-break-inside: avoid; text-align: center; }
+        .signature-line { border-top: 1px solid #333; width: 40%; display: inline-block; margin: 0 2.5%; text-align: center; padding-top: 5px; }
     </style>
 </head>
 <body>
@@ -84,7 +85,7 @@
         </table>
     </div>
 
-    <!-- Detalle de Cobros -->
+    <!-- Detalle de Cobros por Forma de Pago -->
     <div class="section-title">Detalle de Cobros por Forma de Pago</div>
     <table class="data-table">
         <thead>
@@ -109,40 +110,111 @@
         </tbody>
     </table>
 
+    <!-- Listado de Facturas -->
+    @if(isset($facturas) && count($facturas) > 0)
+    <div class="section-title">Detalle de Facturas Emitidas ({{ count($facturas) }})</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nro. Factura</th>
+                <th>CI/RUC</th>
+                <th>Cliente</th>
+                <th class="text-center">Fecha</th>
+                <th class="text-right">Total (GS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $total_facturas = 0; @endphp
+            @foreach ($facturas as $factura)
+                @php $total_facturas += $factura->total; @endphp
+                <tr>
+                    <td>{{ $factura->factura_nro }}</td>
+                    <td>{{ $factura->clie_ci }}</td>
+                    <td>{{ $factura->cliente }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($factura->fecha_venta)->format('d/m/Y') }}</td>
+                    <td class="text-right">{{ number_format($factura->total, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr class="total-row">
+                <td colspan="4">TOTAL FACTURAS</td>
+                <td class="text-right">{{ number_format($total_facturas, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @else
+    <div class="section-title">Detalle de Facturas Emitidas</div>
+    <p style="color: #7f8c8d; font-style: italic;">No se emitieron facturas en este arqueo.</p>
+    @endif
+
+    <!-- Listado de Notas de Débito -->
+    @if(isset($notas_debito) && count($notas_debito) > 0)
+    <div class="section-title">Detalle de Notas de Débito Emitidas ({{ count($notas_debito) }})</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nro. Nota</th>
+                <th>CI/RUC</th>
+                <th>Cliente</th>
+                <th class="text-center">Fecha</th>
+                <th class="text-right">Total (GS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $total_notas = 0; @endphp
+            @foreach ($notas_debito as $nota)
+                @php $total_notas += $nota->total; @endphp
+                <tr>
+                    <td>{{ $nota->nro_nota }}</td>
+                    <td>{{ $nota->clie_ci }}</td>
+                    <td>{{ $nota->cliente }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($nota->fecha_emision)->format('d/m/Y') }}</td>
+                    <td class="text-right">{{ number_format($nota->total, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr class="total-row">
+                <td colspan="4">TOTAL NOTAS DE DÉBITO</td>
+                <td class="text-right">{{ number_format($total_notas, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @endif
+
     <!-- Resumen General -->
-    <div class="section-title">Resumen de Caja</div>
-    <div class="summary-box">
-        <table class="summary-table">
-            <tr>
-                <td>Monto Apertura (Fondo Fijo):</td>
-                <td class="summary-value">{{ number_format($cierre_caja->monto_apertura, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>(+) Total Ventas (Sistema):</td>
-                <td class="summary-value">{{ number_format($total_cobrado, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td style="border-top: 1px solid #ccc; padding-top: 5px;"><strong>(=) Total Esperado en Caja:</strong></td>
-                <td class="summary-value" style="border-top: 1px solid #ccc; padding-top: 5px;">
-                    {{ number_format($cierre_caja->monto_apertura + $total_cobrado, 0, ',', '.') }}
-                </td>
-            </tr>
-            @if($cierre_caja->estado == 'CERRADA')
-            <tr>
-                <td style="padding-top: 10px;"><strong>Monto Cierre (Declarado):</strong></td>
-                <td class="summary-value" style="padding-top: 10px; color: #007bff;">
-                    {{ number_format($cierre_caja->monto_cierre, 0, ',', '.') }}
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Diferencia:</strong></td>
-                @php $diferencia = $cierre_caja->monto_cierre - ($cierre_caja->monto_apertura + $total_cobrado); @endphp
-                <td class="summary-value" style="color: {{ $diferencia < 0 ? 'red' : ($diferencia > 0 ? 'green' : 'black') }};">
-                    {{ number_format($diferencia, 0, ',', '.') }}
-                </td>
-            </tr>
-            @endif
-        </table>
+    <div class="summary-section">
+        <div class="section-title">Resumen de Caja</div>
+        <div class="summary-box">
+            <table class="summary-table">
+                <tr>
+                    <td>Monto Apertura (Fondo Fijo):</td>
+                    <td class="summary-value">{{ number_format($cierre_caja->monto_apertura, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td>(+) Total Ventas (Sistema):</td>
+                    <td class="summary-value">{{ number_format($total_cobrado, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td style="border-top: 1px solid #ccc; padding-top: 5px;"><strong>(=) Total Esperado en Caja:</strong></td>
+                    <td class="summary-value" style="border-top: 1px solid #ccc; padding-top: 5px;">
+                        {{ number_format($cierre_caja->monto_apertura + $total_cobrado, 0, ',', '.') }}
+                    </td>
+                </tr>
+                @if($cierre_caja->estado == 'CERRADA')
+                <tr>
+                    <td style="padding-top: 10px;"><strong>Monto Cierre (Declarado):</strong></td>
+                    <td class="summary-value" style="padding-top: 10px; color: #007bff;">
+                        {{ number_format($cierre_caja->monto_cierre, 0, ',', '.') }}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Diferencia:</strong></td>
+                    @php $diferencia = $cierre_caja->monto_cierre - ($cierre_caja->monto_apertura + $total_cobrado); @endphp
+                    <td class="summary-value" style="color: {{ $diferencia < 0 ? 'red' : ($diferencia > 0 ? 'green' : 'black') }};">
+                        {{ number_format($diferencia, 0, ',', '.') }}
+                    </td>
+                </tr>
+                @endif
+            </table>
+        </div>
     </div>
 
     <!-- Firmas -->

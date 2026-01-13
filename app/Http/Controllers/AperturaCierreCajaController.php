@@ -255,20 +255,40 @@ class AperturaCierreCajaController extends Controller
                 FROM cobros c
                 JOIN metodo_pagos fp ON fp.id_metodo_pago = c.id_metodo_pago
                 JOIN notas_debito nd on nd.id_nota_debito = c.id_nota_debito
-                WHERE nd.user_id = ? 
-                  AND nd.fecha_emision = ? 
+                WHERE nd.id_apertura = ? 
                   AND nd.estado != 'ANULADO'
             ) as combined
             GROUP BY forma_pago",
             [
                 $id_apertura,
-                $cierre_caja->user_id,
-                $cierre_caja->fecha_apertura
+                $id_apertura
             ]
         );
 
+        // Obtener listado detallado de FACTURAS emitidas en este arqueo
+        $facturas = DB::select(
+            "SELECT v.id_venta, v.factura_nro, v.fecha_venta, v.total, v.estado,
+                    CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente, c.clie_ci
+            FROM ventas v
+            JOIN clientes c ON c.id_cliente = v.id_cliente
+            WHERE v.id_apertura = ? AND v.estado = 'PAGADO'
+            ORDER BY v.id_venta",
+            [$id_apertura]
+        );
+
+        // Obtener listado detallado de NOTAS DE DÉBITO emitidas en este arqueo
+        $notas_debito = DB::select(
+            "SELECT nd.id_nota_debito, nd.nro_nota, nd.fecha_emision, nd.total, nd.estado,
+                    CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente, c.clie_ci
+            FROM notas_debito nd
+            JOIN clientes c ON c.id_cliente = nd.id_cliente
+            WHERE nd.id_apertura = ? AND nd.estado != 'ANULADO'
+            ORDER BY nd.id_nota_debito",
+            [$id_apertura]
+        );
+
         // retornar vista con los datos del cierre de caja en pdf
-        $pdf = Pdf::loadView('ventas.cierre_caja_pdf', compact('cierre_caja', 'totales_forma_pago'));
+        $pdf = Pdf::loadView('ventas.cierre_caja_pdf', compact('cierre_caja', 'totales_forma_pago', 'facturas', 'notas_debito'));
         return $pdf->stream('cierre_caja_' . Carbon::now()->format('Y-m-d') . '.pdf');
     }
 

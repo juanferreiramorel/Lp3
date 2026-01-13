@@ -1,271 +1,165 @@
 <style>
     .search-container {
         margin-bottom: 24px;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
+    /* Subtle Card Background with Animation */
     .search-card {
-        background: linear-gradient(135deg, #343a40 0%, #23272b 100%);
-        border-radius: 16px;
+        background: #ffffff;
         padding: 24px;
-        box-shadow: 0 10px 30px rgba(52, 58, 64, 0.3);
-        border: none;
-        position: relative;
-        overflow: hidden;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #f1f5f9;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        animation: slideUpFade 0.6s ease-out;
     }
 
-    /* Efecto decorativo de fondo */
-    .search-card::before {
-        content: '';
-        position: absolute;
-        top: -100px;
-        right: -80px;
-        width: 280px;
-        height: 280px;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-
-    .search-card::after {
-        content: '';
-        position: absolute;
-        bottom: -70px;
-        left: -50px;
-        width: 200px;
-        height: 200px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 50%;
-        pointer-events: none;
+    .search-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        transform: translateY(-2px);
     }
 
     .search-header {
         display: flex;
-        align-items: center;
-        gap: 14px;
+        flex-direction: column;
+        gap: 6px;
         margin-bottom: 20px;
-        position: relative;
-        z-index: 1;
     }
 
-    .search-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        background: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
+    .search-header h6 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0;
+        letter-spacing: -0.015em;
+    }
+
+    .search-header p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Smooth Input Group */
+    .input-group-search-modern {
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-size: 1.2rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .search-icon-wrapper:hover {
-        transform: scale(1.1) rotate(5deg);
-        background: rgba(255, 255, 255, 0.35);
-    }
-
-    .search-header-text h6 {
-        margin: 0;
-        font-weight: 700;
-        color: #ffffff;
-        font-size: 1.1rem;
-        letter-spacing: -0.02em;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .search-header-text p {
-        margin: 2px 0 0 0;
-        font-size: 0.875rem;
-        color: rgba(255, 255, 255, 0.85);
-        font-weight: 400;
-    }
-
-    .input-group-search-modern {
-        position: relative;
-        display: flex;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
-        overflow: hidden;
-        background: #ffffff;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1;
+        overflow: hidden;
+        padding: 4px;
     }
 
     .input-group-search-modern:focus-within {
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
+        background: #ffffff;
+        border-color: #3b82f6; /* Soft Blue Focus */
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); /* Blue ring */
+        transform: scale(1.005);
     }
 
     .search-mode-select {
+        background: transparent;
         border: none;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        color: #495057;
-        font-weight: 600;
+        padding: 0.75rem 1.25rem;
         font-size: 0.875rem;
-        padding: 14px 16px;
-        border-right: 2px solid #e0e7ff;
-        cursor: pointer;
+        color: #334155;
+        font-weight: 500;
+        border-right: 1px solid #e2e8f0;
         outline: none;
-        min-width: 160px;
-        transition: all 0.2s ease;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-radius: 8px 0 0 8px;
     }
 
     .search-mode-select:hover {
-        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    }
-
-    .search-mode-select:focus {
-        outline: none;
-        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-        color: #4338ca;
+        background-color: #f1f5f9;
+        color: #0f172a;
     }
 
     .buscar-input-modern {
         flex: 1;
         border: none;
-        padding: 14px 20px;
-        font-size: 0.975rem;
-        color: #1e293b;
-        background: #ffffff;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #0f172a;
         outline: none;
-        transition: all 0.2s ease;
+        background: transparent;
+        transition: all 0.2s;
     }
 
     .buscar-input-modern::placeholder {
         color: #94a3b8;
-        font-weight: 400;
+        transition: opacity 0.2s;
     }
 
-    .buscar-input-modern:focus {
-        outline: none;
-        background: #fafbfc;
+    .buscar-input-modern:focus::placeholder {
+        opacity: 0.7;
     }
 
     .btn-buscar-modern {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: #0f172a;
         color: #ffffff;
         border: none;
-        padding: 14px 28px;
+        padding: 0.75rem 1.75rem;
+        font-size: 0.875rem;
         font-weight: 600;
-        font-size: 0.925rem;
+        cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 8px;
         display: flex;
         align-items: center;
         gap: 8px;
-        cursor: pointer;
-        white-space: nowrap;
-        box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .btn-buscar-modern:hover {
-        background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-        transform: translateX(-2px);
-        box-shadow: inset 0 0 0 100px rgba(255, 255, 255, 0.1);
+        background: #1e293b; /* Slate 800 */
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        transform: translateY(-1px);
     }
 
     .btn-buscar-modern:active {
-        transform: translateX(-2px) scale(0.98);
+        transform: translateY(0);
+        background: #020617; /* Slate 950 */
     }
 
     .btn-buscar-modern i {
-        font-size: 1rem;
         transition: transform 0.3s ease;
     }
 
     .btn-buscar-modern:hover i {
-        transform: scale(1.15);
+        transform: scale(1.1) rotate(-10deg);
     }
 
-    /* Animación de entrada */
-    @keyframes slideInDown {
+    @keyframes slideUpFade {
         from {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateY(16px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
-    .search-card {
-        animation: slideInDown 0.5s ease-out;
-    }
-
-    @media (max-width: 768px) {
-        .search-card {
-            padding: 20px 16px;
-            border-radius: 12px;
-        }
-
-        .search-icon-wrapper {
-            width: 42px;
-            height: 42px;
-            font-size: 1.1rem;
-        }
-
-        .search-header-text h6 {
-            font-size: 1rem;
-        }
-
-        .search-header-text p {
-            font-size: 0.8rem;
-        }
-
-        .search-mode-select {
-            min-width: 130px;
-            font-size: 0.85rem;
-            padding: 12px 14px;
-        }
-
-        .buscar-input-modern {
-            font-size: 0.9rem;
-            padding: 12px 16px;
-        }
-
-        .btn-buscar-modern {
-            padding: 12px 22px;
-            font-size: 0.9rem;
-        }
-
-        .btn-buscar-modern span {
-            display: none;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .search-header {
-            margin-bottom: 16px;
-        }
-
-        .input-group-search-modern {
-            border-radius: 10px;
-        }
-
-        .search-mode-select {
-            min-width: 110px;
-            font-size: 0.8rem;
-            padding: 11px 12px;
-        }
+    @media (max-width: 640px) {
+        .search-card { padding: 16px; }
+        .input-group-search-modern { flex-direction: column; padding: 6px; gap: 6px; }
+        .search-mode-select { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; border-radius: 6px; }
+        .btn-buscar-modern { width: 100%; justify-content: center; }
     }
 </style>
 
-<div class="clearfix search-container">
+<div class="search-container">
     <div class="search-card">
         <div class="search-header">
-            <div class="search-icon-wrapper">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="search-header-text">
-                <h6>Búsqueda Rápida</h6>
-                <p>Encuentra registros por ID o cualquier campo</p>
-            </div>
+            <h6>Búsqueda Avanzada</h6>
+            <p>Filtra por ID o texto general para encontrar registros.</p>
         </div>
-        <!-- Changing ID to CLASS to avoid collisions with duplicates -->
+        
         <form class="form-busqueda-texto">
             <div class="input-group-search-modern">
                 <select class="search-mode search-mode-select" name="search_mode">
@@ -280,9 +174,9 @@
                     class="buscar buscar-input-modern"
                     name="buscar"
                     value="{{ request()->get('buscar', null) }}"
-                    placeholder="Escribe tu búsqueda aquí... (Ej: 'id:123' o '#123' para ID exacto)"
+                    placeholder="Escribe tu búsqueda..."
                     data-url="{{ url()->current() }}"
-                    title="Use 'id:' o '#' seguido del número para buscar solo por ID">
+                    autocomplete="off">
                 <button class="btn-buscar-modern" type="submit">
                     <i class="fas fa-search"></i>
                     <span>Buscar</span>
@@ -295,15 +189,12 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        // Manejar el submit del formulario de búsqueda de texto (using classes)
         $('.form-busqueda-texto').on('submit', function(e) {
             e.preventDefault();
-            // Find inputs strictly within THIS form instance
             var buscar = $(this).find('.buscar').val();
             var searchMode = $(this).find('.search-mode').val();
             var url = '{{ url()->current() }}';
 
-            // Mantener los filtros actuales
             var params = new URLSearchParams(window.location.search);
             if (buscar) {
                 params.set('buscar', buscar);
