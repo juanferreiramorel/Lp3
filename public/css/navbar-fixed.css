@@ -1,0 +1,170 @@
+/* ===== NAVBAR ALWAYS DARK (SHADCN STYLE) ===== */
+
+/* 1. Reset Navbar Background & Borders (HARDCODED DARK VALUES) */
+.main-header.navbar {
+    background-color: #09090b !important; /* Always Dark (Zinc 950) */
+    border-bottom: 1px solid #27272a !important; /* Zinc 800 */
+    box-shadow: none !important;
+    height: 57px;
+    padding: 0 1rem;
+    backdrop-filter: none;
+    color: #a1a1aa !important; /* Zinc 400 */
+    background-image: none !important;
+}
+
+/* 2. Reset Links Colors */
+.main-header.navbar .nav-link,
+.main-header.navbar .navbar-nav .nav-link {
+    color: #a1a1aa !important; /* Zinc 400 */
+}
+
+.main-header.navbar .nav-link:hover,
+.main-header.navbar .navbar-nav .nav-link:hover {
+    color: #48c6ef !important; /* Brand Sky */
+    background-color: #27272a; /* Zinc 800 */
+    border-radius: 6px;
+}
+
+/* 3. Search Form Redesign (Unified Pill/Shadcn Look) */
+.form-inline .input-group {
+    background-color: rgba(255, 255, 255, 0.03); /* Subtle dark mode bg */
+    border: 1px solid #27272a; /* Zinc 800 */
+    border-radius: 6px; 
+    padding: 0;
+    transition: all 0.2s ease;
+    width: auto;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.form-inline .input-group:focus-within {
+    border-color: #48c6ef; /* Brand Sky */
+    box-shadow: 0 0 0 2px rgba(72, 198, 239, 0.15);
+}
+
+.form-control-navbar {
+    background-color: transparent !important;
+    border: none !important;
+    color: #fafafa !important; /* Zinc 50 (White-ish) */
+    box-shadow: none !important;
+    height: 34px;
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+    outline: none !important;
+    font-weight: 400;
+}
+
+.form-control-navbar::placeholder {
+    color: #71717a; /* Zinc 500 */
+    opacity: 1;
+}
+
+.btn-navbar {
+    background-color: transparent !important;
+    border: none !important;
+    border-left: 1px solid transparent !important;
+    color: #a1a1aa !important; /* Zinc 400 */
+    padding: 0 0.8rem;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.btn-navbar:hover {
+    color: #48c6ef !important;
+    opacity: 1;
+}
+
+/* 4. Sidebar Toggle (True Ghost Button) */
+.nav-link[data-widget="pushmenu"] {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #a1a1aa !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    margin-right: 0.75rem;
+}
+
+.nav-link[data-widget="pushmenu"]:hover {
+    background-color: #27272a !important; /* Zinc 800 */
+    color: #48c6ef !important;
+}
+
+.nav-link[data-widget="pushmenu"] i {
+    font-size: 1.1rem;
+}
+
+/* 5. Shortcuts (Ghost Links) */
+.navbar-btn-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem !important;
+    border-radius: 6px;
+    color: #a1a1aa !important;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    height: 34px;
+    text-decoration: none !important;
+    margin: 0 4px;
+    border: 0 !important;
+    cursor: pointer;
+    background-color: transparent !important;
+}
+
+.navbar-btn-icon:hover {
+    background-color: #27272a !important;
+    color: #48c6ef !important;
+}
+
+.navbar-btn-icon i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.navbar-btn-icon:hover i {
+    opacity: 1;
+}
+
+/* 6. User Menu */
+.user-menu .nav-link {
+    color: #a1a1aa !important;
+}
+.user-image {
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+}
+
+/* Dropdown Styles (Keep dark too for consistency, or let them switch? 
+   User said "navbar solo tenga el modo oscuro". Usually dropdowns match navbar.
+   I'll make them dark to be safe.) */
+.dropdown-menu {
+    border-radius: 8px;
+    border: 1px solid #27272a;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    background-color: #09090b;
+}
+.dropdown-item {
+    color: #a1a1aa;
+}
+.dropdown-item:hover {
+    background-color: #27272a;
+    color: #a1a1aa;
+}

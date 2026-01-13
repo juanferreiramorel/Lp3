@@ -3,8 +3,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/x-icon" href="">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="{{ asset('css/app-styles.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/navbar-modern.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/app-styles.css') }}?v=5">
+        <link rel="stylesheet" href="{{ asset('css/navbar-custom.css') }}?v=1">
     @endpush
     
     <body class="hold-transition sidebar-mini layout-fixed text-sm">
@@ -17,7 +17,7 @@
         <div class="wrapper">
 
             <!-- NAVBAR -->
-            <nav class="main-header navbar navbar-expand navbar-white navbar-light" role="navigation" aria-label="Barra de navegación principal">
+            <nav class="main-header navbar navbar-expand shadcn-navbar" role="navigation" aria-label="Barra de navegación principal">
                 <!-- Left -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
@@ -29,9 +29,19 @@
                             </span>
                         </a>
                     </li>
+                    
+                    <!-- Separator -->
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <div class="navbar-separator"></div>
+                    </li>
+
                     @hasSection('content_header')
                         <li class="nav-item d-none d-md-inline-block">
-                            <span class="navbar-text ml-2">@yield('content_header')</span>
+                            <span class="navbar-text navbar-breadcrumb ml-2">
+                                <span class="text-muted">Dashboard</span> 
+                                <span class="mx-1">/</span>
+                                <span class="text-primary">@yield('content_header')</span>
+                            </span>
                         </li>
                     @endif
 
@@ -79,15 +89,15 @@
                 </ul>
 
                 <!-- SEARCH -->
-                <form class="form-inline ml-3 d-none d-md-flex" method="GET" action="{{ route('search') }}">
-                    <div class="input-group input-group-sm">
-                        <input class="form-control form-control-navbar" type="search" name="q"
-                               placeholder="Buscar…" aria-label="Buscar">
-                        <div class="input-group-append">
-                            <button class="btn btn-navbar" type="submit">
+                <form class="ml-3 d-none d-md-flex align-items-center" method="GET" action="{{ route('search') }}">
+                    <div class="input-group input-group-sm search-input-group">
+                        <div class="input-group-prepend">
+                            <span class="search-icon-wrapper">
                                 <i class="fas fa-search"></i>
-                            </button>
+                            </span>
                         </div>
+                        <input class="form-control form-control-navbar" type="search" name="q"
+                               placeholder="Buscar..." aria-label="Buscar">
                     </div>
                 </form>
 
@@ -154,25 +164,40 @@
                             <span class="d-none d-md-inline ml-2">{{ Auth::user()->name }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                            <li class="user-header bg-primary">
-                                @if(Auth::user()->avatar_url)
-                                    <img src="{{ Auth::user()->avatar_url }}"
-                                         class="img-circle elevation-2" alt="User Image">
-                                @else
-                                    <div class="user-avatar-letter-large img-circle elevation-2">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            <!-- User Header (List Style) -->
+                            <li class="user-header-list">
+                                <div class="d-flex align-items-center px-3 py-3">
+                                    @if(Auth::user()->avatar_url)
+                                        <img src="{{ Auth::user()->avatar_url }}" class="user-image-dropdown mr-3" alt="User Image">
+                                    @else
+                                        <div class="user-avatar-letter user-image-dropdown mr-3 d-flex align-items-center justify-content-center bg-light text-secondary font-weight-bold">
+                                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <div class="d-flex flex-column text-truncate">
+                                        <span class="user-name-dropdown text-truncate">{{ Auth::user()->name }}</span>
+                                        <small class="user-role-dropdown text-muted text-truncate">Miembro desde {{ Auth::user()->created_at?->format('M. Y') }}</small>
                                     </div>
-                                @endif
-                                <p>
-                                    {{ Auth::user()->name }}
-                                    <small>Miembro desde {{ Auth::user()->created_at?->format('M. Y') }}</small>
-                                </p>
+                                </div>
                             </li>
-                            <li class="user-footer">
-                                <a href="{{ url('perfil') }}" class="btn btn-default btn-flat">Perfil</a>
-                                <a href="#" class="btn btn-default btn-flat float-right"
+                            
+                            <li class="dropdown-divider m-0"></li>
+                            
+                            <!-- Menu Items -->
+                            <li>
+                                <a href="{{ url('perfil') }}" class="dropdown-item">
+                                    <i class="fas fa-user mr-2"></i> 
+                                    <span>Perfil</span>
+                                </a>
+                            </li>
+                            
+                            <li class="dropdown-divider m-0"></li>
+                            
+                            <li>
+                                <a href="#" class="dropdown-item dropdown-item-danger" 
                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    Salir
+                                    <i class="fas fa-sign-out-alt mr-2"></i>
+                                    <span>Cerrar Sesión</span>
                                 </a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
                             </li>

@@ -1,0 +1,489 @@
+/* ===== SHADCN NAVBAR FIXES (ROUND 3) ===== */
+
+/* 1. Theme Variables (Unchanged) */
+:root {
+    --navbar-bg: #ffffff;
+    --navbar-border: #e4e4e7;
+    --navbar-fg: #09090b;
+    --navbar-muted: #71717a;
+    --navbar-hover-bg: #f4f4f5;
+    --navbar-hover-fg: #09090b;
+    --navbar-active-fg: #0ea5e9;
+    --input-bg: rgba(9, 9, 11, 0.05); /* Slightly darker for better light mode contrast */
+    --input-border: #e4e4e7;
+}
+
+body.dark-mode {
+    --navbar-bg: #09090b;
+    --navbar-border: #27272a;
+    --navbar-fg: #a1a1aa;
+    --navbar-muted: #71717a;
+    --navbar-hover-bg: #27272a;
+    --navbar-hover-fg: #fafafa;
+    --navbar-active-fg: #38bdf8;
+    --input-bg: rgba(255,255,255,0.05); /* Better dark mode input */
+    --input-border: #27272a;
+}
+
+/* 2. Container Layout */
+.main-header.navbar {
+    background-color: var(--navbar-bg) !important;
+    border-bottom: 1px solid var(--navbar-border) !important;
+    height: 64px; /* Slightly taller for modern look */
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem;
+}
+
+.main-header.navbar.navbar-white,
+.main-header.navbar.navbar-dark {
+    background-color: var(--navbar-bg) !important;
+    color: var(--navbar-fg) !important;
+}
+
+/* 3. Helper Classes for Spacing */
+.navbar-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+}
+
+/* 4. SHORTCUTS (Left Side) */
+.navbar-btn-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px !important;
+    border-radius: 6px;
+    color: var(--navbar-muted) !important; /* Muted by default */
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    white-space: nowrap !important;
+    height: 36px;
+    margin-right: 2px;
+}
+
+.navbar-btn-icon:hover {
+    background-color: var(--navbar-hover-bg) !important;
+    color: var(--navbar-fg) !important; /* Darker on hover */
+}
+
+.navbar-btn-icon i {
+    margin-right: 6px;
+    font-size: 1rem;
+    color: currentColor;
+    opacity: 0.8;
+}
+
+/* 5. SEARCH (Middle) */
+.form-inline .input-group {
+    background-color: var(--input-bg);
+    border: 1px solid transparent; /* No border by default for cleaner look */
+    border-radius: 8px; /* Softer roundness */
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    width: 240px; /* Fixed standard width */
+}
+
+.form-inline .input-group:focus-within {
+    background-color: var(--navbar-bg);
+    border-color: var(--navbar-active-fg);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+    width: 300px; /* Expand on focus */
+}
+
+.form-control-navbar {
+    background: transparent !important;
+    border: none !important;
+    color: var(--navbar-fg) !important;
+    height: 38px;
+    font-size: 0.875rem;
+    padding-left: 12px;
+}
+
+.form-control-navbar::placeholder {
+    color: var(--navbar-muted);
+}
+
+.btn-navbar {
+    background: transparent !important;
+    border: none !important;
+    color: var(--navbar-muted) !important;
+    padding: 0 12px;
+}
+.btn-navbar:hover {
+    color: var(--navbar-active-fg) !important;
+}
+
+/* 6. ICONS & BUTTONS (Right Side) */
+
+/* General Icon Button Style */
+.navbar-nav.ml-auto .nav-link {
+    color: var(--navbar-fg) !important;
+    padding: 0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    width: 38px; /* Default square for icons */
+    transition: background-color 0.2s;
+    margin-left: 2px;
+}
+
+.navbar-nav.ml-auto .nav-link:hover {
+    background-color: var(--navbar-hover-bg) !important;
+}
+
+/* Fix: Ayuda Button */
+.navbar-nav.ml-auto .nav-link[title="Ayuda"],
+.navbar-nav.ml-auto .nav-link.btn-link { 
+    width: auto !important; /* Allow growing */
+    padding: 0 12px !important;
+    font-weight: 500;
+    gap: 6px; /* Space between icon and text */
+}
+
+/* Fix: User Menu */
+.user-menu .nav-link {
+    width: auto !important;
+    padding: 4px 8px !important;
+    margin-left: 8px;
+    gap: 10px;
+    border-radius: 999px; /* Pill shape for user */
+    border: 1px solid transparent;
+}
+
+.user-menu .nav-link:hover {
+    background-color: var(--navbar-hover-bg) !important;
+    border-color: var(--navbar-border);
+}
+
+.user-image {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* User Text */
+.user-menu .d-none.d-md-inline {
+    display: inline-block !important; /* Force display if space allows */
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+/* 7. HAMBURGER MENU ICON (Added back) */
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    gap: 4px; /* Spacing between lines */
+}
+
+.hamburger-icon .line {
+    width: 18px;
+    height: 2px;
+    background-color: var(--navbar-fg);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.nav-link[data-widget="pushmenu"]:hover .hamburger-icon .line {
+    background-color: var(--navbar-active-fg);
+}
+
+/* RESPONSIVE HANDLING */
+@media (max-width: 992px) {
+    /* Hide shortcuts text on smaller desktops */
+    .navbar-btn-icon span {
+        display: none;
+    }
+    .navbar-btn-icon {
+        padding: 0 !important;
+        width: 38px;
+        height: 38px;
+    }
+    .navbar-btn-icon i {
+        margin: 0;
+    }
+    
+    /* Shrink search */
+    .form-inline .input-group, 
+    .form-inline .input-group:focus-within {
+        width: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Hide user name on mobile */
+    .user-menu .d-md-inline {
+        display: none !important;
+    }
+    
+    /* Hide Ayuda text on mobile */
+    .navbar-nav.ml-auto .nav-link[title="Ayuda"] span {
+        display: none;
+    }
+    .navbar-nav.ml-auto .nav-link[title="Ayuda"] {
+        width: 38px !important;
+        padding: 0 !important;
+    }
+}
+
+/* ===== USER DROPDOWN IMPROVEMENTS ===== */
+
+.user-menu .dropdown-menu {
+    width: 280px;
+    padding: 0;
+    border-radius: 12px;
+    border: 1px solid var(--navbar-border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background-color: var(--navbar-bg);
+    margin-top: 8px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Remove AdminLTE bg-primary */
+.user-menu .user-header {
+    background-color: transparent !important;
+    color: var(--navbar-fg) !important;
+    height: auto;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    border-bottom: 1px solid var(--navbar-border);
+}
+
+/* Avatar in dropdown */
+.user-menu .user-header img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid var(--navbar-bg);
+    box-shadow: 0 0 0 1px var(--navbar-border);
+    margin-bottom: 12px;
+    object-fit: cover;
+}
+
+/* Name & Date */
+.user-menu .user-header p {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--navbar-fg);
+}
+.user-menu .user-header p small {
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    color: var(--navbar-muted);
+    font-weight: 400;
+}
+
+/* Footer Actions */
+.user-menu .user-footer {
+    background-color: var(--navbar-hover-bg);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--navbar-border);
+}
+
+.user-menu .user-footer .btn {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: none;
+    transition: all 0.2s;
+    border: 1px solid var(--navbar-border);
+    background-color: var(--navbar-bg);
+    color: var(--navbar-fg);
+}
+
+.user-menu .user-footer .btn:hover {
+    background-color: var(--navbar-hover-bg);
+    border-color: var(--navbar-active-fg);
+    color: var(--navbar-active-fg);
+    transform: translateY(-1px);
+}
+
+/* Special style for Logout to look destructive or distinct? Keeping simple for now */
+.user-menu .user-footer .btn.btn-default {
+    background-color: var(--navbar-bg);
+    color: var(--navbar-fg);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Button specific overrides */
+.user-menu .user-footer .btn-flat {
+    border-radius: 6px !important; /* Override AdminLTE flat style */
+}
+
+
+/* ===== USER DROPDOWN LIST STYLE ===== */
+
+.user-menu .dropdown-menu {
+    width: 240px;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--navbar-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background-color: var(--navbar-bg);
+    animation: fadeIn 0.1s ease-out;
+    margin-top: 6px;
+}
+
+/* Remove old card header styles if they persist */
+.user-menu .user-header-list {
+    background: transparent;
+    padding: 0;
+}
+
+.user-image-dropdown {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--navbar-border);
+}
+
+.user-avatar-letter {
+    font-size: 1rem;
+}
+
+.user-name-dropdown {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--navbar-fg);
+    line-height: 1.2;
+}
+
+.user-role-dropdown {
+    font-size: 0.75rem;
+    color: var(--navbar-muted);
+}
+
+/* Dropdown Items */
+.user-menu .dropdown-item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: var(--navbar-fg);
+    display: flex;
+    align-items: center;
+    transition: background-color 0.15s;
+}
+
+.user-menu .dropdown-item i {
+    width: 16px;
+    margin-right: 10px;
+    text-align: center;
+    color: var(--navbar-muted);
+}
+
+.user-menu .dropdown-item:hover {
+    background-color: var(--navbar-hover-bg);
+    color: var(--navbar-fg);
+}
+
+.user-menu .dropdown-item:active {
+    background-color: var(--navbar-border);
+}
+
+.dropdown-item-danger {
+    color: #ef4444 !important; /* Red-500 */
+}
+.dropdown-item-danger:hover {
+    background-color: #fef2f2 !important; /* Red-50 */
+    color: #dc2626 !important; /* Red-600 */
+}
+
+.dropdown-divider {
+    border-top: 1px solid var(--navbar-border);
+    margin: 4px 0;
+}
+
+
+/* ===== VISUAL POLISH ===== */
+
+/* Vertical Separator */
+.navbar-separator {
+    width: 1px;
+    height: 24px;
+    background-color: var(--navbar-border);
+    margin: 0 12px;
+    display: block;
+}
+
+/* Breadcrumb Styling */
+.navbar-breadcrumb {
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+.navbar-breadcrumb .text-muted {
+    color: var(--navbar-muted) !important;
+}
+.navbar-breadcrumb .text-primary {
+    color: var(--navbar-fg) !important;
+    font-weight: 600;
+}
+
+/* Command Search Input */
+.search-input-group {
+    background-color: var(--input-bg);
+    border: 1px solid var(--navbar-border);
+    border-radius: 8px;
+    padding: 2px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-group:focus-within {
+    border-color: var(--navbar-active-fg);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+}
+
+.search-icon-wrapper {
+    padding-left: 10px;
+    color: var(--navbar-muted);
+    font-size: 0.875rem;
+}
+
+.search-input-group input.form-control-navbar {
+    border: none !important;
+    background: transparent !important;
+    padding-left: 10px;
+    font-size: 0.875rem;
+    height: 32px;
+    color: var(--navbar-fg) !important;
+}
+
+
+

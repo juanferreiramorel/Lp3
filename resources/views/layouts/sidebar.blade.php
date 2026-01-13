@@ -16,18 +16,15 @@
 
     <div class="sidebar">
         <!-- Buscador de menús -->
-        <div class="sidebar-search-wrapper px-3 py-3">
-            <div class="input-group input-group-sm sidebar-search-input">
+        <!-- Buscador de menús -->
+        <div class="sidebar-search-wrapper">
+            <div class="sidebar-search-container">
+                <i class="fas fa-search search-icon"></i>
                 <input type="text"
                        id="sidebar-search"
                        class="form-control"
                        placeholder="Buscar menú..."
                        autocomplete="off">
-                <div class="input-group-append">
-                    <span class="input-group-text bg-transparent border-left-0">
-                        <i class="fas fa-search"></i>
-                    </span>
-                </div>
             </div>
             <div id="search-results" class="search-results-dropdown" style="display: none;"></div>
         </div>
@@ -56,9 +53,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const iconClass = icon ? icon.className : '';
         const href = link.getAttribute('href');
 
+        // Buscar categoría padre si existe
+        let category = '';
+        const parentItem = link.closest('.nav-treeview');
+        if (parentItem) {
+            const parentLink = parentItem.previousElementSibling;
+            if (parentLink && parentLink.classList.contains('nav-link')) {
+                category = parentLink.textContent.trim();
+            }
+        }
+
         if (text && href && href !== '#') {
             menuItems.push({
                 text: text,
+                category: category,
                 icon: iconClass,
                 href: href,
                 element: link.closest('li')
@@ -76,31 +84,50 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebarMenu.querySelectorAll('.nav-item').forEach(item => {
                 item.style.display = '';
             });
+            // Cerrar menús abiertos que no estaban abiertos inicialmente (opcional, por ahora simple)
             return;
         }
 
         // Filtrar resultados
         const filtered = menuItems.filter(item =>
-            item.text.toLowerCase().includes(query)
+            item.text.toLowerCase().includes(query) || 
+            item.category.toLowerCase().includes(query)
         );
 
         if (filtered.length > 0) {
             // Mostrar resultados en dropdown
             searchResults.innerHTML = filtered.map(item => `
                 <a href="${item.href}" class="search-result-item">
-                    <i class="${item.icon}"></i>
-                    <span>${highlightMatch(item.text, query)}</span>
+                    <div class="d-flex flex-column">
+                        ${item.category ? `<small class="search-category-text">${item.category} <i class="fas fa-chevron-right mx-1" style="font-size: 0.6rem;"></i></small>` : ''}
+                        <div class="d-flex align-items-center">
+                            <i class="${item.icon}"></i>
+                            <span>${highlightMatch(item.text, query)}</span>
+                        </div>
+                    </div>
                 </a>
             `).join('');
             searchResults.style.display = 'block';
 
             // Ocultar elementos que no coinciden en el menú principal
             sidebarMenu.querySelectorAll('.nav-item').forEach(item => {
+                // Lógica simplificada: si hay búsqueda, ocultamos el menú principal para enfocar en los resultados del dropdown
+                // O si prefieres mantener el filtrado visual del árbol:
+                
                 const link = item.querySelector('a.nav-link');
                 if (link) {
                     const text = link.textContent.trim().toLowerCase();
-                    if (text.includes(query) || link.getAttribute('href') === '#') {
+                    // Check if this item is a parent of a matching child
+                    const isParentOfMatch = Array.from(item.querySelectorAll('.nav-link')).some(childLink => {
+                         return childLink.textContent.trim().toLowerCase().includes(query);
+                    });
+
+                    if (text.includes(query) || link.getAttribute('href') === '#' && isParentOfMatch) {
                         item.style.display = '';
+                         // Si es padre y tiene coincidencias, abrirlo
+                        if (link.getAttribute('href') === '#' && isParentOfMatch) {
+                            item.classList.add('menu-open');
+                        }
                     } else {
                         item.style.display = 'none';
                     }
@@ -142,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Expandir sidebar al hacer clic en el icono de búsqueda cuando está colapsado
-    const searchIconWrapper = document.querySelector('.sidebar-search-input .input-group-text');
+    const searchIconWrapper = document.querySelector('.sidebar-search-container .search-icon');
     if (searchIconWrapper) {
         searchIconWrapper.addEventListener('click', function() {
             // Solo enfocar el input, el hover ya expande el sidebar visualmente
