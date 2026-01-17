@@ -22,11 +22,10 @@ class CobroController extends Controller
         // Validar que el usuario tenga una caja abierta
         $caja_abierta = DB::selectOne(
             "SELECT * FROM apertura_cierre_cajas
-            WHERE user_id = ? AND estado = 'ABIERTA'
-            AND fecha_apertura = CURRENT_DATE",
+            WHERE user_id = ? AND estado = 'ABIERTA'",
             [auth()->user()->id]
         );
-
+        
         if (empty($caja_abierta)) {
             Alert::toast('Debe abrir una caja para realizar cobros', 'error');
             return redirect()->route('ventas.index');
@@ -63,8 +62,7 @@ class CobroController extends Controller
         // Validar que el usuario tenga una caja abierta
         $caja_abierta = DB::selectOne(
             "SELECT * FROM apertura_cierre_cajas
-            WHERE user_id = ? AND estado = 'ABIERTA'
-            AND fecha_apertura = CURRENT_DATE",
+            WHERE user_id = ? AND estado = 'ABIERTA'",
             [auth()->user()->id]
         );
 

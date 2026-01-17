@@ -187,23 +187,116 @@ class AperturaCierreCajaController extends Controller
             $id_apertura
         ]);
 
-        // AGREGAR MOVIMIENTO DE CAJA: RECAUDACION A DEPOSITAR
-        // Se registra el monto total de cierre como un movimiento de salida (a depositar)
-        try {
-            DB::insert('INSERT INTO movimientos_caja (id_apertura, monto, fecha_hora, id_tipo_transaccion, id_forma_pago, documento, cierre, id_usuario)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
-                $id_apertura,
-                $input['monto_cierre'],
-                Carbon::now(),
-                9, // 9: RECAUDACIONES A DEPOSITAR (segun migration created)
-                1, // 1: EFECTIVO (asumido)
-                'CIERRE DE CAJA',
-                1, // cierre = 1
-                auth()->user()->id
-            ]);
-        } catch (\Exception $e) {
-            // Log error silently usually, or handle it. For now, continue as closure is main event.
-            // \Log::error('Error creating movement on close: ' . $e->getMessage());
+        // AGREGAR MOVIMIENTO DE CAJA: RECAUDACION (Desglosado por Tipo)
+        
+        // 1. Obtener totales cobrados por método de pago en esta apertura
+        $ventas_notas_totales = DB::select(
+            "SELECT c.id_metodo_pago, SUM(c.cobro_importe) as total
+            FROM cobros c
+            JOIN ventas ve on ve.id_venta = c.id_venta 
+            WHERE ve.id_apertura = ? AND ve.estado = 'PAGADO'
+            GROUP BY c.id_metodo_pago
+
+            UNION ALL
+
+            SELECT c.id_metodo_pago, SUM(c.cobro_importe) as total
+            FROM cobros c
+            JOIN notas_debito nd on nd.id_nota_debito = c.id_nota_debito
+            WHERE nd.id_apertura = ? AND nd.estado != 'ANULADO'
+            GROUP BY c.id_metodo_pago",
+            [$id_apertura, $id_apertura]
+        );
+
+        $totales_map = [];
+        foreach ($ventas_notas_totales as $row) {
+             if (!isset($totales_map[$row->id_metodo_pago])) {
+                 $totales_map[$row->id_metodo_pago] = 0;
+             }
+             $totales_map[$row->id_metodo_pago] += $row->total;
+        }
+
+        // 2. Primero, VALIDAR configuración antes de procesar nada
+        $metodos_pago = \App\Models\MetodoPago::with('tipo')->get();
+        $errores_config = [];
+
+        foreach ($metodos_pago as $metodo) {
+            $monto_a_registrar = 0;
+            if ($metodo->id_metodo_pago == 1) {
+                // Efectivo siempre validamos con el monto ingresado, si es > 0
+                $monto_a_registrar = $input['monto_cierre'];
+            } else {
+                $monto_a_registrar = $totales_map[$metodo->id_metodo_pago] ?? 0;
+            }
+
+            if ($monto_a_registrar > 0) {
+                if (!$metodo->tipo) {
+                    $errores_config[] = "El método de pago '{$metodo->descripcion}' no tiene asignado un Tipo de Método de Pago.";
+                    continue;
+                }
+
+                // Validar que tenga transacción asignada según lógica
+                $tiene_transaccion = false;
+                if ($metodo->id_tipo_metodo_pago == 1) {
+                     // Efectivo requiere salida
+                     if ($metodo->tipo->id_transaccion_salida) $tiene_transaccion = true;
+                } else {
+                     // Otros requieren salida o entrada
+                     if ($metodo->tipo->id_transaccion_salida || $metodo->tipo->id_transaccion_entrada) $tiene_transaccion = true;
+                }
+
+                if (!$tiene_transaccion) {
+                    $errores_config[] = "El Tipo de Método '{$metodo->tipo->descripcion}' (usado por {$metodo->descripcion}) no tiene configurada una transacción de entrada/salida válida.";
+                }
+            }
+        }
+
+        if (count($errores_config) > 0) {
+            $msg = implode("<br>", $errores_config);
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de Configuración: ' . $msg
+                ]);
+            }
+            Alert::error('Error de Configuración', $msg);
+            return redirect()->route('ventas.index');
+        }
+
+        // 3. Procesar Movimientos (Si pasó validación)
+        foreach ($metodos_pago as $metodo) {
+            $monto_a_registrar = 0;
+            $id_transaccion = 0;
+            
+            if (!$metodo->tipo) continue; // Ya validado arriba, pero por seguridad
+
+            if ($metodo->id_tipo_metodo_pago == 1) { 
+                $monto_a_registrar = $input['monto_cierre'];
+                $id_transaccion = $metodo->tipo->id_transaccion_salida;
+            } else {
+                $monto_a_registrar = $totales_map[$metodo->id_metodo_pago] ?? 0;
+                
+                if ($metodo->tipo->id_transaccion_salida && ($metodo->id_tipo_metodo_pago == 3 || $metodo->id_tipo_metodo_pago == 4)) {
+                     $id_transaccion = $metodo->tipo->id_transaccion_salida;
+                } else {
+                     $id_transaccion = $metodo->tipo->id_transaccion_entrada;
+                }
+            }
+
+            if ($monto_a_registrar > 0 && $id_transaccion > 0) {
+                 try {
+                    DB::insert('INSERT INTO movimientos_caja (id_apertura, monto, fecha_hora, id_tipo_transaccion, id_forma_pago, documento, cierre, id_usuario)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+                        $id_apertura,
+                        $monto_a_registrar,
+                        Carbon::now(),
+                        $id_transaccion,
+                        $metodo->id_metodo_pago,
+                        'CIERRE - ' . $metodo->descripcion,
+                        1,
+                        auth()->user()->id
+                    ]);
+                } catch (\Exception $e) { }
+            }
         }
 
         if ($request->ajax()) {

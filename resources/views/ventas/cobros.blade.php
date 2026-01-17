@@ -167,8 +167,29 @@
 
                 // verificar que exista datos en row_pagos
                 if ($(row_pagos).length > 0) {
+                    // Calcular el saldo restante para autocompletar
+                    var totfac = $("#vtot_fac").val().replace(/\./g, '');
+                    var actual_total_paid = 0;
+
+                    // Sumar lo que ya hay en la tabla
+                    tableRef.find("tbody tr").each(function() {
+                        var val = $(this).find("[name='importe[]']").val();
+                        if (val) {
+                            actual_total_paid += parseInt(val.replace(/\./g, '')) || 0;
+                        }
+                    });
+
+                    var remaining = parseInt(totfac) - actual_total_paid;
+                    if (remaining < 0) remaining = 0;
+
+                    // Asignar el valor restante al nuevo input
+                    $(row_pagos).find("input[name='importe[]']").val(formatMoney(remaining));
+
                     //agregar datos al body de la tabla con append()
                     tableRef.find("tbody").append(row_pagos);
+                    
+                    // Actualizar los totales visuales
+                    actTotFpa();
                 }
                 $this.removeClass('disabled');
             });

@@ -14,6 +14,11 @@ class MetodoPago extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'descripcion'
+        'descripcion',
+        'id_tipo_metodo_pago'
     ];
+    public function tipo()
+    {
+        return $this->belongsTo(TipoMetodoPago::class, 'id_tipo_metodo_pago', 'id_tipo_metodo_pago');
+    }
 }
