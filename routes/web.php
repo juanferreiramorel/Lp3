@@ -157,6 +157,7 @@ Route::resource('roles', App\Http\Controllers\RoleController::class);
 
 // Apertura y cierre de caja
 Route::resource('apertura-cierre-caja', App\Http\Controllers\AperturaCierreCajaController::class);
+Route::resource('metodo_pagos', App\Http\Controllers\MetodoPagoController::class);
 
 ## Ruta para imprimir factura
 Route::get('imprimir-factura/{id}', [App\Http\Controllers\VentaController::class, 'factura']);

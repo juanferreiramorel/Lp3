@@ -1,48 +1,45 @@
 <!-- Componente de filtros para auditoría -->
-<div class="card filtros-auditoria collapsed-card mb-3">
-    <div class="card-header filtros-header">
-        <div class="filtros-title-wrapper">
-            <div class="filtros-icon">
-                <i class="fas fa-sliders-h"></i>
-            </div>
-            <div>
-                <h3 class="card-title mb-0">Filtros Avanzados</h3>
-                <br>
-                <p class="filtros-subtitle mb-0">Refina tu búsqueda con criterios específicos</p>
-            </div>
-        </div>
+<div class="card shadow-sm border-0 mb-4 collapsed-card" id="card-filtros-auditoria" style="border-radius: 0.5rem;">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"
+         style="border-bottom: 1px solid #f0f0f0; border-radius: 0.5rem 0.5rem 0 0; cursor: pointer;"
+         data-card-widget="collapse">
+        <h5 class="card-title text-dark m-0" style="font-size: 0.95rem; font-weight: 600;">
+            <i class="fas fa-filter text-muted mr-2"></i> Filtros de Auditoría
+        </h5>
         <div class="card-tools">
-            <button type="button" class="btn btn-filtros" data-card-widget="collapse">
-                <span class="btn-text">VER FILTROS</span>
-                <i class="fas fa-chevron-down ml-2"></i>
+            <button type="button" class="btn btn-tool text-muted" id="btn-collapse-auditoria">
+                <i class="fas fa-chevron-down"></i>
             </button>
         </div>
     </div>
-    <div class="card-body filtros-body" style="display: none;">
+    <div class="card-body bg-light" style="display: none; border-radius: 0 0 0.5rem 0.5rem;">
         <form id="form-busqueda">
             <div class="row">
                 <!-- RANGO DE FECHAS -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_desde', 'Fecha Desde:') !!}
+                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::input('date', 'fecha_desde', request()->get('fecha_desde', null), [
-                        'class' => 'form-control form-control-sm',
+                        'class' => 'form-control form-control-sm shadow-none border-0',
+                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'id' => 'fecha_desde',
                     ]) !!}
                 </div>
 
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_hasta', 'Fecha Hasta:') !!}
+                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::input('date', 'fecha_hasta', request()->get('fecha_hasta', null), [
-                        'class' => 'form-control form-control-sm',
+                        'class' => 'form-control form-control-sm shadow-none border-0',
+                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'id' => 'fecha_hasta',
                     ]) !!}
                 </div>
 
                 <!-- COMBO USUARIO -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('user_id', 'Usuario:') !!}
+                    {!! Form::label('user_id', 'Usuario:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::select('user_id', $usuarios, request()->get('user_id', null), [
-                        'class' => 'form-control form-control-sm select2',
+                        'class' => 'form-control form-control-sm select2 shadow-none',
+                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'placeholder' => 'Todos',
                         'id' => 'user_id',
                     ]) !!}
@@ -50,9 +47,10 @@
 
                 <!-- COMBO OPERACIÓN -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('operation', 'Operación:') !!}
+                    {!! Form::label('operation', 'Operación:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::select('operation', $operaciones, request()->get('operation', null), [
-                        'class' => 'form-control form-control-sm select2',
+                        'class' => 'form-control form-control-sm select2 shadow-none',
+                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'placeholder' => 'Todas',
                         'id' => 'operation',
                     ]) !!}
@@ -60,9 +58,10 @@
 
                 <!-- COMBO TABLA -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('table_name', 'Tabla:') !!}
+                    {!! Form::label('table_name', 'Tabla:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::select('table_name', $tablas, request()->get('table_name', null), [
-                        'class' => 'form-control form-control-sm select2',
+                        'class' => 'form-control form-control-sm select2 shadow-none',
+                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'placeholder' => 'Todas',
                         'id' => 'table_name',
                     ]) !!}
@@ -70,23 +69,23 @@
 
                 <!-- COMBO SUCURSAL -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('id_sucursal', 'Sucursal:') !!}
+                    {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
                     {!! Form::select('id_sucursal', $sucursales, request()->get('id_sucursal', null), [
-                        'class' => 'form-control form-control-sm select2',
+                        'class' => 'form-control form-control-sm select2 shadow-none',
+                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
                         'placeholder' => 'Todas',
                         'id' => 'id_sucursal',
                     ]) !!}
                 </div>
 
                 <!-- BOTÓN LIMPIAR FILTROS -->
-                <div class="form-group col-md-2">
-                    <label>&nbsp;</label>
-                    <button class="btn btn-limpiar-filtros btn-block" type="button"
+                <div class="form-group col-md-2 text-center d-flex align-items-end">
+                    <button class="btn btn-light btn-sm btn-block border" type="button"
                         id="btn-limpiar-filtros"
+                        style="color: #64748b; background-color: #fff; border-color: #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-radius: 0.375rem;"
                         data-toggle="tooltip" data-placement="top"
                         title="Limpiar todos los filtros">
-                        <i class="fas fa-redo mr-2"></i>
-                        <span>Limpiar Filtros</span>
+                        <i class="fas fa-broom mr-2"></i> Clean
                     </button>
                 </div>
             </div>
@@ -94,120 +93,7 @@
     </div>
 </div>
 
-<style>
-    /* === FILTROS CARD === */
-    .filtros-auditoria {
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-        overflow: hidden;
-    }
-    .filtros-header {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        border: none;
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .filtros-title-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        color: #ffffff;
-    }
-    .filtros-icon {
-        width: 44px;
-        height: 44px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-    .card-title {
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 1.15rem;
-    }
-    .filtros-subtitle {
-        color: rgba(255, 255, 255, 0.85);
-        font-size: 0.85rem;
-        margin-top: 2px;
-    }
-    .btn-filtros {
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: #ffffff;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-    }
-    .btn-filtros:hover {
-        background: rgba(255, 255, 255, 0.3);
-        border-color: rgba(255, 255, 255, 0.4);
-        color: #ffffff;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    .btn-filtros i {
-        transition: transform 0.3s ease;
-    }
-    .filtros-auditoria:not(.collapsed-card) .btn-filtros i {
-        transform: rotate(180deg);
-    }
-    .filtros-body {
-        background: #fafbfc;
-        padding: 24px;
-    }
-    .filtros-body .form-group label {
-        font-weight: 600;
-        color: #475569;
-        font-size: 0.9rem;
-        margin-bottom: 8px;
-    }
-    .filtros-body .form-control {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 10px 14px;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-    }
-    .filtros-body .form-control:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-    }
-    .btn-limpiar-filtros {
-        background: #ffc107;
-        color: #212529;
-        border: 1px solid #ffc107;
-        border-radius: 4px;
-        padding: 10px 16px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.15s ease;
-    }
-    .btn-limpiar-filtros:hover {
-        background: #e0a800;
-        border-color: #d39e00;
-        color: #212529;
-    }
 
-    @media (max-width: 768px) {
-        .filtros-header {
-            flex-direction: column;
-            gap: 12px;
-            align-items: flex-start;
-        }
-        .btn-filtros {
-            width: 100%;
-        }
-    }
-</style>
 
 <!-- BÚSQUEDA POR TEXTO -->
 @include('components.search-input')
@@ -289,26 +175,23 @@
             };
 
             // Abrir card de filtros si hay filtros activos
+            // Abrir card de filtros si hay filtros activos
             @if(request()->get('fecha_desde') || request()->get('fecha_hasta') || request()->get('user_id') || request()->get('operation') || request()->get('table_name') || request()->get('id_sucursal'))
-                $('.collapsed-card .btn-tool').click();
+                $('#card-filtros-auditoria').removeClass('collapsed-card');
+                $('#card-filtros-auditoria .card-body').show();
+                $('#btn-collapse-auditoria i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
             @endif
 
-            // Cambiar texto e icono del botón al expandir/colapsar
-            $('[data-card-widget="collapse"]').on('click', function() {
-                let $card = $(this).closest('.card');
-                let $button = $(this);
+            // Cambiar icono del botón al expandir/colapsar
+            $('#card-filtros-auditoria .card-header').on('click', function() {
+                let $card = $('#card-filtros-auditoria');
+                let $icon = $('#btn-collapse-auditoria i');
 
-                // Verificar el estado ANTES de que AdminLTE cambie la clase
-                let isCollapsed = $card.hasClass('collapsed-card');
-
-                setTimeout(function() {
-                    // Si estaba colapsado, ahora está expandido
-                    if (isCollapsed) {
-                        $button.html('<span class="btn-text">OCULTAR FILTROS</span><i class="fas fa-chevron-down ml-2"></i>');
-                    } else {
-                        $button.html('<span class="btn-text">VER FILTROS</span><i class="fas fa-chevron-down ml-2"></i>');
-                    }
-                }, 350); // Esperar a que termine la animación
+                if ($card.hasClass('collapsed-card')) {
+                    $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                } else {
+                    $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
             });
         });
     </script>

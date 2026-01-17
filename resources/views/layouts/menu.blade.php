@@ -11,6 +11,7 @@
         || Request::is('permissions*')
         || Request::is('cajas*')
         || Request::is('roles*')
+        || Request::is('metodo_pagos*')
         || Request::is('ayuda*');
 
     $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*') || Request::is('notas_debito*');
@@ -301,6 +302,7 @@
     auth()->user()->can('users index') ||
     auth()->user()->can('permissions index') ||
     auth()->user()->can('roles index') ||
+    auth()->user()->can('metodo_pagos index') ||
     auth()->user()->can('ayuda index'))
 <li class="nav-item {{ $isConfigOpen ? 'menu-is-opening menu-open' : '' }}">
     <a href="#" class="nav-link">
@@ -360,6 +362,15 @@
             </a>
         </li>
         @endcan
+
+        {{-- @can('metodo_pagos index') --}}
+        <li class="nav-item">
+            <a href="{{ route('metodo_pagos.index') }}" class="nav-link {{ Request::is('metodo_pagos*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-credit-card"></i>
+                <p>Métodos de Pago</p>
+            </a>
+        </li>
+        {{-- @endcan --}}
 
         @can('cargos index')
         <li class="nav-item">
