@@ -1,7 +1,7 @@
 <!-- Empresa Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('id_empresa', 'Empresa:') !!}
-    {!! Form::select('id_empresa', $empresas->pluck('razon_social', 'id_empresa'), null, ['class' => 'form-control', 'required', 'placeholder' => 'Seleccione una empresa']) !!}
+    {!! Form::select('id_empresa', $empresas, null, ['class' => 'form-control', 'required', 'placeholder' => 'Seleccione una empresa']) !!}
 </div>
 
 <!-- Tipo Timbrado Field -->

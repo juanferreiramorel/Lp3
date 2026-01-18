@@ -320,42 +320,24 @@ class UserController extends AppBaseController
      */
     protected function buildSucursalesDisponibles(array $idsExtra = [], bool $listarTodas = false)
     {
-        if ($listarTodas) {
-            $sucursales = DB::table('sucursales')
-                ->orderBy('descripcion')
-                ->pluck('descripcion', 'id_sucursal');
-        } else {
-            $sucursales = $this->getSucursalesPermitidas();
-
-            if ($sucursales->isEmpty()) {
-                $sucursales = DB::table('sucursales')
-                    ->orderBy('descripcion')
-                    ->pluck('descripcion', 'id_sucursal');
-            }
-        }
-
-        $idsExtra = collect($idsExtra)
+        // Sanitizar idsExtra
+        $includeIds = collect($idsExtra)
             ->filter(fn ($id) => $id !== null)
             ->map(fn ($id) => (int) $id)
             ->unique()
-            ->values();
+            ->values()
+            ->toArray();
 
-        if ($idsExtra->isNotEmpty()) {
-            $idsActuales = $sucursales->keys()
-                ->map(fn ($id) => (int) $id);
-
-            $faltantes = $idsExtra->diff($idsActuales);
-
-            if ($faltantes->isNotEmpty()) {
-                $sucursalesExtra = DB::table('sucursales')
-                    ->whereIn('id_sucursal', $faltantes->all())
-                    ->pluck('descripcion', 'id_sucursal');
-
-                $sucursales = $sucursales->merge($sucursalesExtra);
-            }
+        // Si se solicita listar todas (común en create/edit de usuarios para admins)
+        if ($listarTodas) {
+            return $this->getTodasSucursalesActivas($includeIds)
+                ->sortBy(fn ($descripcion) => Str::lower($descripcion));
         }
 
-        return $sucursales->sortBy(fn ($descripcion) => Str::lower($descripcion));
+        // Si se respetan los permisos del usuario actual
+        // Nota: Esto aplicará filtros de permisos a los IDs incluidos también.
+        return $this->getSucursalesPermitidas(null, $includeIds)
+            ->sortBy(fn ($descripcion) => Str::lower($descripcion));
     }
 
     public function destroy($id)

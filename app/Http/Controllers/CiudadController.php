@@ -27,43 +27,41 @@ class CiudadController extends AppBaseController
         // buscar
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter');
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        $query = 'SELECT c.*, d.descripcion as departamento
+                  FROM ciudades c
+                  JOIN departamentos d ON c.id_departamento = d.id_departamento
+                  WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $query .= ' AND c.estado = ?';
+            $params[] = ($estadoFilter === '1' || $estadoFilter === 'true') ? true : false;
+        }
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $ciudades = DB::select(
-                    'SELECT c.*, d.descripcion as departamento
-                    FROM ciudades c
-                    JOIN departamentos d ON c.id_departamento = d.id_departamento
-                    WHERE c.id_ciudad = ?
-                    ORDER BY c.id_ciudad DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND c.id_ciudad = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
-                $ciudades = DB::select(
-                    'SELECT c.*, d.descripcion as departamento
-                    FROM ciudades c
-                    JOIN departamentos d ON c.id_departamento = d.id_departamento
-                    WHERE c.descripcion ILIKE ?
-                    OR d.descripcion ILIKE ?
-                    OR cast(c.id_ciudad as text) ILIKE ?
-                    ORDER BY c.id_ciudad DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (c.descripcion ILIKE ? OR d.descripcion ILIKE ? OR cast(c.id_ciudad as text) ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        }else{
-            $ciudades = DB::select(
-                'SELECT c.*, d.descripcion as departamento
-                    FROM ciudades c
-                    JOIN departamentos d ON c.id_departamento = d.id_departamento
-                    ORDER BY c.id_ciudad DESC'
-            );
         }
+        
+        $query .= ' ORDER BY c.id_ciudad DESC';
+
+        $ciudades = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -137,10 +135,11 @@ class CiudadController extends AppBaseController
 
         // Guardar la nueva ciudad
         DB::insert(
-            'INSERT INTO ciudades (descripcion, id_departamento) VALUES (?, ?)',
+            'INSERT INTO ciudades (descripcion, id_departamento, estado) VALUES (?, ?, ?)',
             [
                 $input['descripcion'],
-                $input['id_departamento']
+                $input['id_departamento'],
+                true // Estado activo por defecto
             ]
         );
         // Redirigir a la lista de ciudades con un mensaje de éxito
@@ -222,7 +221,7 @@ class CiudadController extends AppBaseController
 
     public function destroy($id)
     {
-        // Eliminar la ciudad por su ID
+        // Obtener la ciudad por su ID
         $ciudad = DB::selectOne('SELECT * FROM ciudades WHERE id_ciudad = ?', [$id]);
 
         // Si la ciudad no existe, redirigir con un mensaje de error
@@ -232,10 +231,20 @@ class CiudadController extends AppBaseController
         }
 
         try {
-            DB::delete('DELETE FROM ciudades WHERE id_ciudad = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // Soft delete: cambiar el estado
+            // Si el campo 'estado' no existe aún en la BD (antes de correr la migración), esto fallará si se ejecuta.
+            // Asumimos que la migración se corre al final.
+            // Para toggle:
+            $nuevoEstado = isset($ciudad->estado) ? !$ciudad->estado : false; 
+            // Si es null o no existe, asumimos que queremos desactivarlo (false). 
+            // Pero si estamos implementando soft deletes, el default debería ser true.
+            
+            DB::update('UPDATE ciudades SET estado = ? WHERE id_ciudad = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Ciudad activada correctamente.' : 'Ciudad inactivada correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('ciudades.index'));

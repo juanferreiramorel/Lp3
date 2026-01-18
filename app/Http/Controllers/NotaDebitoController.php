@@ -183,7 +183,8 @@ class NotaDebitoController extends AppBaseController
         }
 
         // Metodos de pago
-        $metodo_pagos = DB::table('metodo_pagos')->pluck('descripcion', 'id_metodo_pago');
+        // Metodos de pago
+        $metodo_pagos = $this->getMetodosPago();
 
         return view('notas_debito.create', compact('clientes', 'sucursales', 'usuario', 'timbrados_vigentes', 'metodo_pagos'));
     }
@@ -505,9 +506,7 @@ class NotaDebitoController extends AppBaseController
         }
 
         // Sucursales permitidas
-        $sucursales = DB::table('sucursales')
-            ->where('id_sucursal', auth()->user()->id_sucursal)
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas(auth()->user(), $nota->id_sucursal);
 
         $usuario = auth()->user()->name;
 
@@ -530,7 +529,10 @@ class NotaDebitoController extends AppBaseController
         }
 
         // Metodos de pago
-        $metodo_pagos = DB::table('metodo_pagos')->pluck('descripcion', 'id_metodo_pago');
+        // Metodos de pago
+        $cobro = DB::table('cobros')->where('id_nota_debito', $id)->first();
+        $idMetodoPagoActual = $cobro ? $cobro->id_metodo_pago : null;
+        $metodo_pagos = $this->getMetodosPago($idMetodoPagoActual);
 
         return view('notas_debito.edit', compact('nota', 'sucursales', 'usuario', 'timbrados_vigentes', 'metodo_pagos'));
     }

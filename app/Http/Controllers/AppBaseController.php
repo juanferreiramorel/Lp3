@@ -50,18 +50,80 @@ class AppBaseController extends Controller
      * @param  \App\Models\User|null  $user
      * @return \Illuminate\Support\Collection
      */
-    protected function getSucursalesPermitidas($user = null)
+    /**
+     * Retorna el query base para sucursales activas.
+     * Este es el único lugar donde se debe definir el filtro de estado.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getSucursalesQuery($includeId = null)
+    {
+        return DB::table('sucursales')
+            ->where(function ($query) use ($includeId) {
+                $query->where('estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('id_sucursal', $includeId);
+                    } else {
+                        $query->orWhere('id_sucursal', $includeId);
+                    }
+                }
+            })
+            ->orderBy('descripcion');
+    }
+
+    /**
+     * Retorna todas las sucursales activas.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getTodasSucursalesActivas($includeId = null)
+    {
+        return $this->getSucursalesQuery($includeId)->pluck('descripcion', 'id_sucursal');
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de las sucursales permitidas para el usuario autenticado.
+     * Si el usuario no tiene restricciones retorna todas las sucursales.
+     *
+     * @param  \App\Models\User|null  $user
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getSucursalesPermitidas($user = null, $includeId = null)
     {
         $ids = $this->getSucursalesPermitidasIds($user);
 
-        $query = DB::table('sucursales')
-            ->orderBy('descripcion');
+        $query = $this->getSucursalesQuery($includeId);
 
         if (!empty($ids)) {
             $query->whereIn('id_sucursal', $ids);
         }
 
         return $query->pluck('descripcion', 'id_sucursal');
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de los métodos de pago activos.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getMetodosPago($includeId = null)
+    {
+        return DB::table('metodo_pagos')
+            ->where(function ($query) use ($includeId) {
+                $query->where('estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('id_metodo_pago', $includeId);
+                    } else {
+                        $query->orWhere('id_metodo_pago', $includeId);
+                    }
+                }
+            })
+            ->pluck('descripcion', 'id_metodo_pago');
     }
 
     public function sendResponse($result, $message)
@@ -118,5 +180,77 @@ class AppBaseController extends Controller
             'mode' => 'all',
             'term' => $buscar
         ];
+    }
+    /**
+     * Retorna un listado (id => razon_social) de las empresas activas.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getEmpresasActivas()
+    {
+        return \App\Models\Empresa::active()
+            ->select(DB::raw("id_empresa, COALESCE(nombre_comercial, razon_social) as nombre"))
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id_empresa');
+    }
+
+    /**
+     * Retorna el query base para ciudades activas.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getCiudadesQuery($includeId = null)
+    {
+        return DB::table('ciudades')
+            ->where(function ($query) use ($includeId) {
+                $query->where('estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('id_ciudad', $includeId);
+                    } else {
+                        $query->orWhere('id_ciudad', $includeId);
+                    }
+                }
+            })
+            ->orderBy('descripcion');
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de las ciudades activas.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getCiudadesDropdown($includeId = null)
+    {
+        return $this->getCiudadesQuery($includeId)->pluck('descripcion', 'id_ciudad');
+    }
+
+    /**
+     * Retorna un listado de ciudades activas con su departamento.
+     * Utilizado en vistas que requieren datos adicionales (ej: data-attributes o filtrado js).
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getCiudadesConDepartamento($includeId = null)
+    {
+        // Reconstruimos la query para incluir el join con departamentos
+        return DB::table('ciudades')
+            ->join('departamentos', 'ciudades.id_departamento', '=', 'departamentos.id_departamento')
+            ->select('ciudades.*', 'departamentos.descripcion as departamento')
+            ->where(function ($query) use ($includeId) {
+                $query->where('ciudades.estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('ciudades.id_ciudad', $includeId);
+                    } else {
+                        $query->orWhere('ciudades.id_ciudad', $includeId);
+                    }
+                }
+            })
+            ->orderBy('ciudades.descripcion')
+            ->get();
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class PagoController extends Controller
+class PagoController extends AppBaseController
 {
     public function __construct()
     {
@@ -39,7 +39,8 @@ class PagoController extends Controller
         }
 
         // enviar metodos de pago, listar solos los activos
-        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+        // enviar metodos de pago, listar solos los activos
+        $metodos_pago = $this->getMetodosPago();
 
         // retornar la vista de pagos que se encuentra en resources/views/compras/pagos.blade.php
         return view('compras.pagos')->with('compras', $compra)->with('metodos_pago', $metodos_pago);

@@ -220,10 +220,7 @@ class VentaController extends AppBaseController
 
         // Enviar datos de sucursales segun sucursal del usuario
         $usuarioActual = auth()->user();
-        $sucursalesPermitidasIds = $this->getSucursalesPermitidasIds($usuarioActual);
-        $sucursales = DB::table('sucursales')
-            ->whereIn('id_sucursal', $sucursalesPermitidasIds)
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
         $usuario = $usuarioActual->name;
 
         // enviar datos de apertura de caja a ventas 
@@ -610,8 +607,7 @@ class VentaController extends AppBaseController
         ];
 
         // Enviar datos de sucursales segun sucursal del usuario
-        $sucursales = DB::table('sucursales')->where('id_sucursal', auth()->user()->id_sucursal)
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas(auth()->user(), $venta->id_sucursal);
 
         // obtener los detalles de ventas
         $detalle_venta = DB::select(

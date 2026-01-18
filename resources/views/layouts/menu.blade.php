@@ -363,14 +363,14 @@
         </li>
         @endcan
 
-        {{-- @can('metodo_pagos index') --}}
+        @can('metodo_pagos index')
         <li class="nav-item">
             <a href="{{ route('metodo_pagos.index') }}" class="nav-link {{ Request::is('metodo_pagos*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-credit-card"></i>
                 <p>Métodos de Pago</p>
             </a>
         </li>
-        {{-- @endcan --}}
+        @endcan
 
         @can('cargos index')
         <li class="nav-item">

@@ -58,7 +58,7 @@ class TimbradoController extends Controller
             $timbrado->actualizarEstado();
         }
 
-        $empresas = Empresa::orderBy('razon_social')->get();
+        $empresas = $this->getEmpresasActivas();
         $tipos = TipoTimbrado::all();
 
         return view('timbrados.index', compact('timbrados', 'empresas', 'tipos'));
@@ -71,7 +71,7 @@ class TimbradoController extends Controller
     {
         $this->middleware('permission:timbrados create');
 
-        $empresas = Empresa::orderBy('razon_social')->get();
+        $empresas = $this->getEmpresasActivas();
         $tipos = TipoTimbrado::all();
 
         return view('timbrados.create', compact('empresas', 'tipos'));
@@ -168,7 +168,7 @@ class TimbradoController extends Controller
         $this->middleware('permission:timbrados edit');
 
         $timbrado = Timbrado::findOrFail($id);
-        $empresas = Empresa::orderBy('razon_social')->get();
+        $empresas = $this->getEmpresasActivas();
         $tipos = TipoTimbrado::all();
 
         // No permitir editar si ya tiene facturas asociadas -> AHORA SI SE PERMITE CON RESTRICCIONES

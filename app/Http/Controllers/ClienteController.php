@@ -115,7 +115,8 @@ class ClienteController extends AppBaseController
     public function create()
     {
         // Armar consultar para cargar ciudad y departamento para el select
-        $ciudades = DB::table('ciudades')->select('id_ciudad', 'descripcion', 'id_departamento')->get();
+        // Usar helper del AppBaseController para traer ciudades activas
+        $ciudades = $this->getCiudadesConDepartamento();
         $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
 
         return view('clientes.create')->with('ciudades', $ciudades)
@@ -219,7 +220,8 @@ class ClienteController extends AppBaseController
         }
 
         // Armar consultar para cargar ciudad y departamento para el select
-        $ciudades = DB::table('ciudades')->select('id_ciudad', 'descripcion', 'id_departamento')->get();
+        // Usar helper del AppBaseController incluyendo la ciudad actual del cliente
+        $ciudades = $this->getCiudadesConDepartamento($clientes->id_ciudad);
         $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
 
         return view('clientes.edit')->with('clientes', $clientes)

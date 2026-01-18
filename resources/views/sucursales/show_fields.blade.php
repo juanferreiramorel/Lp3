@@ -22,3 +22,14 @@
     <p>{{ $sucursales->id_ciudad }}</p>
 </div>
 
+<!-- Estado Field -->
+<div class="col-sm-12">
+    {!! Form::label('estado', 'Estado:') !!}
+    <p>
+        @if($sucursales->estado)
+            <span class="badge badge-success">Activo</span>
+        @else
+            <span class="badge badge-secondary">Inactivo</span>
+        @endif
+    </p>
+

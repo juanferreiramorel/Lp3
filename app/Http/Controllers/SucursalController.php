@@ -96,12 +96,11 @@ class SucursalController extends AppBaseController
     }
     public function create(){
         //Obtener ciudades
-        $ciudades = DB::table('ciudades')->pluck('descripcion', 'id_ciudad');
+        $ciudades = $this->getCiudadesDropdown();
 
         //Obtener empresas
-        $empresas = DB::table('empresas')
-            ->selectRaw("id_empresa, COALESCE(nombre_comercial, razon_social) as nombre")
-            ->pluck('nombre', 'id_empresa');
+        //Obtener empresas
+        $empresas = $this->getEmpresasActivas();
 
         return view('sucursales.create')
             ->with('ciudades', $ciudades)
@@ -165,12 +164,11 @@ class SucursalController extends AppBaseController
             return redirect()->route('sucursales.index');
         }
         //Obtener ciudades
-        $ciudades = DB::table('ciudades')->pluck('descripcion', 'id_ciudad');
+        $ciudades = $this->getCiudadesDropdown($sucursales->id_ciudad);
 
         //Obtener empresas
-        $empresas = DB::table('empresas')
-            ->selectRaw("id_empresa, COALESCE(nombre_comercial, razon_social) as nombre")
-            ->pluck('nombre', 'id_empresa');
+        //Obtener empresas
+        $empresas = $this->getEmpresasActivas();
 
         return view('sucursales.edit')
             ->with('sucursales', $sucursales)
@@ -243,11 +241,14 @@ class SucursalController extends AppBaseController
         }
 
         try {
-            //Eliminar la sucursal de la base de datos
-            DB::delete('DELETE FROM sucursales WHERE id_sucursal = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            //Eliminar la sucursal de la base de datos (SOFT DELETE via estado)
+            $nuevoEstado = !$sucursal->estado;
+            DB::update('UPDATE sucursales SET estado = ? WHERE id_sucursal = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Sucursal activada correctamente.' : 'Sucursal inactivada correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado de la sucursal: ' . $e->getMessage());
         }
 
         return redirect(route('sucursales.index'));

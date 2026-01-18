@@ -28,6 +28,7 @@ class EmpresaController extends AppBaseController
     {
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter'); // New filter
         $sql_busqueda = 'WHERE 1=1';
 
         // Procesar modo de búsqueda
@@ -35,14 +36,20 @@ class EmpresaController extends AppBaseController
 
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
-                $sql_busqueda = "WHERE e.id_empresa = " . (int)$searchConfig['term'];
+                $sql_busqueda .= " AND e.id_empresa = " . (int)$searchConfig['term'];
             } else {
                 $buscarTerm = $searchConfig['term'];
-                $sql_busqueda = "WHERE (CAST(e.id_empresa AS TEXT) iLIKE '%{$buscarTerm}%'
+                $sql_busqueda .= " AND (CAST(e.id_empresa AS TEXT) iLIKE '%{$buscarTerm}%'
                     OR e.razon_social ILIKE '%{$buscarTerm}%'
                     OR e.nombre_comercial ILIKE '%{$buscarTerm}%'
                     OR e.ruc ILIKE '%{$buscarTerm}%')";
             }
+        }
+
+        // Apply state filter if present
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+             $valor = ($estadoFilter === '1' || $estadoFilter === 'true') ? 'TRUE' : 'FALSE';
+             $sql_busqueda .= " AND e.estado = $valor";
         }
 
         $empresas = DB::select(
@@ -297,27 +304,17 @@ class EmpresaController extends AppBaseController
             return redirect()->route('empresas.index');
         }
 
-        // Verificar si tiene sucursales asociadas
-        $sucursales = DB::selectOne('SELECT COUNT(*) as total FROM sucursales WHERE id_empresa = ?', [$id]);
-
-        if ($sucursales->total > 0) {
-            Alert::error('Error', 'No se puede eliminar la empresa porque tiene sucursales asociadas.');
-            return redirect()->route('empresas.index');
-        }
-
-        DB::beginTransaction();
         try {
-            // Eliminar el logo si existe
-            if ($empresa->logo && file_exists($this->path . $empresa->logo)) {
-                unlink($this->path . $empresa->logo);
-            }
-
-            DB::delete('DELETE FROM empresas WHERE id_empresa = ?', [$id]);
-            DB::commit();
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // Toggle estado
+            $nuevoEstado = $empresa->estado ? 'false' : 'true'; // SQL understands 'true'/'false' or 1/0
+            
+            DB::update('UPDATE empresas SET estado = ? WHERE id_empresa = ?', [$nuevoEstado === 'true' ? true : false, $id]);
+            
+            $mensaje = ($nuevoEstado === 'true') ? 'Empresa activada correctamente.' : 'Empresa inactivada correctamente.';
+            Alert::success('Éxito', $mensaje);
+            
         } catch (\Exception $e) {
-            DB::rollback();
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
         return redirect()->route('empresas.index');
     }

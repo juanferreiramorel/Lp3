@@ -31,10 +31,10 @@
                                 <label>Empresa</label>
                                 <select name="id_empresa" class="form-control">
                                     <option value="">Todas</option>
-                                    @foreach($empresas as $empresa)
-                                        <option value="{{ $empresa->id_empresa }}"
-                                            {{ request('id_empresa') == $empresa->id_empresa ? 'selected' : '' }}>
-                                            {{ $empresa->razon_social }}
+                                    @foreach($empresas as $id => $razon_social)
+                                        <option value="{{ $id }}"
+                                            {{ request('id_empresa') == $id ? 'selected' : '' }}>
+                                            {{ $razon_social }}
                                         </option>
                                     @endforeach
                                 </select>

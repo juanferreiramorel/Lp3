@@ -22,7 +22,7 @@
        <!--<include('flash::message')>-->
 
         <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
+            @include('ciudades.filtros')
         </div>
 
         <div class="card tabla-container">

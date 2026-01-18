@@ -21,6 +21,7 @@ class Sucursal extends Model
         'telefono',
         'id_ciudad',
         'id_empresa',
+        'estado',
     ];
 
     public function empresa()

@@ -57,7 +57,7 @@
 
     <div class="card-footer clearfix">
         <div class="float-right">
-            {{-- @include('adminlte-templates::common.paginate', ['records' => $metodos]) --}}
+            @include('adminlte-templates::common.paginate', ['records' => $metodos])
         </div>
     </div>
 </div>

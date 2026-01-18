@@ -144,7 +144,8 @@ class CuentasACobrarController extends AppBaseController
         }
 
         // Obtener métodos de pago para el modal de cobro
-        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+        // Obtener métodos de pago para el modal de cobro
+        $metodos_pago = $this->getMetodosPago();
 
         // Obtener datos para los filtros
         $clientes = DB::table('clientes')->selectRaw("id_cliente, CONCAT(clie_nombre, ' ', clie_apellido) as cliente")->pluck('cliente', 'id_cliente');
@@ -514,7 +515,8 @@ class CuentasACobrarController extends AppBaseController
         $saldo_pendiente = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
 
         // Obtener métodos de pago
-        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+        // Obtener métodos de pago
+        $metodos_pago = $this->getMetodosPago();
 
         return view('cuentasacobrar.pagar', compact('cuenta', 'venta', 'cliente', 'saldo_pendiente', 'metodos_pago'));
     }

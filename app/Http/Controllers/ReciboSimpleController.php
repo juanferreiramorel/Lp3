@@ -180,13 +180,11 @@ class ReciboSimpleController extends AppBaseController
         $usuario = auth()->user()->name;
 
         // Obtener sucursales activas
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas(auth()->user());
 
         // Obtener métodos de pago
-        $metodos_pago = DB::table('metodo_pagos')
-            ->where('estado', True)
-            ->pluck('descripcion', 'id_metodo_pago');
+        // Obtener métodos de pago
+        $metodos_pago = $this->getMetodosPago();
 
         // Obtener departamentos
         $departamentos = DB::table('departamentos')
@@ -439,13 +437,12 @@ class ReciboSimpleController extends AppBaseController
         $usuario = auth()->user()->name;
 
         // Sucursales
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas(auth()->user(), $recibo->id_sucursal);
 
         // Métodos de pago
-        $metodos_pago = DB::table('metodo_pagos')
-            ->where('estado', True)
-            ->pluck('descripcion', 'id_metodo_pago');
+        // Métodos de pago
+        $cobros = DB::table('cobros_recibos_simples')->where('id_recibo', $id)->pluck('id_metodo_pago')->toArray();
+        $metodos_pago = $this->getMetodosPago($cobros);
 
         // Detalles del recibo
         $detalle_recibo = DB::select(

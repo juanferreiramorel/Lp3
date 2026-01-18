@@ -369,8 +369,7 @@ class OrdenCompraController extends AppBaseController
         $proveedores = DB::table('proveedores')
             ->pluck('descripcion', 'id_proveedor');
 
-        $sucursales = DB::table('sucursales')
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas(auth()->user(), $ordenCompra->id_sucursal);
 
         $usuario = auth()->user()->name;
 

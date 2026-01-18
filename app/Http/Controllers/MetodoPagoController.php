@@ -14,10 +14,10 @@ class MetodoPagoController extends AppBaseController
     public function __construct()
     {
         $this->middleware('auth');
-        // $this->middleware('permission:metodo_pagos index')->only(['index']);
-        // $this->middleware('permission:metodo_pagos create')->only(['create', 'store']);
-        // $this->middleware('permission:metodo_pagos edit')->only(['edit', 'update']);
-        // $this->middleware('permission:metodo_pagos destroy')->only(['destroy']);
+        $this->middleware('permission:metodo_pagos index')->only(['index']);
+        $this->middleware('permission:metodo_pagos create')->only(['create', 'store']);
+        $this->middleware('permission:metodo_pagos edit')->only(['edit', 'update']);
+        $this->middleware('permission:metodo_pagos destroy')->only(['destroy']);
     }
 
     public function index(Request $request)

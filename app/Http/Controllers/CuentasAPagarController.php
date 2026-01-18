@@ -143,7 +143,8 @@ class CuentasAPagarController extends AppBaseController
         }
 
         // Obtener métodos de pago para el modal de pago
-        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+        // Obtener métodos de pago para el modal de pago
+        $metodos_pago = $this->getMetodosPago();
 
         // Obtener datos para los filtros
         $proveedores = DB::table('proveedores')->pluck('descripcion', 'id_proveedor');
@@ -562,7 +563,8 @@ class CuentasAPagarController extends AppBaseController
         $saldo_pendiente = $cuenta->importe - ($cuenta->importe_pagado ?? 0);
 
         // Obtener métodos de pago
-        $metodos_pago = DB::table('metodo_pagos')->where('estado', true)->pluck('descripcion', 'id_metodo_pago');
+        // Obtener métodos de pago
+        $metodos_pago = $this->getMetodosPago();
 
         return view('cuentasapagar.pagar', compact('cuenta', 'compra', 'proveedor', 'saldo_pendiente', 'metodos_pago'));
     }
