@@ -29,6 +29,7 @@ class Cobro extends Model
         'fechahora_anulado',
         'id_useranulado',
         'id_cta',
+        'id_apertura',
     ];
 
     public function notaDebito()

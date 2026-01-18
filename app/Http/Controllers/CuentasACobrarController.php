@@ -296,8 +296,8 @@ class CuentasACobrarController extends AppBaseController
 
             // Insertar el cobro
             DB::insert(
-                'INSERT INTO cobros(id_cta, id_venta, user_id, id_metodo_pago, cobro_fecha, cobro_importe, cobro_estado, nro_voucher)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cobros(id_cta, id_venta, user_id, id_metodo_pago, cobro_fecha, cobro_importe, cobro_estado, nro_voucher, id_apertura)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $id_cta,
                     $cuenta->id_venta,
@@ -306,7 +306,8 @@ class CuentasACobrarController extends AppBaseController
                     $request->fecha_cobro,
                     $monto,
                     'COBRADO',
-                    $request->nro_voucher ?? null
+                    $request->nro_voucher ?? null,
+                    $caja_abierta->id_apertura
                 ]
             );
 
@@ -537,6 +538,19 @@ class CuentasACobrarController extends AppBaseController
             $fecha_cobro = $request->fecha_cobro;
             $pagos = $request->pagos;
 
+            // Validar que el usuario tenga una caja abierta para procesar pagos
+            $caja_abierta = DB::selectOne(
+                "SELECT * FROM apertura_cierre_cajas
+                WHERE user_id = ? AND estado = 'ABIERTA'
+                ORDER BY id_apertura DESC LIMIT 1",
+                [auth()->user()->id]
+            );
+
+            if (empty($caja_abierta)) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'No tienes una caja abierta para realizar cobros.'], 403);
+            }
+
             $cuenta = DB::table('cuentas_a_cobrar')->where('id_cta', $id_cta)->lockForUpdate()->first();
             
             // Validar nuevamente cuotas anteriores por seguridad
@@ -571,6 +585,7 @@ class CuentasACobrarController extends AppBaseController
                         'cobro_importe' => $monto,
                         'cobro_estado' => 'COBRADO',
                         'nro_voucher' => $pago['nro_voucher'] ?? null,
+                        'id_apertura' => $caja_abierta->id_apertura,
                     ], 'id_cobro');
                     
                     $cobros_ids[] = $id_cobro;

@@ -24,27 +24,37 @@ class CargoController extends AppBaseController
     {
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter');
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        $query = 'SELECT * FROM cargos WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $query .= ' AND estado = ?';
+            $params[] = ($estadoFilter === '1' || $estadoFilter === 'true') ? true : false;
+        }
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $cargos = DB::select('select * from cargos where id_cargo = ?', [(int)$searchConfig['term']]);
+                $query .= ' AND id_cargo = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
-                $cargos = DB::select(
-                    'select * from cargos
-                    where descripcion ilike ?
-                    or cast(id_cargo as text) ilike ?',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (descripcion ILIKE ? OR cast(id_cargo as text) ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            $cargos = DB::select('select * from cargos');
         }
+
+        $query .= ' ORDER BY id_cargo DESC';
+
+        $cargos = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -111,9 +121,10 @@ class CargoController extends AppBaseController
         }
 
         // Si la validación pasa, guardar el nuevo cargo utilizando la función insert de la base de datos
-        DB::insert('insert into cargos (descripcion) values (?)',
+        DB::insert('insert into cargos (descripcion, estado) values (?, ?)',
             [
-                $input['descripcion']
+                $input['descripcion'],
+                true
             ]
         );
 
@@ -199,11 +210,15 @@ class CargoController extends AppBaseController
         }
 
         try {
-            // Eliminar el cargo utilizando la función delete de la base de datos
-            DB::delete('delete from cargos where id_cargo = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // Soft delete: cambiar el estado
+            $nuevoEstado = isset($cargo->estado) ? !$cargo->estado : false; 
+            
+            DB::update('UPDATE cargos SET estado = ? WHERE id_cargo = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Cargo activado correctamente.' : 'Cargo inactivado correctamente.';
+            Alert::toast($mensaje, 'success');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('cargos.index'));

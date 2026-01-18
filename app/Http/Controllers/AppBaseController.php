@@ -195,6 +195,72 @@ class AppBaseController extends Controller
     }
 
     /**
+     * Retorna el query base para departamentos activos.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getDepartamentosQuery($includeId = null)
+    {
+        return DB::table('departamentos')
+            ->where(function ($query) use ($includeId) {
+                $query->where('estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('id_departamento', $includeId);
+                    } else {
+                        $query->orWhere('id_departamento', $includeId);
+                    }
+                }
+            })
+            ->orderBy('descripcion');
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de los departamentos activos.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getDepartamentosDropdown($includeId = null)
+    {
+        return $this->getDepartamentosQuery($includeId)->pluck('descripcion', 'id_departamento');
+    }
+
+    /**
+     * Retorna el query base para cargos activos.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getCargosQuery($includeId = null)
+    {
+        return DB::table('cargos')
+            ->where(function ($query) use ($includeId) {
+                $query->where('estado', true);
+                if ($includeId) {
+                    if (is_array($includeId)) {
+                        $query->orWhereIn('id_cargo', $includeId);
+                    } else {
+                        $query->orWhere('id_cargo', $includeId);
+                    }
+                }
+            })
+            ->orderBy('descripcion');
+    }
+
+    /**
+     * Retorna un listado (id => descripcion) de los cargos activos.
+     *
+     * @param int|array|null $includeId ID(s) a incluir incluso si no están activos
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getCargosDropdown($includeId = null)
+    {
+        return $this->getCargosQuery($includeId)->pluck('descripcion', 'id_cargo');
+    }
+
+    /**
      * Retorna el query base para ciudades activas.
      *
      * @param int|array|null $includeId ID(s) a incluir incluso si no están activos

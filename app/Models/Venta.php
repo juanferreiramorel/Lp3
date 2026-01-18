@@ -14,7 +14,6 @@ class Venta extends Model
 
     protected $fillable = [
         'factura_nro',
-        'id_apertura',
         'id_cliente',
         'id_sucursal',
         'id_timbrado',

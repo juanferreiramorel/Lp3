@@ -187,8 +187,7 @@ class ReciboSimpleController extends AppBaseController
         $metodos_pago = $this->getMetodosPago();
 
         // Obtener departamentos
-        $departamentos = DB::table('departamentos')
-            ->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown();
 
         return view('recibossimples.create')
             ->with('clientes', $clientes)
@@ -457,8 +456,7 @@ class ReciboSimpleController extends AppBaseController
         );
 
         // Obtener departamentos
-        $departamentos = DB::table('departamentos')
-            ->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown();
 
         return view('recibossimples.edit')
             ->with('recibo', $recibo)

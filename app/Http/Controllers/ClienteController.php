@@ -117,7 +117,7 @@ class ClienteController extends AppBaseController
         // Armar consultar para cargar ciudad y departamento para el select
         // Usar helper del AppBaseController para traer ciudades activas
         $ciudades = $this->getCiudadesConDepartamento();
-        $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown();
 
         return view('clientes.create')->with('ciudades', $ciudades)
             ->with('departamentos', $departamentos);
@@ -222,7 +222,7 @@ class ClienteController extends AppBaseController
         // Armar consultar para cargar ciudad y departamento para el select
         // Usar helper del AppBaseController incluyendo la ciudad actual del cliente
         $ciudades = $this->getCiudadesConDepartamento($clientes->id_ciudad);
-        $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown($clientes->id_departamento);
 
         return view('clientes.edit')->with('clientes', $clientes)
             ->with('ciudades', $ciudades)

@@ -25,33 +25,37 @@ class DepartamentoController extends AppBaseController
         // Obtener el término de búsqueda
         $buscar = $request->get('buscar');
         $searchMode = $request->get('search_mode', 'all');
+        $estadoFilter = $request->get('estado_filter');
 
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        $query = 'SELECT * FROM departamentos WHERE 1=1';
+        $params = [];
+
+        // Aplicar filtro de estado
+        if ($estadoFilter !== null && $estadoFilter !== '') {
+            $query .= ' AND estado = ?';
+            $params[] = ($estadoFilter === '1' || $estadoFilter === 'true') ? true : false;
+        }
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $departamentos = DB::select(
-                    'SELECT * FROM departamentos
-                    WHERE id_departamento = ?
-                    ORDER BY id_departamento DESC',
-                    [(int)$searchConfig['term']]
-                );
+                $query .= ' AND id_departamento = ?';
+                $params[] = (int)$searchConfig['term'];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
-                $departamentos = DB::select(
-                    'SELECT * FROM departamentos
-                    WHERE descripcion ILIKE ?
-                    OR cast(id_departamento as text) ILIKE ?
-                    ORDER BY id_departamento DESC',
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                $query .= ' AND (descripcion ILIKE ? OR cast(id_departamento as text) ILIKE ?)';
+                $params[] = '%' . $buscarTerm . '%';
+                $params[] = '%' . $buscarTerm . '%';
             }
-        } else {
-            $departamentos = DB::select('SELECT * FROM departamentos ORDER BY id_departamento DESC');
         }
+
+        $query .= ' ORDER BY id_departamento DESC';
+
+        $departamentos = DB::select($query, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)
@@ -115,9 +119,10 @@ class DepartamentoController extends AppBaseController
         }
 
         // Si la validación pasa, guardar el nuevo departamento utilizando la función insert de la base de datos
-        DB::insert('insert into departamentos (descripcion) values (?)',
+        DB::insert('insert into departamentos (descripcion, estado) values (?, ?)',
             [
-                $input['descripcion']
+                $input['descripcion'],
+                true
             ]
         );
 
@@ -196,10 +201,18 @@ class DepartamentoController extends AppBaseController
 
         try {
             // Eliminar el departamento utilizando la función delete de la base de datos
-            DB::delete('delete from departamentos where id_departamento = ?', [$id]);
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            // DB::delete('delete from departamentos where id_departamento = ?', [$id]);
+            // Alert::success('Éxito', 'Registro eliminado correctamente.');
+            
+             // Soft delete: cambiar el estado
+            $nuevoEstado = isset($departamentos->estado) ? !$departamentos->estado : false; 
+            
+            DB::update('UPDATE departamentos SET estado = ? WHERE id_departamento = ?', [$nuevoEstado, $id]);
+            
+            $mensaje = $nuevoEstado ? 'Departamento activado correctamente.' : 'Departamento inactivado correctamente.';
+            Alert::success('Éxito', $mensaje);
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cambiar el estado: ' . $e->getMessage());
         }
 
         return redirect(route('departamentos.index'));
@@ -210,9 +223,7 @@ class DepartamentoController extends AppBaseController
      */
     public function listadoSimple()
     {
-        $departamentos = DB::table('departamentos')
-            ->orderBy('descripcion')
-            ->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown();
 
         return response()->json($departamentos);
     }

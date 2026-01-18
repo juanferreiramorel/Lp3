@@ -9,19 +9,21 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::table('sucursales', function (Blueprint $table) {
+        Schema::table('cargos', function (Blueprint $table) {
             $table->boolean('estado')->default(true);
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        Schema::table('sucursales', function (Blueprint $table) {
+        Schema::table('cargos', function (Blueprint $table) {
             $table->dropColumn('estado');
         });
     }

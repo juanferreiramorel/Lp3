@@ -243,7 +243,6 @@ class NotaDebitoController extends AppBaseController
                 'estado' => 'COMPLETADO',
                 'user_id' => auth()->id(),
                 'motivo' => $input['motivo'] ?? null,
-                'id_apertura' => $caja_abierta->id_apertura,
                 'created_at' => now(),
                 'updated_at' => now(),
             ], 'id_nota_debito');
@@ -489,9 +488,10 @@ class NotaDebitoController extends AppBaseController
             return redirect()->route('notas_debito.index');
         }
 
-        // VALIDACIÓN ESTRICTA: Solo permitir editar si la nota pertenece a la apertura actual
-        if ($nota->id_apertura != $caja_abierta->id_apertura) {
-            Alert::error('Acceso Denegado', 'Solo puede editar Notas de Débito creadas en su sesión de caja actual.');
+        // VALIDACIÓN ESTRICTA: Solo permitir editar notas creadas hoy
+        // (Al quitar id_apertura, usaremos fecha como proxy o chequearemos cobros si es necesario)
+        if (substr($nota->fecha_emision, 0, 10) != substr(now(), 0, 10)) {
+            Alert::error('Acceso Denegado', 'Solo puede editar Notas de Débito creadas hoy.');
             return redirect()->route('notas_debito.index');
         }
 

@@ -5,14 +5,25 @@
                 <tr>
                     <th>#</th>
                     <th>Descripcion</th>
+                    <th>Estado</th>
                     <th colspan="3">Acción</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($cargos as $cargo)
-                    <tr>
+                    <tr class="{{ isset($cargo->estado) && !$cargo->estado ? 'text-muted' : '' }}" 
+                        style="{{ isset($cargo->estado) && !$cargo->estado ? 'background-color: #f8f9fa;' : '' }}">
                         <td>{{ $cargo->id_cargo }}</td>
                         <td>{{ $cargo->descripcion }}</td>
+                        <td>
+                            @if(isset($cargo->estado))
+                                <span class="badge badge-{{ $cargo->estado ? 'success' : 'secondary' }}">
+                                    {{ $cargo->estado ? 'Activo' : 'Inactivo' }}
+                                </span>
+                            @else
+                                <span class="badge badge-success">Activo</span>
+                            @endif
+                        </td>
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['cargos.destroy', $cargo->id_cargo], 'method' => 'delete']) !!}
                             <div class='btn-group'>
@@ -20,11 +31,23 @@
                                     <i class="far fa-edit"></i>
                                 </a>
 
-                                {!! Form::button('<i class="far fa-trash-alt"></i>', [
-                                    'type' => 'submit',
-                                    'class' => 'btn btn-danger btn-xs alert-delete',
-                                    'data-mensaje' => $cargo->descripcion,
-                                ]) !!}
+                                @if(isset($cargo->estado) && !$cargo->estado)
+                                    {!! Form::button('<i class="fas fa-check-circle"></i>', [
+                                        'type' => 'submit',
+                                        'class' => 'btn btn-success btn-xs alert-toggle',
+                                        'data-title' => 'Activar Cargo',
+                                        'data-mensage' => '¿Desea activar el cargo: ' . $cargo->descripcion . '?',
+                                        'title' => 'Activar cargo'
+                                    ]) !!}
+                                @else
+                                    {!! Form::button('<i class="fas fa-ban"></i>', [
+                                        'type' => 'submit',
+                                        'class' => 'btn btn-danger btn-xs alert-toggle',
+                                        'data-title' => 'Inactivar Cargo',
+                                        'data-mensage' => '¿Desea inactivar el cargo: ' . $cargo->descripcion . '?',
+                                        'title' => 'Inactivar cargo'
+                                    ]) !!}
+                                @endif
                             </div>
                             {!! Form::close() !!}
                         </td>

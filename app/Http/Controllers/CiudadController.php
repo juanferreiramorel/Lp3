@@ -96,7 +96,7 @@ class CiudadController extends AppBaseController
     public function create()
     {
         // Mostrar departamentos en la vista utilizando la función pluck()
-        $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown();
 
         return view('ciudades.create')->with('departamentos', $departamentos);
     }
@@ -159,7 +159,7 @@ class CiudadController extends AppBaseController
         }
 
         // Mostrar departamentos en la vista utilizando la función pluck()
-        $departamentos = DB::table('departamentos')->pluck('descripcion', 'id_departamento');
+        $departamentos = $this->getDepartamentosDropdown($ciudad->id_departamento);
 
         return view('ciudades.edit')->with('ciudades', $ciudad)
                                     ->with('departamentos', $departamentos);

@@ -9,7 +9,7 @@
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-primary float-right" href="{{ route('cargos.create') }}">
-                        <i class="fas fa-plus-circle"></i>
+                        <i class="fas fa-plus"></i>
                         Nuevo Cargo
                     </a>
                 </div>
@@ -20,7 +20,7 @@
     <div class="content px-3">
 
         <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
+            @include('cargos.filtros')
         </div>
 
         <!-- agregar la clase tabla-container para mostrar los valores filtrados de table-->

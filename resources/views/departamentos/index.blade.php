@@ -23,7 +23,7 @@
     <div class="content px-3">
 
          <div class="clearfix">
-            @includeIf('layouts.buscador', ['url' => url()->current()])
+            @include('departamentos.filtros')
         </div>
 
         <!-- agregar la clase tabla-container para mostrar los valores filtrados de table-->

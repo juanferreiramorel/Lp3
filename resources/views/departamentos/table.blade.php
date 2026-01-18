@@ -5,14 +5,22 @@
                 <tr>
                     <th>#</th>
                     <th>Descripcion</th>
+                    <th>Estado</th>
                     <th colspan="3">Action</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($departamentos as $departamento)
-                    <tr>
+                    <tr style="{{ !$departamento->estado ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $departamento->id_departamento }}</td>
                         <td>{{ $departamento->descripcion }}</td>
+                        <td>
+                            @if($departamento->estado)
+                                <span class="badge badge-success">Activo</span>
+                            @else
+                                <span class="badge badge-secondary">Inactivo</span>
+                            @endif
+                        </td>
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['departamentos.destroy', $departamento->id_departamento], 'method' => 'delete']) !!}
                             <div class='btn-group'>
@@ -24,11 +32,23 @@
                                 @endcan
 
                                 @can('departamentos destroy')
-                                    {!! Form::button('<i class="far fa-trash-alt"></i>', [
-                                        'type' => 'submit',
-                                        'class' => 'btn btn-danger btn-xs alert-delete',
-                                        'data-mensaje' => 'el departamento',
-                                    ]) !!}
+                                    @if($departamento->estado)
+                                        {!! Form::button('<i class="fas fa-ban"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-danger btn-xs alert-toggle',
+                                            'data-title' => 'Inactivar Departamento',
+                                            'data-mensage' => 'Desea inactivar el departamento: ' . $departamento->descripcion . '?',
+                                            'title' => 'Inactivar departamento'
+                                        ]) !!}
+                                    @else
+                                        {!! Form::button('<i class="fas fa-check-circle"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-success btn-xs alert-toggle',
+                                            'data-title' => 'Activar Departamento',
+                                            'data-mensage' => 'Desea activar el departamento: ' . $departamento->descripcion . '?',
+                                            'title' => 'Activar departamento'
+                                        ]) !!}
+                                    @endif
                                 @endcan
                             </div>
                             {!! Form::close() !!}

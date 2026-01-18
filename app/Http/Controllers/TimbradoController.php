@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 use Carbon\Carbon;
 
-class TimbradoController extends Controller
+class TimbradoController extends AppBaseController
 {
     /**
      * Display a listing of the resource.
