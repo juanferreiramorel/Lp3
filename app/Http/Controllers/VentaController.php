@@ -1008,9 +1008,7 @@ class VentaController extends AppBaseController
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
-                JOIN apertura_cierre_cajas acc ON v.id_apertura = acc.id_apertura
-                JOIN cajas cj ON acc.id_caja = cj.id_caja
-                JOIN sucursales s ON cj.id_sucursal = s.id_sucursal
+                JOIN sucursales s ON v.id_sucursal = s.id_sucursal
                 LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
                 LEFT JOIN timbrados t ON v.id_timbrado = t.id_timbrado
             WHERE v.id_venta = ?",

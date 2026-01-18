@@ -326,7 +326,6 @@ class AperturaCierreCajaController extends Controller
              return abort(404, 'Cierre de caja no encontrado');
         }
 
-        // obtener los totales por forma de pago segun cobros
         // obtener los totales por forma de pago segun cobros (Directamente de cobros)
         $totales_forma_pago = DB::select(
             "SELECT fp.descripcion as forma_pago, SUM(c.cobro_importe) as total_cobro
@@ -337,18 +336,69 @@ class AperturaCierreCajaController extends Controller
             [$id_apertura]
         );
 
-        // Obtener listado detallado de FACTURAS emitidas en este arqueo (Tiempo + Usuario)
-        // Usamos created_at para filtrar ventas de esta sesión
-        $facturas = DB::select(
-            "SELECT v.id_venta, v.factura_nro, v.fecha_venta, v.total, v.estado,
-                    CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente, c.clie_ci
+        // Determinar fecha fin (cierre o actual si está abierta)
+        $fecha_fin = $cierre_caja->fecha_cierre ?? \Carbon\Carbon::now();
+
+        // 1. FACTURAS CONTADO (Ventas directas en caja)
+        // Usamos la tabla cobros para vincular exactamente con la apertura actual
+        $facturas_contado = DB::select(
+            "SELECT DISTINCT
+                v.id_venta,
+                'FACTURA' as tipo,
+                v.factura_nro as numero,
+                v.fecha_venta as fecha,
+                v.total as monto,
+                CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente, 
+                c.clie_ci as ruc
+            FROM ventas v
+            JOIN clientes c ON c.id_cliente = v.id_cliente
+            JOIN cobros cob ON cob.id_venta = v.id_venta
+            WHERE cob.id_apertura = ? 
+              AND cob.cobro_estado = 'COBRADO'
+              AND v.condicion_venta = 'CONTADO'
+              AND v.estado = 'PAGADO'
+            ORDER BY v.id_venta",
+            [$id_apertura]
+        );
+
+        // 2. FACTURAS CRÉDITO (Ventas a crédito)
+        // Estas se muestran informativamente, pero no afectan el arqueo de efectivo (excepto si hubo entrega inicial, que sería un cobro)
+        $facturas_credito = DB::select(
+            "SELECT 
+                'FACTURA' as tipo,
+                v.factura_nro as numero,
+                v.fecha_venta as fecha,
+                v.total as monto,
+                CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente, 
+                c.clie_ci as ruc
             FROM ventas v
             JOIN clientes c ON c.id_cliente = v.id_cliente
             WHERE v.user_id = ? 
-              AND v.created_at >= ?
-              AND v.estado = 'PAGADO'
+              AND v.fecha_venta >= ?
+              AND v.fecha_venta <= ?
+              AND v.condicion_venta = 'CREDITO'
+              AND v.estado != 'ANULADO'
             ORDER BY v.id_venta",
-            [$cierre_caja->user_id, $cierre_caja->fecha_apertura]
+            [$cierre_caja->user_id, $cierre_caja->fecha_apertura, $fecha_fin]
+        );
+
+        // 3. RECIBOS DE COBRO (Pagos de cuentas a crédito)
+        // Estos están vinculados directamente a la apertura mediante id_apertura en cobros
+        $recibos = DB::select(
+            "SELECT 
+                'RECIBO' as tipo,
+                CAST(cob.id_cobro AS VARCHAR) as numero,
+                cob.cobro_fecha as fecha,
+                cob.cobro_importe as monto,
+                CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente,
+                c.clie_ci as ruc
+            FROM cobros cob
+            JOIN cuentas_a_cobrar ca ON ca.id_cta = cob.id_cta
+            JOIN ventas v ON v.id_venta = ca.id_venta
+            JOIN clientes c ON c.id_cliente = v.id_cliente
+            WHERE cob.id_apertura = ? 
+              AND cob.cobro_estado = 'COBRADO'",
+            [$id_apertura]
         );
 
         // Obtener listado detallado de NOTAS DE DÉBITO emitidas en este arqueo
@@ -359,13 +409,15 @@ class AperturaCierreCajaController extends Controller
             JOIN clientes c ON c.id_cliente = nd.id_cliente
             WHERE nd.user_id = ? 
               AND nd.created_at >= ? 
+              AND nd.created_at <= ?
               AND nd.estado != 'ANULADO'
             ORDER BY nd.id_nota_debito",
-            [$cierre_caja->user_id, $cierre_caja->fecha_apertura]
+            [$cierre_caja->user_id, $cierre_caja->fecha_apertura, $fecha_fin]
         );
 
+
         // retornar vista con los datos del cierre de caja en pdf
-        $pdf = Pdf::loadView('ventas.cierre_caja_pdf', compact('cierre_caja', 'totales_forma_pago', 'facturas', 'notas_debito'));
+        $pdf = Pdf::loadView('ventas.cierre_caja_pdf', compact('cierre_caja', 'totales_forma_pago', 'facturas_contado', 'facturas_credito', 'recibos', 'notas_debito'));
         return $pdf->stream('cierre_caja_' . Carbon::now()->format('Y-m-d') . '.pdf');
     }
 

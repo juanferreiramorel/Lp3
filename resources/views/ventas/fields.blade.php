@@ -1,7 +1,4 @@
-<!-- Id Apertura Field -->
-{!! Form::hidden('id_apertura', isset($apertura_caja) ? $apertura_caja->id_apertura : null, [
-    'class' => 'form-control',
-]) !!}
+
 <!-- Id Pedido Field (si viene desde pedido) -->
 {!! Form::hidden('id_pedido', isset($pedido) ? $pedido->id_pedido : null, [
     'class' => 'form-control',

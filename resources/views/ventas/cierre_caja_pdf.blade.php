@@ -110,9 +110,9 @@
         </tbody>
     </table>
 
-    <!-- Listado de Facturas -->
-    @if(isset($facturas) && count($facturas) > 0)
-    <div class="section-title">Detalle de Facturas Emitidas ({{ count($facturas) }})</div>
+    <!-- 1. FACTURAS CONTADO -->
+    @if(isset($facturas_contado) && count($facturas_contado) > 0)
+    <div class="section-title">Detalle de Facturas Contado ({{ count($facturas_contado) }})</div>
     <table class="data-table">
         <thead>
             <tr>
@@ -124,26 +124,98 @@
             </tr>
         </thead>
         <tbody>
-            @php $total_facturas = 0; @endphp
-            @foreach ($facturas as $factura)
-                @php $total_facturas += $factura->total; @endphp
+            @php $total_contado = 0; @endphp
+            @foreach ($facturas_contado as $doc)
+                @php $total_contado += $doc->monto; @endphp
                 <tr>
-                    <td>{{ $factura->factura_nro }}</td>
-                    <td>{{ $factura->clie_ci }}</td>
-                    <td>{{ $factura->cliente }}</td>
-                    <td class="text-center">{{ \Carbon\Carbon::parse($factura->fecha_venta)->format('d/m/Y') }}</td>
-                    <td class="text-right">{{ number_format($factura->total, 0, ',', '.') }}</td>
+                    <td>{{ $doc->numero }}</td>
+                    <td>{{ $doc->ruc }}</td>
+                    <td>{{ $doc->cliente }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($doc->fecha)->format('d/m/Y') }}</td>
+                    <td class="text-right">{{ number_format($doc->monto, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
-                <td colspan="4">TOTAL FACTURAS</td>
-                <td class="text-right">{{ number_format($total_facturas, 0, ',', '.') }}</td>
+                <td colspan="4">TOTAL FACTURAS CONTADO</td>
+                <td class="text-right">{{ number_format($total_contado, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
     @else
-    <div class="section-title">Detalle de Facturas Emitidas</div>
-    <p style="color: #7f8c8d; font-style: italic;">No se emitieron facturas en este arqueo.</p>
+    <div class="section-title">Detalle de Facturas Contado</div>
+    <p style="color: #7f8c8d; font-style: italic;">No se emitieron facturas contado en este arqueo.</p>
+    @endif
+
+    <!-- 2. FACTURAS CRÉDITO -->
+    @if(isset($facturas_credito) && count($facturas_credito) > 0)
+    <div class="section-title">Detalle de Facturas Crédito ({{ count($facturas_credito) }})</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nro. Factura</th>
+                <th>CI/RUC</th>
+                <th>Cliente</th>
+                <th class="text-center">Fecha</th>
+                <th class="text-right">Total (GS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $total_credito = 0; @endphp
+            @foreach ($facturas_credito as $doc)
+                @php $total_credito += $doc->monto; @endphp
+                <tr>
+                    <td>{{ $doc->numero }}</td>
+                    <td>{{ $doc->ruc }}</td>
+                    <td>{{ $doc->cliente }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($doc->fecha)->format('d/m/Y') }}</td>
+                    <td class="text-right">{{ number_format($doc->monto, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr class="total-row">
+                <td colspan="4">TOTAL FACTURAS CRÉDITO</td>
+                <td class="text-right">{{ number_format($total_credito, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @else
+    <div class="section-title">Detalle de Facturas Crédito</div>
+    <p style="color: #7f8c8d; font-style: italic;">No se emitieron facturas crédito en este arqueo.</p>
+    @endif
+
+    <!-- 3. RECIBOS DE COBRO -->
+    @if(isset($recibos) && count($recibos) > 0)
+    <div class="section-title">Detalle de Recibos de Cobro ({{ count($recibos) }})</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nro. Recibo</th>
+                <th>CI/RUC</th>
+                <th>Cliente</th>
+                <th class="text-center">Fecha</th>
+                <th class="text-right">Total (GS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $total_recibos = 0; @endphp
+            @foreach ($recibos as $doc)
+                @php $total_recibos += $doc->monto; @endphp
+                <tr>
+                    <td>{{ $doc->numero }}</td>
+                    <td>{{ $doc->ruc }}</td>
+                    <td>{{ $doc->cliente }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($doc->fecha)->format('d/m/Y') }}</td>
+                    <td class="text-right">{{ number_format($doc->monto, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+            <tr class="total-row">
+                <td colspan="4">TOTAL RECIBOS</td>
+                <td class="text-right">{{ number_format($total_recibos, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @else
+    <div class="section-title">Detalle de Recibos de Cobro</div>
+    <p style="color: #7f8c8d; font-style: italic;">No se emitieron recibos en este arqueo.</p>
     @endif
 
     <!-- Listado de Notas de Débito -->

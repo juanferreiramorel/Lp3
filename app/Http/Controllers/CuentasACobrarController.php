@@ -219,8 +219,7 @@ class CuentasACobrarController extends AppBaseController
         // Validar que el usuario tenga una caja abierta
         $caja_abierta = DB::selectOne(
             "SELECT * FROM apertura_cierre_cajas
-            WHERE user_id = ? AND estado = 'ABIERTA'
-            AND fecha_apertura = CURRENT_DATE",
+            WHERE user_id = ? AND estado = 'ABIERTA'",
             [auth()->user()->id]
         );
 
@@ -476,8 +475,7 @@ class CuentasACobrarController extends AppBaseController
         // Validar que el usuario tenga una caja abierta
         $caja_abierta = DB::selectOne(
             "SELECT * FROM apertura_cierre_cajas
-            WHERE user_id = ? AND estado = 'ABIERTA'
-            AND fecha_apertura = CURRENT_DATE",
+            WHERE user_id = ? AND estado = 'ABIERTA'",
             [auth()->user()->id]
         );
 

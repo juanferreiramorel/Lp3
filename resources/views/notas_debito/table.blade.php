@@ -40,7 +40,7 @@
                                 <a href="{{ route('notas_debito.pdf', [$nota->id_nota_debito]) }}" class='btn btn-success btn-xs' target="_blank" title="Imprimir">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                @if ($nota->estado != 'ANULADO' && !empty($caja_abierta) && $nota->id_apertura == $caja_abierta->id_apertura)
+                                @if ($nota->estado != 'ANULADO' && !empty($caja_abierta) && $nota->user_id == auth()->id() && $nota->fecha_emision >= $caja_abierta->fecha_apertura)
                                     <a href="{{ route('notas_debito.edit', [$nota->id_nota_debito]) }}" class='btn btn-default btn-xs' title="Editar">
                                         <i class="far fa-edit"></i>
                                     </a>

@@ -1,8 +1,4 @@
-<!-- Id Apertura Field -->
-<div class="col-sm-4">
-    {!! Form::label('id_apertura', 'Nro Apertura Caja:') !!}
-    <p>{{ $ventas->id_apertura }}</p>
-</div>
+
 
 <!-- Id Cliente Field -->
 <div class="col-sm-4">
