@@ -883,6 +883,28 @@ class VentaController extends AppBaseController
             return redirect()->route('ventas.index');
         }
 
+        // Verificar si existen Notas de Crédito asociadas activas
+        $existeNC = DB::table('notas_credito')
+            ->where('id_venta', $id)
+            ->where('estado', '!=', 'ANULADO')
+            ->exists();
+
+        if ($existeNC) {
+            Alert::error('Error', 'No se puede anular la venta porque tiene Notas de Crédito asociadas activas.');
+            return redirect()->route('ventas.index');
+        }
+
+        // Verificar si existen Notas de Débito asociadas activas
+        $existeND = DB::table('notas_debito')
+            ->where('id_venta', $id)
+            ->where('estado', '!=', 'ANULADO')
+            ->exists();
+
+        if ($existeND) {
+            Alert::error('Error', 'No se puede anular la venta porque tiene Notas de Débito asociadas activas.');
+            return redirect()->route('ventas.index');
+        }
+
         // Usar transacciones
         DB::beginTransaction();
         try {

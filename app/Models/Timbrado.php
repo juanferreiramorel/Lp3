@@ -95,6 +95,14 @@ class Timbrado extends Model
     }
 
     /**
+     * Scope para notas de credito
+     */
+    public function scopeNotasCredito($query)
+    {
+        return $query->where('id_tipo_timbrado', TipoTimbrado::NOTA_CREDITO);
+    }
+
+    /**
      * Verifica si el timbrado está vigente
      */
     public function estaVigente()

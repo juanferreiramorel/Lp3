@@ -14,7 +14,7 @@
         || Request::is('metodo_pagos*')
         || Request::is('ayuda*');
 
-    $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*') || Request::is('notas_debito*');
+    $isVentasOpen = Request::is('ventas*') || Request::is('apertura-cierre-caja*') || Request::is('pedidos*') || Request::is('clientes*') || Request::is('cuentasacobrar*') || Request::is('recibossimples*') || Request::is('notas_debito*') || Request::is('notas_credito*');
     $isComprasOpen = Request::is('compras*') || Request::is('ordencompra*') || Request::is('proveedores*') || Request::is('cuentasapagar*');
     $isInventarioOpen = Request::is('productos*') || Request::is('stock*') || Request::is('marcas*');
 @endphp
@@ -39,7 +39,16 @@
         </li>
         @endcan
 
-        @can('ventas index')
+        @can('notas_credito index')
+        <li class="nav-item">
+            <a href="{{ route('notas_credito.index') }}" class="nav-link {{ Request::is('notas_credito*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-file-invoice"></i>
+                <p>Notas de Crédito</p>
+            </a>
+        </li>
+        @endcan
+
+        @can('notas_debito index')
         <li class="nav-item">
             <a href="{{ route('notas_debito.index') }}" class="nav-link {{ Request::is('notas_debito*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-file-invoice-dollar"></i>
@@ -260,6 +269,14 @@
             <a href="{{ url('reporte-ventas') }}" class="nav-link {{ Request::is('reporte-ventas*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-chart-line"></i>
                 <p>Reporte ventas</p>
+            </a>
+        </li>
+        @endcan
+        @can('ventas index')
+        <li class="nav-item">
+            <a href="{{ url('reporte-libro-venta') }}" class="nav-link {{ Request::is('reporte-libro-venta*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-book"></i>
+                <p>Libro Venta</p>
             </a>
         </li>
         @endcan

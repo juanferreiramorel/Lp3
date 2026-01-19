@@ -13,7 +13,7 @@ class LogRecentAccess
         $response = $next($request);
 
         // Only track GET requests, exclude AJAX, and only successful responses
-        if ($request->isMethod('get') && !$request->ajax() && $response->status() == 200) {
+        if ($request->isMethod('get') && !$request->ajax() && $response->getStatusCode() == 200) {
             
             // Check if user is authenticated and mode is automatic
             if (!auth()->check() || auth()->user()->shortcut_mode !== 'automatic') {

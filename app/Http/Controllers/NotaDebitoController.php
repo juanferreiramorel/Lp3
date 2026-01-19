@@ -22,9 +22,10 @@ class NotaDebitoController extends AppBaseController
     public function __construct()
     {
         $this->middleware('auth');
-        // Asignar permisos si existen, o usar genéricos por ahora
-        // $this->middleware('permission:ventas index')->only(['index', 'show']);
-        // $this->middleware('permission:ventas create')->only(['create', 'store']);
+        $this->middleware('permission:notas_debito index')->only(['index', 'show', 'pdf']);
+        $this->middleware('permission:notas_debito create')->only(['create', 'store', 'buscarProductosJson', 'buscarVentasJson']);
+        $this->middleware('permission:notas_debito edit')->only(['edit', 'update']);
+        $this->middleware('permission:notas_debito destroy')->only(['destroy']);
     }
 
     public function index(Request $request)
@@ -165,9 +166,7 @@ class NotaDebitoController extends AppBaseController
             ->pluck('cliente', 'id_cliente');
 
         // Sucursales permitidas
-        $sucursales = DB::table('sucursales')
-            ->where('id_sucursal', auth()->user()->id_sucursal)
-            ->pluck('descripcion', 'id_sucursal');
+        $sucursales = $this->getSucursalesPermitidas();
 
         $usuario = auth()->user()->name;
 

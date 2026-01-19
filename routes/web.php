@@ -80,6 +80,10 @@ Route::post('plantillas-contratos/ckeditor/upload', [App\Http\Controllers\Planti
 
 Route::resource('plantillas-contratos', App\Http\Controllers\PlantillaContratoController::class)->names('plantillas_contratos');
 Route::resource('ventas', App\Http\Controllers\VentaController::class);
+Route::get('notas_credito/buscar-ventas', [App\Http\Controllers\NotaCreditoController::class, 'buscarVentasJson'])->name('notas_credito.buscar_ventas');
+Route::get('notas_credito/detalles-venta/{id}', [App\Http\Controllers\NotaCreditoController::class, 'getDetallesVentaJson'])->name('notas_credito.detalles_venta');
+Route::get('notas_credito/{id}/pdf', [App\Http\Controllers\NotaCreditoController::class, 'pdf'])->name('notas_credito.pdf');
+Route::resource('notas_credito', App\Http\Controllers\NotaCreditoController::class);
 Route::get('notas_debito/buscar-productos', [App\Http\Controllers\NotaDebitoController::class, 'buscarProductosJson'])->name('notas_debito.buscar_productos');
 Route::get('notas_debito/buscar-ventas', [App\Http\Controllers\NotaDebitoController::class, 'buscarVentasJson'])->name('notas_debito.buscar_ventas');
 Route::get('notas_debito/{id}/pdf', [App\Http\Controllers\NotaDebitoController::class, 'pdf'])->name('notas_debito.pdf');
@@ -147,6 +151,7 @@ Route::get('reporte-productos', [App\Http\Controllers\ReporteController::class, 
 Route::get('reporte-sucursales', [App\Http\Controllers\ReporteController::class, 'rpt_sucursales']);
 Route::get('reporte-sucursales', [App\Http\Controllers\ReporteController::class, 'rpt_sucursales']);
 Route::get('reporte-ventas', [App\Http\Controllers\ReporteController::class, 'rpt_ventas']);
+Route::get('reporte-libro-venta', [App\Http\Controllers\ReporteController::class, 'rpt_libro_venta']);
 Route::get('reporte-compras', [App\Http\Controllers\ReporteController::class, 'rpt_compras']);
 Route::get('reporte-pedidos', [App\Http\Controllers\ReporteController::class, 'rpt_pedidos']);
 Route::get('reporte-ordenes-compra', [App\Http\Controllers\ReporteController::class, 'rpt_ordenes_compra']);

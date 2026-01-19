@@ -189,6 +189,18 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        // Debounce setup for real-time search
+        let searchTimeout = null;
+
+        $('.buscar').on('input', function() {
+            clearTimeout(searchTimeout);
+            var $form = $(this).closest('.form-busqueda-texto');
+            
+            searchTimeout = setTimeout(function() {
+                $form.trigger('submit');
+            }, 600); // Wait 600ms after user stops typing
+        });
+
         $('.form-busqueda-texto').on('submit', function(e) {
             e.preventDefault();
             var buscar = $(this).find('.buscar').val();
@@ -204,6 +216,9 @@
             if (searchMode) {
                 params.set('search_mode', searchMode);
             }
+
+            // Reset page to 1 when searching
+            params.delete('page');
 
             window.location.href = url + '?' + params.toString();
         });

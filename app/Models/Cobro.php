@@ -32,6 +32,11 @@ class Cobro extends Model
         'id_apertura',
     ];
 
+    public function notaCredito()
+    {
+        return $this->belongsTo(NotaCredito::class, 'id_nota_credito', 'id_nota_credito');
+    }
+
     public function notaDebito()
     {
         return $this->belongsTo(NotaDebito::class, 'id_nota_debito', 'id_nota_debito');

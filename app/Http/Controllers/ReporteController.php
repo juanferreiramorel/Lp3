@@ -341,6 +341,139 @@ class ReporteController extends Controller
 
         return view('reportes.rpt_sucursales')->with('sucursales', $sucursales)->with('page', $page)->with('totalPages', $totalPages)->with('total', $total);
     }
+    public function rpt_libro_venta(Request $request)
+    {
+        // recibir datos del formulario a partir de la url get
+        $input = $request->all();
+
+        // Configuración de paginación
+        $porPagina = 20; // Más registros por página para libro venta
+        $page = $request->input('page', 1);
+        $offset = ($page - 1) * $porPagina;
+
+        // definir variables para filtros 
+        $filtro_desde = "";
+        $filtro_hasta = "";
+        $filtro_cliente = "";
+        $filtro_sucursal = "";
+        $filtro_search = "";
+
+        // filtros desde y concatena el sql and
+        if(!empty($input['desde'])){
+            $filtro_desde = " AND v.fecha_venta >= '".$input['desde']."'";
+        }
+
+        // filtros hasta y concatena el sql correspondientes
+        if(!empty($input['hasta'])){
+            $filtro_hasta = " AND v.fecha_venta <= '".$input['hasta']."'";
+        }
+
+        if(!empty($input['id_cliente'])){
+            $filtro_cliente = " AND v.id_cliente = ".$input['id_cliente'];
+        }
+
+        if(!empty($input['id_sucursal'])){
+            $filtro_sucursal = " AND v.id_sucursal = ".$input['id_sucursal'];
+        }
+
+        $search = $request->input('buscar');
+        if(!empty($search)){
+             $filtro_search = " AND (v.factura_nro LIKE '%$search%' OR c.clie_nombre LIKE '%$search%' OR c.clie_apellido LIKE '%$search%' OR c.clie_ci LIKE '%$search%')";
+        }
+
+
+        // WHERE clause construction
+        $whereClause = "WHERE 1=1 ".$filtro_desde." ".$filtro_hasta." ".$filtro_cliente." ".$filtro_sucursal." ".$filtro_search;
+
+        $queryBase = "FROM ventas v 
+            JOIN clientes c ON v.id_cliente = c.id_cliente
+            JOIN sucursales s ON v.id_sucursal = s.id_sucursal";
+
+        // Contar total de registros
+        $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$whereClause}";
+        $totalResult = DB::select($totalQuery);
+        $total = $totalResult[0]->total;
+
+        // Obtener registros paginados
+        // Seleccionamos columnas específicas para IVA
+        $query = "SELECT v.id_venta, v.fecha_venta, v.factura_nro, v.estado,
+                v.total, v.total_exento, v.total_gravado_5, v.total_gravado_10, v.total_iva_5, v.total_iva_10,
+                concat(c.clie_nombre, ' ', c.clie_apellido) as cliente, c.clie_ci as ruc,
+                s.descripcion as sucursal
+            {$queryBase}
+            {$whereClause}
+            ORDER BY v.fecha_venta ASC, v.factura_nro ASC
+            LIMIT {$porPagina} OFFSET {$offset}";
+        $ventasData = DB::select($query);
+
+        // Convertir a Paginator para que funcione con el componente de paginación
+        $ventas = new \Illuminate\Pagination\LengthAwarePaginator(
+            $ventasData,
+            $total,
+            $porPagina,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Calcular paginación (legacy/manual use if needed, but Paginator handles it)
+        $totalPages = ceil($total / $porPagina);
+
+        // Totales generales para el footer del reporte
+        $totalesQuery = "SELECT 
+            SUM(v.total) as total_general,
+            SUM(v.total_exento) as sum_exento,
+            SUM(v.total_gravado_5) as sum_gravado_5,
+            SUM(v.total_gravado_10) as sum_gravado_10,
+            SUM(v.total_iva_5) as sum_iva_5,
+            SUM(v.total_iva_10) as sum_iva_10
+            {$queryBase} {$whereClause}";
+        $totalesGenerales = DB::select($totalesQuery)[0];
+
+
+        // validar que exista la variable input['exportar']
+        if(isset($input['exportar']) && $input['exportar'] == 'pdf'){
+            // Para PDF, obtener todos los registros sin paginación
+            $ventasAll = DB::select("SELECT v.id_venta, v.fecha_venta, v.factura_nro, v.estado,
+                v.total, v.total_exento, v.total_gravado_5, v.total_gravado_10, v.total_iva_5, v.total_iva_10,
+                concat(c.clie_nombre, ' ', c.clie_apellido) as cliente, c.clie_ci as ruc,
+                s.descripcion as sucursal
+                {$queryBase}
+                {$whereClause}
+                ORDER BY v.fecha_venta ASC, v.factura_nro ASC");
+            
+            // crear pdf
+            $pdf = Pdf::loadView(
+                'reportes.pdf_libro_venta',
+                compact('ventasAll', 'totalesGenerales')
+            )
+            ->setPaper('a4', 'landscape');
+
+            return $pdf->download("LibroVenta.pdf");
+        }elseif(isset($input['exportar']) && $input['exportar'] == 'excel'){
+            // Exportar a Excel
+            $desde = isset($input['desde']) ? $input['desde'] : null;
+            $hasta = isset($input['hasta']) ? $input['hasta'] : null;
+            $cliente_id = isset($input['id_cliente']) ? $input['id_cliente'] : null;
+            $sucursal_id = isset($input['id_sucursal']) ? $input['id_sucursal'] : null;
+            $search_term = isset($input['buscar']) ? $input['buscar'] : null;
+
+            return Excel::download(new \App\Exports\LibroVentaExport($desde, $hasta, $cliente_id, $sucursal_id, $search_term), 'libro_venta.xlsx');
+        }
+
+        // Obtener listas para filtros
+        $clientes = DB::table('clientes')->selectRaw("concat(clie_nombre, ' ', clie_apellido) as cliente, id_cliente")->orderBy('cliente')->pluck('cliente', 'id_cliente');
+        $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
+
+        return view('reportes.rpt_libro_venta')
+            ->with('ventas', $ventas)
+            ->with('totalesGenerales', $totalesGenerales)
+            ->with('clientes', $clientes)
+            ->with('sucursales', $sucursales)
+            ->with('page', $page)
+            ->with('totalPages', $totalPages)
+            ->with('total', $total);
+    }
+
     public function rpt_ventas(Request $request)
     {
         // recibir datos del formulario a partir de la url get
