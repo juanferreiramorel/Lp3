@@ -8,6 +8,7 @@
                         <th>Cliente</th>
                         <th>Fecha de Venta</th>
                         <th>Monto Total</th>
+                        <th>Saldo Pendiente</th>
                         <th>Total Cuotas</th>
                         <th>Cuotas Pendientes</th>
                         <th>Cuotas Pagadas</th>
@@ -24,6 +25,7 @@
                             <td>{{ $fila->cliente }}</td>
                             <td>{{ \Carbon\Carbon::parse($fila->fecha_venta)->format('d/m/Y') }}</td>
                             <td>{{ number_format($fila->monto_total ?? 0, 0, ',', '.') }}</td>
+                            <td>{{ number_format($fila->saldo_pendiente ?? 0, 0, ',', '.') }}</td>
                             <td>{{ $fila->total_cuotas }}</td>
                             <td>
                                 @if ($fila->cuotas_pendientes > 0)

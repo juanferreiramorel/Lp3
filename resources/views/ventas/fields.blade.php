@@ -3,6 +3,11 @@
 {!! Form::hidden('id_pedido', isset($pedido) ? $pedido->id_pedido : null, [
     'class' => 'form-control',
 ]) !!}
+
+<!-- Id Apertura Field (si existe) -->
+@if(isset($apertura_caja))
+    {!! Form::hidden('id_apertura', $apertura_caja->id_apertura) !!}
+@endif
 <!-- Fecha Venta Field -->
 <div class="form-group col-sm-4">
     {!! Form::label('fecha_venta', 'Fecha Venta:') !!}
@@ -10,7 +15,6 @@
         'class' => 'form-control',
         'id' => 'fecha_venta',
         'required',
-        'readonly',
     ]) !!}
 </div>
 
@@ -186,7 +190,11 @@ $(document).ready(function() {
 
     // Ejecutar al cargar si ya hay una sucursal seleccionada
     if ($('#id_sucursal').length && $('#id_sucursal').val()) {
-        $('#id_sucursal').trigger('change');
+        // Solo disparar el cambio si NO hay timbrados cargados (o solo esta el placeholder)
+        // Esto evita borrar los timbrados que vienen cargados desde el servidor (ej: crear desde pedido)
+        if ($('#id_timbrado option').length <= 1) {
+            $('#id_sucursal').trigger('change');
+        }
     }
 });
 </script>

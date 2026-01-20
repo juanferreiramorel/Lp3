@@ -107,6 +107,7 @@ class CuentasACobrarController extends AppBaseController
                 SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS cuotas_pendientes,
                 SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END) AS cuotas_vencidas_count,
                 SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END) AS cuotas_pagadas,
+                SUM(ca.importe - COALESCE(ca.importe_pagado, 0)) AS saldo_pendiente,
                 MIN(ca.vencimiento) AS primer_vencimiento,
                 MAX(ca.vencimiento) AS ultimo_vencimiento
             FROM ventas v

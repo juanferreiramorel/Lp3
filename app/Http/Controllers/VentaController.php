@@ -384,22 +384,9 @@ class VentaController extends AppBaseController
                 'total' => $total,
                 'id_sucursal' => $input['id_sucursal'],
                 'estado' => 'COMPLETADO',
-                'estado' => 'COMPLETADO',
                 'id_pedido' => !empty($input['id_pedido']) ? $input['id_pedido'] : null,
             ], 'id_venta');
 
-            // --- NUEVO: Si es CONTADO, registrar cobro asociado a la CAJA ACTUAL ---
-            if ($input['condicion_venta'] == 'CONTADO') {
-                DB::table('cobros')->insert([
-                    'id_venta' => $ventas,
-                    'user_id' => $user_id,
-                    'id_metodo_pago' => 1, // EFECTIVO por defecto al ser Contado sin especificar
-                    'cobro_fecha' => $input['fecha_venta'],
-                    'cobro_importe' => $total,
-                    'cobro_estado' => 'COBRADO',
-                    'id_apertura' => $input['id_apertura'], // ASIGNAR A LA APERTURA ACTUAL
-                ]);
-            }
             // -----------------------------------------------------------------------
 
             // insertar detalle ventas

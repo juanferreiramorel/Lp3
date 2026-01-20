@@ -61,15 +61,23 @@
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    var html = '';
+                    var totalImporte = 0;
+                    var totalSaldo = 0;
+
                     $.each(data, function(index, item) {
                         var fecha = new Date(item.vencimiento);
                         var fechaFormateada = ('0' + fecha.getDate()).slice(-2) + '/' +
                             ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' +
                             fecha.getFullYear();
 
-                        var importeFormateado = Number(item.importe).toLocaleString('es-PY');
-                        var saldoFormateado = Number(item.saldo).toLocaleString('es-PY');
+                        var importe = Number(item.importe);
+                        var saldo = Number(item.saldo);
+
+                        totalImporte += importe;
+                        totalSaldo += saldo;
+
+                        var importeFormateado = importe.toLocaleString('es-PY');
+                        var saldoFormateado = saldo.toLocaleString('es-PY');
 
                         var estadoBadge = '';
                         var estadoMostrar = item.estado_actual || item.estado;
@@ -153,6 +161,8 @@
                     });
 
                     $('#tbody-detalle-cuentas').html(html);
+                    $('#total-importe').text(totalImporte.toLocaleString('es-PY'));
+                    $('#total-saldo').text(totalSaldo.toLocaleString('es-PY'));
                 }
             });
         }
@@ -213,6 +223,8 @@
                             return;
                         }
 
+                        var totalImporte = 0;
+                        var totalSaldo = 0;
                         var html = '';
                         $.each(data, function(index, item) {
                             // Formatear fecha
@@ -221,9 +233,15 @@
                                                 ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' +
                                                 fecha.getFullYear();
 
+                            // Calcular totales
+                            var importe = Number(item.importe);
+                            var saldo = Number(item.saldo);
+                            totalImporte += importe;
+                            totalSaldo += saldo;
+
                             // Formatear importe y saldo
-                            var importeFormateado = Number(item.importe).toLocaleString('es-PY');
-                            var saldoFormateado = Number(item.saldo).toLocaleString('es-PY');
+                            var importeFormateado = importe.toLocaleString('es-PY');
+                            var saldoFormateado = saldo.toLocaleString('es-PY');
 
                             // Determinar badge de estado
                             var estadoBadge = '';
@@ -294,6 +312,8 @@
                         });
 
                         $('#tbody-detalle-cuentas').html(html);
+                        $('#total-importe').text(totalImporte.toLocaleString('es-PY'));
+                        $('#total-saldo').text(totalSaldo.toLocaleString('es-PY'));
                     },
                     error: function(xhr, status, error) {
                         $('#loading-detalle').hide();

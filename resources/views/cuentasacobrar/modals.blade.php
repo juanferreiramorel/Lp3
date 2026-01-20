@@ -30,6 +30,14 @@
                         <tbody id="tbody-detalle-cuentas">
                             <!-- Se llenará dinámicamente con AJAX -->
                         </tbody>
+                        <tfoot id="tfoot-detalle-cuentas">
+                            <tr>
+                                <td colspan="2" class="text-right"><strong>Totales:</strong></td>
+                                <td id="total-importe" class="font-weight-bold"></td>
+                                <td id="total-saldo" class="text-danger font-weight-bold"></td>
+                                <td colspan="4"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>

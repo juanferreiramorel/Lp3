@@ -350,7 +350,7 @@ class NotaCreditoController extends AppBaseController
             
             // Buscar cuotas con deuda
             $cuotas = CuentaACobrar::where('id_venta', $input['id_venta'])
-                ->where('estado', '!=', 'CANCELADO')
+                ->where('estado', '!=', 'PAGADO')
                 ->whereRaw('(importe - importe_pagado) > 0') // Double check balance
                 ->orderBy('vencimiento', 'asc') // Apply to oldest first
                 ->get();
@@ -393,7 +393,7 @@ class NotaCreditoController extends AppBaseController
                 // Update Quota
                 $cuota->importe_pagado += $aplicar;
                 if ($cuota->importe_pagado >= $cuota->importe) {
-                    $cuota->estado = 'CANCELADO';
+                    $cuota->estado = 'PAGADO';
                 }
                 $cuota->save();
 
