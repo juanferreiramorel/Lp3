@@ -327,19 +327,14 @@ class TimbradoController extends AppBaseController
             return redirect()->route('timbrados.index');
         }
 
-        // No permitir eliminar si ya tiene facturas asociadas
-        if ($timbrado->ventas()->count() > 0) {
-            Alert::error('Error', 'No se puede eliminar un timbrado que ya tiene facturas asociadas.');
-            return redirect()->route('timbrados.index');
-        }
-
         try {
-            $timbrado->delete();
+            $timbrado->estado = 'CANCELADO';
+            $timbrado->save();
 
-            Alert::success('Éxito', 'Registro eliminado correctamente.');
+            Alert::success('Éxito', 'Timbrado cancelado correctamente.');
             return redirect()->route('timbrados.index');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar el registro: ' . $e->getMessage());
+            Alert::error('Error', 'No se pudo cancelar el timbrado: ' . $e->getMessage());
             return redirect()->route('timbrados.index');
         }
     }

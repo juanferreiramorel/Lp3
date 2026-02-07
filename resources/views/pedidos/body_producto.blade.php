@@ -4,6 +4,7 @@
             <th>Código de Producto</th>
             <th>Producto</th>
             <th>Precio</th>
+            <th>Stock</th>
         </tr>
     </thead>
     <tbody>
@@ -31,10 +32,11 @@
                 <td>{{ $product->id_producto }}</td>
                 <td>{{ $product->descripcion }}</td>
                 <td>{{ number_format($product->precio, 0, ',', '.') }}</td>
+                <td>{{ number_format($product->cantidad ?? 0, 0, ',', '.') }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="3">No se encontraron productos.</td>
+                <td colspan="4">No se encontraron productos.</td>
             </tr>
         @endforelse
     </tbody>

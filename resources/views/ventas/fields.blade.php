@@ -78,8 +78,15 @@
 @push('page_scripts')
 <script>
 $(document).ready(function() {
+    // Detectar si estamos en modo edición
+    const isEditMode = {{ Route::currentRouteName() === 'ventas.edit' ? 'true' : 'false' }};
+    console.log('Modo edición (JS):', isEditMode, 'Ruta:', '{{ Route::currentRouteName() }}');
+
     // Cargar timbrados cuando cambia la sucursal
     $('#id_sucursal').on('change', function() {
+        // En modo edición, no recargar timbrados al cambiar sucursal (o al cargar página)
+        if (isEditMode) return;
+
         var sucursalId = $(this).val();
         var $timbradoSelect = $('#id_timbrado');
         var $display = $('#factura_nro_display');
@@ -140,6 +147,9 @@ $(document).ready(function() {
 
     // Actualizar preview cuando se selecciona un timbrado
     $('#id_timbrado').on('change', function() {
+        // En modo edición, no recalcular número de factura
+        if (isEditMode) return;
+
         var timbradoId = $(this).val();
         var $display = $('#factura_nro_display');
 
@@ -184,12 +194,12 @@ $(document).ready(function() {
     });
 
     // Ejecutar al cargar si ya hay un timbrado seleccionado
-    if ($('#id_timbrado').length && $('#id_timbrado').val()) {
+    if (!isEditMode && $('#id_timbrado').length && $('#id_timbrado').val()) {
         $('#id_timbrado').trigger('change');
     }
 
     // Ejecutar al cargar si ya hay una sucursal seleccionada
-    if ($('#id_sucursal').length && $('#id_sucursal').val()) {
+    if (!isEditMode && $('#id_sucursal').length && $('#id_sucursal').val()) {
         // Solo disparar el cambio si NO hay timbrados cargados (o solo esta el placeholder)
         // Esto evita borrar los timbrados que vienen cargados desde el servidor (ej: crear desde pedido)
         if ($('#id_timbrado option').length <= 1) {
