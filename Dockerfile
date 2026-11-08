@@ -1,3 +1,14 @@
+# Compila los assets del front. public/build esta en .gitignore, asi que no
+# viaja en el repositorio: si no se compila aca, la imagen queda sin
+# manifest.json y toda pantalla que use @vite revienta en produccion.
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY vite.config.js ./
+COPY resources ./resources
+RUN npm run build
+
 FROM php:8.2-fpm
 
 # Establecer directorio de trabajo
@@ -42,6 +53,10 @@ RUN composer install --no-scripts --no-autoloader --no-dev
 
 # Copiar el resto de los archivos del proyecto
 COPY . /var/www/html
+
+# Los assets compilados en la etapa anterior. Va despues del COPY de arriba
+# para que no lo pise.
+COPY --from=assets /app/public/build /var/www/html/public/build
 
 # Generar autoloader optimizado
 RUN composer dump-autoload --optimize --no-dev

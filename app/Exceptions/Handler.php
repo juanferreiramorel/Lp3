@@ -124,8 +124,21 @@ class Handler extends ExceptionHandler
             return back();
         }
 
-        // Para cualquier otro error no manejado específicamente
-        if (!($exception instanceof ValidationException) && !config('app.debug')) {
+        // Para cualquier otro error no manejado especificamente.
+        //
+        // back() sirve para un envio de formulario que hay que corregir. En un
+        // GET es una trampa: la pagina a la que vuelve puede traer de nuevo a
+        // la que fallo, y entonces un error se vuelve un bucle de redirecciones
+        // en el que ya no se lee el error. Paso de verdad: sin los assets
+        // compilados, /home tiraba una excepcion en cada carga y el usuario
+        // veia ERR_TOO_MANY_REDIRECTS en lugar del motivo.
+        //
+        // Un GET fallado muestra la pagina de error. Sigue sin revelar el
+        // detalle, porque eso lo decide app.debug, pero deja de esconder que
+        // algo se rompio.
+        $esEnvio = !$request->isMethodSafe();
+
+        if ($esEnvio && !($exception instanceof ValidationException) && !config('app.debug')) {
             Alert::error('Error', 'Ha ocurrido un error inesperado. Por favor, intente nuevamente.');
             return back();
         }
