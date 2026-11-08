@@ -1,21 +1,7 @@
 <div class="p-0 card-body">
-    <div class="table-responsive">
-        <table class="table" id="notas-debito-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Ci/Ruc</th>
-                    <th>Cliente</th>
-                    <th>Sucursal</th>
-                    <th>Fecha Emisión</th>
-                    <th>Nro Nota</th>
-                    <th>Total</th>
-                    <th>Usuario</th>
-                    <th>Estado</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$notas"
+                  id="notas-debito-table" table-class="table"
+                  empty="No hay notas de débito que coincidan con la búsqueda.">
                 @foreach ($notas as $nota)
                     <tr>
                         <td>{{ $nota->id_nota_debito }}</td>
@@ -56,9 +42,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="clearfix card-footer">
         <div class="float-right">

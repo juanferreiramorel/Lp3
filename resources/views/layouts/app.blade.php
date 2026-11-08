@@ -3,11 +3,56 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/x-icon" href="">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="{{ asset('css/app-styles.css') }}?v=5">
-        <link rel="stylesheet" href="{{ asset('css/navbar-custom.css') }}?v=1">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+        {{-- The cache-buster is the file's own mtime: a hand-maintained ?v=
+             only works while someone remembers to bump it, and a stale
+             stylesheet looks exactly like a bug that was never fixed. --}}
+        @php
+            $cssVersion = fn ($file) => @filemtime(public_path($file)) ?: 1;
+        @endphp
+        <link rel="stylesheet" href="{{ asset('css/app-styles.css') }}?v={{ $cssVersion('css/app-styles.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/navbar-custom.css') }}?v={{ $cssVersion('css/navbar-custom.css') }}">
+        {{-- Loaded last: the token layer that both files above resolve against. --}}
+        <link rel="stylesheet" href="{{ asset('css/theme.css') }}?v={{ $cssVersion('css/theme.css') }}">
+
+        {{-- Manifest, icons and service worker registration: makes the app
+             installable on a phone at the counter. --}}
+        @include('layouts.pwa')
+
+        {{-- Resolve the theme before the first paint. Running this in <head>
+             is what prevents the light flash dark-mode users used to get on
+             every page load, because the old script sat at the end of <body>. --}}
+        <script>
+            (function () {
+                try {
+                    var saved = localStorage.getItem('adminlte-theme');
+                    var dark = saved === 'dark'
+                        || (saved === null
+                            && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    if (dark) document.documentElement.classList.add('dark-mode');
+                } catch (e) { /* private mode: fall through to light */ }
+            })();
+        </script>
     @endpush
     
     <body class="hold-transition sidebar-mini layout-fixed text-sm">
+        {{-- Mirror the decision taken in <head> onto <body>, which is where
+             AdminLTE and our own .dark-mode rules are keyed. Runs before any
+             content is parsed, so nothing paints in the wrong theme. --}}
+        <script>
+            if (document.documentElement.classList.contains('dark-mode')) {
+                document.body.classList.add('dark-mode');
+            }
+        </script>
+
+        {{-- This stack was never rendered, so every @push('styles') in the app
+             was silently discarded (home, recibossimples/detalle, fields and
+             modal_cliente). The <head> is owned by the vendor component, which
+             only renders its own pushes, so the stack lives here instead. --}}
+        @stack('styles')
+
         @php
             $helpTopicsForRoute = ($helpTopicsForRoute ?? collect());
             $hasHelpTopics = $helpTopicsForRoute->isNotEmpty();
@@ -155,11 +200,8 @@
                                     <img src="{{ Auth::user()->avatar_url }}"
                                          class="user-image img-circle" alt="User Image">
                                 @else
-                                    <div class="user-avatar-letter user-image img-circle">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                    </div>
+                                    <div class="user-avatar-letter user-image img-circle" aria-hidden="true">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                                 @endif
-                                <span class="user-status-indicator"></span>
                             </div>
                             <span class="d-none d-md-inline ml-2">{{ Auth::user()->name }}</span>
                         </a>
@@ -170,9 +212,7 @@
                                     @if(Auth::user()->avatar_url)
                                         <img src="{{ Auth::user()->avatar_url }}" class="user-image-dropdown mr-3" alt="User Image">
                                     @else
-                                        <div class="user-avatar-letter user-image-dropdown mr-3 d-flex align-items-center justify-content-center bg-light text-secondary font-weight-bold">
-                                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                        </div>
+                                        <div class="user-avatar-letter user-image-dropdown mr-3" aria-hidden="true">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                                     @endif
                                     <div class="d-flex flex-column text-truncate">
                                         <span class="user-name-dropdown text-truncate">{{ Auth::user()->name }}</span>
@@ -260,17 +300,35 @@
         <script>
             (function () {
                 const key = 'adminlte-theme';
+                const root = document.documentElement;
                 const body = document.body;
                 const toggle = document.getElementById('darkModeToggle');
 
-                const saved = localStorage.getItem(key);
-                if (saved === 'dark') body.classList.add('dark-mode');
+                // The theme was already resolved in <head>. This only keeps the
+                // control in sync with it and writes the user's choice back.
+                function paint(dark) {
+                    root.classList.toggle('dark-mode', dark);
+                    body.classList.toggle('dark-mode', dark);
+
+                    if (!toggle) return;
+                    const icon = toggle.querySelector('i');
+                    if (icon) icon.className = dark ? 'fas fa-sun' : 'far fa-moon';
+                    const label = dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+                    toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+                    toggle.setAttribute('aria-label', label);
+                    toggle.setAttribute('title', label);
+                }
+
+                paint(root.classList.contains('dark-mode'));
 
                 if (toggle) {
                     toggle.addEventListener('click', function (e) {
                         e.preventDefault();
-                        body.classList.toggle('dark-mode');
-                        localStorage.setItem(key, body.classList.contains('dark-mode') ? 'dark' : 'light');
+                        const dark = !root.classList.contains('dark-mode');
+                        paint(dark);
+                        try {
+                            localStorage.setItem(key, dark ? 'dark' : 'light');
+                        } catch (err) { /* private mode: the choice will not persist */ }
                     });
                 }
             })();
@@ -350,13 +408,63 @@
 
         <!-- CUSTOM SCRIPTS -->
         <script>
+            /**
+             * Every simple combo in the app, initialised in one place.
+             *
+             * Any <select> rendered with .form-control or .select2 is picked up
+             * automatically, so a new screen gets the house style without
+             * adding a line of JavaScript. Opt a select out with
+             * data-select2-skip when it needs to stay native.
+             *
+             * Call window.initSelects() again after injecting markup via AJAX.
+             */
+            window.initSelects = function (root) {
+                if (!$.fn.select2) return;
+
+                $(root || document)
+                    .find('select.form-control, select.select2')
+                    // Already initialised: Select2 marks the original element.
+                    .not('.select2-hidden-accessible')
+                    .not('[data-select2-skip]')
+                    // The advanced-search mode picker keeps its own compact treatment.
+                    .not('.search-mode-select')
+                    .each(function () {
+                        const $select = $(this);
+
+                        // allowClear throws unless there is a placeholder to
+                        // clear back to, and a placeholder only makes sense
+                        // when an empty option exists to represent it.
+                        const $empty = $select.find('option[value=""]').first();
+                        const placeholder = $select.data('placeholder')
+                            || ($empty.length ? $.trim($empty.text()) : '')
+                            || 'Seleccioná una opción';
+                        const clearable = $empty.length > 0 && !$select.prop('multiple');
+
+                        // A search box over five options is noise, not help.
+                        const options = $select.find('option').length;
+
+                        $select.select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            placeholder: placeholder,
+                            allowClear: clearable,
+                            minimumResultsForSearch: options > 8 ? 0 : Infinity,
+                            // A dropdown opened inside a modal must live in the
+                            // modal, or the overlay clips it and steals focus.
+                            dropdownParent: $select.closest('.modal').length
+                                ? $select.closest('.modal')
+                                : $(document.body),
+                        });
+
+                        // Select2 tags its own container with `select2`. Left
+                        // alone, the next pass would treat that container as a
+                        // select and rebuild it into an empty combo.
+                        $select.next('.select2-container').removeClass('select2');
+                    });
+            };
+
             $(document).ready(function() {
-                // Inicializar select2 en los elementos con la clase .select2
-                $('.select2').select2({
-                    placeholder: "Selecciona una opción", // Placeholder
-                    allowClear: true, // Permite limpiar la selección
-                    width: '100%' // Ancho del select
-                });
+                window.initSelects();
 
                 //sweetalert para confirmacion de borrado - usa delegación de eventos para AJAX
                 $(document).on('click', '.alert-delete', function(event) {

@@ -1,21 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="users-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nombre y Apellido</th>
-                    <th>Username</th>
-                    <th>Nro Doc.</th>
-                    <th>Teléfono</th>
-                    <th>Fecha Ingreso</th>
-                    <th>Estado</th>
-                    <th>Rol</th>
-                    <th>Sucursal</th>
-                    <th colspan="3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$users"
+                  id="users-table"
+                  empty="No hay usuarios para mostrar.">
                 @foreach ($users as $user)
                     <tr>
                         <td>{{ $user->id }}</td>
@@ -57,9 +43,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

@@ -116,6 +116,22 @@ class ComprasController extends AppBaseController
             return Excel::download(new ComprasExport($filtros, $buscar, $idsPermitidos), 'compras.xlsx');
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 'c.fecha_compra', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'condicion' => ['label' => 'Condicion', 'sort' => 'c.condicion_compra'],
+            'factura' => ['label' => 'Factura', 'sort' => 'c.factura'],
+            'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
+            'estado' => ['label' => 'Estado', 'sort' => 'c.estado'],
+            'total' => ['label' => 'Total', 'sort' => 'c.total', 'align' => 'right', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
+
         $compras = DB::select(
             "SELECT c.*,
                     p.descripcion AS proveedor,
@@ -126,7 +142,7 @@ class ComprasController extends AppBaseController
           LEFT JOIN users u       ON c.user_id = u.id
           LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
                {$sql_busqueda} {$sql_filtros} {$sqlSucursalesPermitidas}
-               ORDER BY c.fecha_compra DESC, c.id_compra DESC"
+               ORDER BY {$sort->orderBy()}"
         );
 
         // Definimos los valores de paginación
@@ -151,7 +167,10 @@ class ComprasController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('compras.table')->with('compras', $compras);
+            return view('compras.table')
+                ->with('compras', $compras)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Obtener datos para los filtros
@@ -159,7 +178,9 @@ class ComprasController extends AppBaseController
         $sucursales = $this->getSucursalesPermitidas();
         $condiciones_compra = ['CONTADO' => 'CONTADO', 'CREDITO' => 'CREDITO'];
 
-        return view('compras.index', compact('compras', 'proveedores', 'sucursales', 'condiciones_compra'));
+        return view('compras.index', compact('compras', 'proveedores', 'sucursales', 'condiciones_compra'))
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
     
     public function create()

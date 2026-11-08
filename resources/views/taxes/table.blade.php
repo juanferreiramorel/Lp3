@@ -1,17 +1,7 @@
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table" id="taxes-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Porcentaje</th>
-                        <th>Estado</th>
-                        <th colspan="3">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-data-table :columns="$columns" :sort="$sort" :paginator="$taxes"
+                      id="taxes-table"
+                      empty="No hay impuestos para mostrar.">
                     @foreach ($taxes as $tax)
                         <tr>
                             <td>{{ $tax->id_tax }}</td>
@@ -46,9 +36,7 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+        </x-data-table>
 
         <div class="card-footer clearfix">
             <div class="float-right">

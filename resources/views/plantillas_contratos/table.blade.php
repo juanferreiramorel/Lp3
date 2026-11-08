@@ -1,18 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="plantillas-contratos-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nombre Plantilla</th>
-                    <th>Descripción</th>
-                    <th>Estado</th>
-                    <th>Usuario</th>
-                    <th>Última Modificación</th>
-                    <th colspan="4">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$plantillas"
+                  id="plantillas-contratos-table" table-class="table"
+                  empty="No hay plantillas de contrato que coincidan con la búsqueda.">
                 @foreach ($plantillas as $plantilla)
                     <tr>
                         <td>{{ $plantilla->id_plantilla_contrato }}</td>
@@ -53,9 +42,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

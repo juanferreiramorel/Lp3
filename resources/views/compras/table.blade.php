@@ -1,21 +1,8 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="compras-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Fecha</th>
-                    <th>Condicion</th>
-                    <th>Factura</th>
-                    <th>Proveedor</th>
-                    <th>Usuario</th>
-                    <th>Estado</th>
-                    <th class="text-right">Total</th>
-                    <th colspan="3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($compras as $compra)
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$compras"
+                  id="compras-table"
+                  empty="No hay compras registradas.">
+                @foreach($compras as $compra)
                     <tr>
                         <td>{{ $compra->id_compra }}</td>
                         <td>{{ \Carbon\Carbon::parse($compra->fecha_compra)->format('d/m/Y') }}</td>
@@ -58,14 +45,8 @@
                             </div>
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">No hay compras registradas.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                @endforeach
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

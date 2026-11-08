@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cliente;
+use App\Services\PeopleLookup;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -77,7 +79,24 @@ class ClienteController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_cliente DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        // The outer SELECT flattens the subquery, so the expressions carry no alias.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_cliente', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => "CONCAT(clie_nombre, ' ', clie_apellido)"],
+            'ci' => ['label' => 'Nro. C.I', 'sort' => 'clie_ci'],
+            'telefono' => ['label' => 'Telefono', 'sort' => 'clie_telefono'],
+            'ciudad' => ['label' => 'Ciudad', 'sort' => 'ciudad'],
+            'fecha_nac' => ['label' => 'Fecha de Nacimiento', 'sort' => 'clie_fecha_nac', 'tiebreaker' => 'id_cliente', 'first' => 'desc'],
+            'departamento' => ['label' => 'Departamento', 'sort' => 'departamento'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Accion', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         // Ejecutar la consulta
         $clientes = DB::select($query, $params);
@@ -104,12 +123,17 @@ class ClienteController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('clientes.table')->with('clientes', $clientes);
+            return view('clientes.table')
+                ->with('clientes', $clientes)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         return view('clientes.index')
             ->with('clientes', $clientes)
-            ->with('estadoFilter', $estadoFilter);
+            ->with('estadoFilter', $estadoFilter)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()
@@ -363,6 +387,64 @@ class ClienteController extends AppBaseController
     /**
      * Store a newly created cliente via AJAX
      */
+    /**
+     * Resolve a CI or RUC before the rest of the form is filled in.
+     *
+     * Answers two questions in one round trip: is this person already a client
+     * (so nobody creates a duplicate), and what does the DNIT registry know
+     * about them (so the name and date of birth do not have to be typed).
+     */
+    public function consultarDocumento(Request $request, PeopleLookup $people)
+    {
+        $documento = trim((string) $request->query('documento', ''));
+
+        if ($documento === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingresá un CI o RUC para buscar.',
+            ], 422);
+        }
+
+        $soloDigitos = preg_replace('/\D/', '', $documento);
+
+        $existente = Cliente::where('clie_ci', $documento)
+            ->orWhere('clie_ci', $soloDigitos)
+            ->first();
+
+        if ($existente) {
+            return response()->json([
+                'success' => true,
+                'estado' => 'ya_registrado',
+                'message' => 'Ese documento ya pertenece a un cliente registrado.',
+                'cliente' => [
+                    'id_cliente' => $existente->id_cliente,
+                    'nombre' => trim($existente->clie_nombre . ' ' . $existente->clie_apellido),
+                ],
+            ]);
+        }
+
+        $resultado = $people->find($documento);
+
+        if ($resultado['found']) {
+            return response()->json([
+                'success' => true,
+                'estado' => 'encontrado',
+                'datos' => $resultado['data'],
+            ]);
+        }
+
+        $mensajes = [
+            'not_configured' => 'La consulta al padrón no está configurada todavía. Cargá los datos a mano.',
+            'empty' => 'Ingresá un CI o RUC para buscar.',
+        ];
+
+        return response()->json([
+            'success' => true,
+            'estado' => $resultado['reason'] === 'not_configured' ? 'no_configurado' : 'sin_resultados',
+            'message' => $mensajes[$resultado['reason'] ?? ''] ?? 'No encontramos ese documento en el padrón. Podés cargarlo a mano.',
+        ]);
+    }
+
     public function storeAjax(Request $request)
     {
         $input = $request->all();

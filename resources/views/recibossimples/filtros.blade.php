@@ -1,45 +1,47 @@
 <!-- Componente de filtros para recibos simples -->
-<div class="card shadow-sm border-0 mb-4 collapsed-card" id="card-filtros-recibos" style="border-radius: 0.5rem;">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"
-         style="border-bottom: 1px solid #f0f0f0; border-radius: 0.5rem 0.5rem 0 0; cursor: pointer;"
+{{-- Every control here used to carry its colours in a style="" attribute, which
+     is why this whole panel stayed light when the rest of the app went dark.
+     Colour now comes from the theme tokens. --}}
+<div class="card mb-4 collapsed-card" id="card-filtros-recibos">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center"
+         style="cursor: pointer;"
          data-card-widget="collapse">
-        <h5 class="card-title text-dark m-0" style="font-size: 0.95rem; font-weight: 600;">
-            <i class="fas fa-filter text-muted mr-2"></i> Filtros de Búsqueda
+        <h5 class="card-title m-0" style="font-size: 0.95rem; font-weight: 600;">
+            <i class="fas fa-filter text-muted mr-2" aria-hidden="true"></i> Filtros de Búsqueda
         </h5>
         <div class="card-tools">
-            <button type="button" class="btn btn-tool text-muted" id="btn-collapse-recibos">
-                <i class="fas fa-chevron-down"></i>
+            <button type="button" class="btn btn-tool" id="btn-collapse-recibos"
+                    aria-label="Mostrar u ocultar los filtros">
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
             </button>
         </div>
     </div>
-    <div class="card-body bg-light" style="display: none; border-radius: 0 0 0.5rem 0.5rem;">
+    <div class="card-body" style="display: none;">
         <form id="form-busqueda">
             <div class="row">
                 <!-- RANGO DE FECHAS -->
                 <div class="form-group col-md-3 col-6">
-                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_desde', 'Fecha Desde:') !!}
                     {!! Form::input('date', 'fecha_desde', request()->get('fecha_desde', null), [
-                    'class' => 'form-control form-control-sm shadow-none border-0',
-                    'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                    'class' => 'form-control form-control-sm',
                     'id' => 'fecha_desde',
                     ]) !!}
                 </div>
 
                 <div class="form-group col-md-3 col-6">
-                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_hasta', 'Fecha Hasta:') !!}
                     {!! Form::input('date', 'fecha_hasta', request()->get('fecha_hasta', null), [
-                    'class' => 'form-control form-control-sm shadow-none border-0',
-                    'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                    'class' => 'form-control form-control-sm',
                     'id' => 'fecha_hasta',
                     ]) !!}
                 </div>
 
                 <!-- COMBO CLIENTE -->
                 <div class="form-group col-md-3 col-12">
-                    {!! Form::label('id_cliente', 'Cliente:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('id_cliente', 'Cliente:') !!}
                     {!! Form::select('id_cliente', $clientes, request()->get('id_cliente', null), [
-                    'class' => 'form-control form-control-sm select2 shadow-none',
-                    'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                    'class' => 'form-control form-control-sm select2',
+                    'style' => 'width: 100%;',
                     'placeholder' => 'Todos los clientes',
                     'id' => 'id_cliente',
                     ]) !!}
@@ -47,24 +49,24 @@
 
                 <!-- COMBO ESTADO -->
                 <div class="form-group col-md-2 col-8">
-                    {!! Form::label('estado', 'Estado:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('estado', 'Estado:') !!}
                     {!! Form::select('estado', $estados, request()->get('estado', null), [
-                    'class' => 'form-control form-control-sm select2 shadow-none',
-                    'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                    'class' => 'form-control form-control-sm select2',
+                    'style' => 'width: 100%;',
                     'placeholder' => 'Todos',
                     'id' => 'estado',
                     ]) !!}
                 </div>
 
                 <!-- BOTÓN LIMPIAR FILTROS -->
-                <div class="form-group col-md-1 col-4 text-center d-flex align-items-end">
+                <div class="form-group col-md-1 col-4 d-flex align-items-end">
                     <label class="d-none d-md-block">&nbsp;</label>
-                    <button class="btn btn-light btn-sm btn-block border" type="button"
+                    <button class="btn btn-default btn-block" type="button"
                         id="btn-limpiar-filtros"
-                        style="color: #64748b; background-color: #fff; border-color: #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-radius: 0.375rem;"
                         data-toggle="tooltip" data-placement="top"
+                        aria-label="Limpiar los filtros"
                         title="Limpiar filtros">
-                        <i class="fas fa-broom"></i>
+                        <i class="fas fa-broom" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
@@ -79,11 +81,6 @@
 <script>
     $(document).ready(function() {
         // Inicializar Select2 en los filtros con tamaño pequeño
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            width: '100%',
-            allowClear: true
-        });
 
         // LIMPIAR TODOS LOS FILTROS
         $('#btn-limpiar-filtros').click(function() {

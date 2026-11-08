@@ -28,13 +28,26 @@ class ProveedorController extends AppBaseController
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_proveedor', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
+            'ruc' => ['label' => 'RUC', 'sort' => 'ruc'],
+            'direccion' => ['label' => 'Direccion', 'sort' => 'direccion'],
+            'telefono' => ['label' => 'Telefono', 'sort' => 'telefono'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
                 $proveedores = DB::select(
                     'SELECT * FROM proveedores
                     WHERE id_proveedor = ?
-                    ORDER BY id_proveedor DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     [(int)$searchConfig['term']]
                 );
             } else {
@@ -47,12 +60,12 @@ class ProveedorController extends AppBaseController
                     OR telefono ILIKE ?
                     OR ruc ILIKE ?
                     OR cast(id_proveedor as text) ILIKE ?
-                    ORDER BY id_proveedor DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                 );
             }
         } else {
-            $proveedores = DB::select('SELECT * FROM proveedores ORDER BY id_proveedor DESC');
+            $proveedores = DB::select('SELECT * FROM proveedores ORDER BY ' . $sort->orderBy());
         }
 
         // Definimos los valores de paginación
@@ -77,10 +90,16 @@ class ProveedorController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('proveedores.table')->with('proveedores', $proveedores);
+            return view('proveedores.table')
+                ->with('proveedores', $proveedores)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('proveedores.index')->with('proveedores', $proveedores);
+        return view('proveedores.index')
+            ->with('proveedores', $proveedores)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
     public function create()
     {

@@ -1,19 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="empresas-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Razón Social</th>
-                    <th>Nombre Comercial</th>
-                    <th>RUC</th>
-                    <th>Teléfono</th>
-                    <th>Email</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$empresas"
+                  id="empresas-table" table-class="table"
+                  empty="No hay empresas que coincidan con la búsqueda.">
                 @foreach ($empresas as $empresa)
                     <tr class="{{ !$empresa->estado ? 'text-muted' : '' }}" style="{{ !$empresa->estado ? 'background-color: #f8f9fa;' : '' }}">
                         <td>{{ $empresa->id_empresa }}</td>
@@ -68,13 +56,6 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
-    @if(count($empresas) == 0)
-    <div class="card-body">
-        <p class="text-center">No hay empresas registradas</p>
-    </div>
-    @endif
 </div>

@@ -1,16 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="metodo_pagos-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripción</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$metodos"
+                  id="metodo_pagos-table"
+                  empty="No hay métodos de pago para mostrar.">
                 @foreach ($metodos as $metodo)
                     <tr style="{{ !$metodo->estado ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $metodo->id_metodo_pago }}</td>
@@ -51,9 +42,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

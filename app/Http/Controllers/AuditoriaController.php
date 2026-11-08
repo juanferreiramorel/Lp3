@@ -110,6 +110,19 @@ class AuditoriaController extends AppBaseController
         // Contar total (para la paginación) usando el resultado anterior
         $total = $statsTotals['total'];
 
+        // One definition drives both the ORDER BY below and the table header.
+        $columns = [
+            'id' => ['label' => 'ID', 'sort' => 's.id', 'icon' => 'fa-hashtag', 'class' => 'th-id', 'first' => 'desc'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 'sc.descripcion', 'icon' => 'fa-store', 'class' => 'th-sucursal'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'icon' => 'fa-user', 'class' => 'th-usuario'],
+            'operacion' => ['label' => 'Operación', 'sort' => 's.operation', 'icon' => 'fa-cog', 'class' => 'th-operacion'],
+            'tabla' => ['label' => 'Tabla', 'sort' => 's.table_name', 'icon' => 'fa-table', 'class' => 'th-tabla'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 's.changed_at', 'tiebreaker' => 's.id', 'icon' => 'fa-calendar-alt', 'class' => 'th-fecha', 'first' => 'desc'],
+            'accion' => ['label' => 'Acción', 'icon' => 'fa-tools', 'class' => 'th-accion text-center'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         // Paginación
         $page = $request->input('page', 1);
         $perPage = 10;
@@ -125,7 +138,7 @@ class AuditoriaController extends AppBaseController
                          old_data AS anterior,
                          new_data AS nuevo
                   {$queryBase} {$where}
-                  ORDER BY s.id DESC
+                  ORDER BY {$sort->orderBy()}
                   LIMIT {$perPage} OFFSET {$offset}";
 
         $auditoria = DB::select($query);
@@ -144,7 +157,8 @@ class AuditoriaController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('auditoria.table')->with('auditoria', $auditoria);
+            return view('auditoria.table')->with('auditoria', $auditoria)
+                ->with('columns', $columns)->with('sort', $sort);
         }
 
         // Obtener datos para los filtros
@@ -163,6 +177,6 @@ class AuditoriaController extends AppBaseController
             ->orderBy('table_name')
             ->pluck('table_name', 'table_name');
 
-        return view('auditoria.index', compact('auditoria', 'usuarios', 'sucursales', 'operaciones', 'tablas', 'statsTotals'));
+        return view('auditoria.index', compact('auditoria', 'usuarios', 'sucursales', 'operaciones', 'tablas', 'statsTotals', 'columns', 'sort'));
     }
 }

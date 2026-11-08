@@ -22,11 +22,11 @@
     <div class="content px-3">
 
         <!-- Filters Card -->
-        <div class="card shadow-sm border-0 mb-4 collapsed-card" id="card-filtros" style="border-radius: 0.5rem;">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center" 
-                 style="border-bottom: 1px solid #f0f0f0; border-radius: 0.5rem 0.5rem 0 0; cursor: pointer;" 
+        <div class="card mb-4 collapsed-card" id="card-filtros" style="border-radius: 0.5rem;">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center" 
+                 style="cursor: pointer;" 
                  data-card-widget="collapse">
-                <h5 class="card-title text-dark m-0" style="font-size: 0.95rem; font-weight: 600;">
+                <h5 class="card-title m-0" style="font-size: 0.95rem; font-weight: 600;">
                     <i class="fas fa-filter text-muted mr-2"></i> Filtros de Búsqueda
                 </h5>
                 <div class="card-tools">
@@ -35,31 +35,29 @@
                     </button>
                 </div>
             </div>
-            <div class="card-body bg-light" style="display: none; border-radius: 0 0 0.5rem 0.5rem;">
+            <div class="card-body" style="display: none;">
                 <form id="form-filtros">
                     <div class="row">
                         <!-- RANGO DE FECHAS -->
                         <div class="form-group col-md-3">
-                            {!! Form::label('desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                            {!! Form::label('desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem;']) !!}
                             {!! Form::input('date', 'desde', request()->get('desde', null), [
                                 'class' => 'form-control form-control-sm shadow-none border-0',
-                                'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                                'id' => 'desde',
+                                                                'id' => 'desde',
                             ]) !!}
                         </div>
 
                         <div class="form-group col-md-3">
-                            {!! Form::label('hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                            {!! Form::label('hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem;']) !!}
                             {!! Form::input('date', 'hasta', request()->get('hasta', null), [
                                 'class' => 'form-control form-control-sm shadow-none border-0',
-                                'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                                'id' => 'hasta',
+                                                                'id' => 'hasta',
                             ]) !!}
                         </div>
 
                         <!-- COMBO CLIENTE -->
                         <div class="form-group col-md-3">
-                            {!! Form::label('id_cliente', 'Cliente:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                            {!! Form::label('id_cliente', 'Cliente:', ['style' => 'font-size: 0.85rem;']) !!}
                             {!! Form::select('id_cliente', $clientes, request()->get('id_cliente', null), [
                                 'class' => 'form-control form-control-sm select2 shadow-none',
                                 'style' => 'width: 100%;',
@@ -70,7 +68,7 @@
 
                          <!-- COMBO SUCURSAL -->
                          <div class="form-group col-md-3">
-                            {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                            {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem;']) !!}
                             {!! Form::select('id_sucursal', $sucursales, request()->get('id_sucursal', null), [
                                 'class' => 'form-control form-control-sm select2 shadow-none',
                                 'style' => 'width: 100%;',
@@ -165,11 +163,6 @@
     <script type="text/javascript">
         $(document).ready(function() {
             // Inicializar Select2
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%',
-                allowClear: true
-            });
 
             // Toggle Filters Card Style
             $('#card-filtros .card-header').on('click', function() {

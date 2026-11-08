@@ -50,7 +50,23 @@ class TimbradoController extends AppBaseController
             });
         }
 
-        $timbrados = $query->orderBy('fecha_vencimiento', 'desc')
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'timbrados.id_timbrado', 'first' => 'desc'],
+            'empresa' => ['label' => 'Empresa', 'sort' => '(SELECT e.razon_social FROM empresas e WHERE e.id_empresa = timbrados.id_empresa)', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'tipo' => ['label' => 'Tipo', 'sort' => '(SELECT tt.descripcion FROM tipos_timbrados tt WHERE tt.id_tipo_timbrado = timbrados.id_tipo_timbrado)', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'numero' => ['label' => 'Nro. Timbrado', 'sort' => 'timbrados.numero_timbrado', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'vigencia' => ['label' => 'Vigencia', 'sort' => 'timbrados.fecha_vencimiento', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
+            'rango' => ['label' => 'Rango', 'sort' => 'timbrados.rango_inicio', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
+            'disponibles' => ['label' => 'Disponibles', 'sort' => '(timbrados.rango_fin - (timbrados.rango_inicio + timbrados.numero_actual) + 1)', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
+            'estado' => ['label' => 'Estado', 'sort' => 'timbrados.estado', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'vigencia', 'desc', $request);
+
+        $timbrados = $query->orderByRaw($sort->orderBy())
                           ->paginate(15);
 
         // Actualizar estados automáticamente
@@ -61,7 +77,7 @@ class TimbradoController extends AppBaseController
         $empresas = $this->getEmpresasActivas();
         $tipos = TipoTimbrado::all();
 
-        return view('timbrados.index', compact('timbrados', 'empresas', 'tipos'));
+        return view('timbrados.index', compact('timbrados', 'empresas', 'tipos', 'columns', 'sort'));
     }
 
     /**

@@ -1,40 +1,10 @@
 
     <div class="card-body p-0">
-        <div class="table-responsive table-modern-wrap">
-            <table class="table table-hover align-middle table-modern mb-0" id="productos-table">
-                <thead>
-                    <tr>
-                        <th class="th-id">
-                            <i class="fas fa-hashtag mr-1"></i>
-                            ID
-                        </th>
-                        <th class="th-sucursal">
-                            <i class="fas fa-store mr-1"></i>
-                            Sucursal
-                        </th>
-                        <th class="th-usuario">
-                            <i class="fas fa-user mr-1"></i>
-                            Usuario
-                        </th>
-                        <th class="th-operacion">
-                            <i class="fas fa-cog mr-1"></i>
-                            Operación
-                        </th>
-                        <th class="th-tabla">
-                            <i class="fas fa-table mr-1"></i>
-                            Tabla
-                        </th>
-                        <th class="th-fecha">
-                            <i class="fas fa-calendar-alt mr-1"></i>
-                            Fecha
-                        </th>
-                        <th class="th-accion text-center">
-                            <i class="fas fa-tools mr-1"></i>
-                            Acción
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div class="table-modern-wrap">
+            <x-data-table :columns="$columns" :sort="$sort" :paginator="$auditoria"
+                          id="productos-table"
+                          table-class="table table-hover align-middle table-modern mb-0"
+                          empty="No hay movimientos registrados para este filtro.">
                     @foreach ($auditoria as $fila)
                         <tr class="table-row-hover">
                             <td class="td-id">
@@ -103,8 +73,7 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
+            </x-data-table>
         </div>
 
         <div class="card-footer card-footer-modern clearfix">

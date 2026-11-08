@@ -1,28 +1,17 @@
 <div class="p-0 card-body">
     <!-- Vista de tabla para desktop -->
-    <div class="table-responsive d-none d-md-block">
-        <table class="table" id="recibos-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Fecha</th>
-                    <th>CI/RUC</th>
-                    <th>Cliente</th>
-                    <th>Total</th>
-                    <th>Sucursal</th>
-                    <th>Usuario</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="d-none d-md-block">
+        <x-data-table :columns="$columns" :sort="$sort" :paginator="$recibos"
+                      id="recibos-table"
+                      empty="No hay recibos que coincidan con la búsqueda."
+                      empty-hint="Probá quitar algún filtro o ampliar el rango de fechas.">
                 @foreach ($recibos as $recibo)
                     <tr>
                         <td>{{ $recibo->id_recibo }}</td>
                         <td>{{ \Carbon\Carbon::parse($recibo->fecha_recibo)->format('d/m/Y') }}</td>
                         <td>{{ $recibo->clie_ci }}</td>
                         <td>{{ $recibo->cliente }}</td>
-                        <td>{{ number_format($recibo->total, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($recibo->total, 0, ',', '.') }}</td>
                         <td>{{ $recibo->sucursal }}</td>
                         <td>{{ $recibo->usuario }}</td>
                         <td>
@@ -33,31 +22,42 @@
                         <td style="width: 120px">
                             {!! Form::open(['route' => ['recibossimples.destroy', $recibo->id_recibo], 'method' => 'delete']) !!}
                             <div class='btn-group'>
+                                {{-- Icon-only actions now share one neutral treatment, so each
+                                     one has to name itself for the pointer and the screen reader. --}}
                                 @can('recibossimples index')
-                                    <a href="{{ route('recibossimples.show', [$recibo->id_recibo]) }}" class='btn btn-default btn-xs'>
-                                        <i class="far fa-eye"></i>
+                                    <a href="{{ route('recibossimples.show', [$recibo->id_recibo]) }}"
+                                        class='btn btn-default btn-xs'
+                                        title="Ver el recibo {{ $recibo->id_recibo }}"
+                                        aria-label="Ver el recibo {{ $recibo->id_recibo }}">
+                                        <i class="far fa-eye" aria-hidden="true"></i>
                                     </a>
                                 @endcan
 
                                 @if($recibo->estado != 'ANULADO')
                                     @can('recibossimples index')
                                         <a href="{{ route('recibossimples.imprimir', [$recibo->id_recibo]) }}"
-                                            class='btn btn-success btn-xs' target="_blank">
-                                            <i class="fas fa-print"></i>
+                                            class='btn btn-success btn-xs' target="_blank" rel="noopener"
+                                            title="Imprimir el recibo {{ $recibo->id_recibo }}"
+                                            aria-label="Imprimir el recibo {{ $recibo->id_recibo }}">
+                                            <i class="fas fa-print" aria-hidden="true"></i>
                                         </a>
                                     @endcan
 
                                     @can('recibossimples edit')
                                         <a href="{{ route('recibossimples.edit', [$recibo->id_recibo]) }}"
-                                            class='btn btn-default btn-xs'>
-                                            <i class="far fa-edit"></i>
+                                            class='btn btn-default btn-xs'
+                                            title="Editar el recibo {{ $recibo->id_recibo }}"
+                                            aria-label="Editar el recibo {{ $recibo->id_recibo }}">
+                                            <i class="far fa-edit" aria-hidden="true"></i>
                                         </a>
                                     @endcan
 
                                     @can('recibossimples destroy')
-                                        {!! Form::button('<i class="far fa-trash-alt"></i>', [
+                                        {!! Form::button('<i class="far fa-trash-alt" aria-hidden="true"></i>', [
                                             'type' => 'submit',
                                             'class' => 'btn btn-danger btn-xs alert-delete',
+                                            'title' => 'Anular el recibo '. $recibo->id_recibo,
+                                            'aria-label' => 'Anular el recibo '. $recibo->id_recibo,
                                             'data-mensaje' => 'el recibo nro: '. $recibo->id_recibo
                                         ]) !!}
                                     @endcan
@@ -67,8 +67,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
+        </x-data-table>
     </div>
 
     <!-- Vista de cards para mobile -->

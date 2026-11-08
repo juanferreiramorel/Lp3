@@ -59,7 +59,20 @@ class MarcaController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_marca DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        // 'estado' is the computed label the subquery exposes, so the header
+        // sorts by the same text the cell shows.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_marca', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         // Ejecutar la consulta
         $marcas = DB::select($query, $params);
@@ -86,12 +99,14 @@ class MarcaController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('marcas.table')->with('marcas', $marcas);
+            return view('marcas.table')->with('marcas', $marcas)->with('columns', $columns)->with('sort', $sort);
         }
 
         return view('marcas.index')
             ->with('marcas', $marcas)
-            ->with('estadoFilter', $estadoFilter);
+            ->with('estadoFilter', $estadoFilter)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
     public function create()
     {

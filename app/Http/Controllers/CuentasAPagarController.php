@@ -95,6 +95,24 @@ class CuentasAPagarController extends AppBaseController
             }
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'first' => 'desc'],
+            'factura' => ['label' => 'N° de Factura', 'sort' => 'c.factura', 'tiebreaker' => 'c.id_compra'],
+            'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion', 'tiebreaker' => 'c.id_compra'],
+            'fecha_compra' => ['label' => 'Fecha de Compra', 'sort' => 'c.fecha_compra', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'monto_total' => ['label' => 'Monto Total', 'sort' => 'c.total', 'align' => 'right', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'total_cuotas' => ['label' => 'Total Cuotas', 'sort' => 'COUNT(ca.id_cta)', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_pendientes' => ['label' => 'Cuotas Pendientes', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_vencidas' => ['label' => 'Cuotas Vencidas', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_pagadas' => ['label' => 'Cuotas Pagadas', 'sort' => "SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'vencimientos' => ['label' => 'Rango Vencimientos', 'sort' => 'MIN(ca.vencimiento)', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha_compra', 'desc', $request);
+
         $cuentasapagar = DB::select(
             "SELECT
                 c.id_compra,
@@ -113,7 +131,7 @@ class CuentasAPagarController extends AppBaseController
             JOIN cuentas_a_pagar ca USING(id_compra)
             {$sql_busqueda} {$sql_filtros}
             GROUP BY c.id_compra, c.factura, proveedor, c.fecha_compra, c.total
-            ORDER BY c.fecha_compra DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         // Definimos los valores de paginación
@@ -139,7 +157,10 @@ class CuentasAPagarController extends AppBaseController
          // Verificamos si la petición es AJAX
         if ($request->ajax()) { //devuelve true o false si es ajax o no
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('cuentasapagar.table')->with('cuentasapagar', $cuentasapagar);
+            return view('cuentasapagar.table')
+                ->with('cuentasapagar', $cuentasapagar)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Obtener métodos de pago para el modal de pago
@@ -161,7 +182,9 @@ class CuentasAPagarController extends AppBaseController
             ->with('metodos_pago', $metodos_pago)
             ->with('proveedores', $proveedores)
             ->with('sucursales', $sucursales)
-            ->with('estados_cuota', $estados_cuota);
+            ->with('estados_cuota', $estados_cuota)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function detalle($id_compra)

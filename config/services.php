@@ -37,4 +37,15 @@ return [
         'socket_secret' => env('AI_OCR_SOCKET_SECRET', ''),
     ],
 
+    /*
+     * People: the DNIT (ex SET) taxpayer registry, exposed as a private REST
+     * API. Used to resolve a CI or RUC into a name before a client is created.
+     * The token is a JWT the service issues; it never reaches the browser.
+     */
+    'people' => [
+        'base_url' => env('PEOPLE_API_BASE', 'https://people.lanzapy.com'),
+        'jwt' => env('PEOPLE_API_JWT', ''),
+        'timeout' => (int) env('PEOPLE_API_TIMEOUT', 8),
+    ],
+
 ];

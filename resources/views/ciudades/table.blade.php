@@ -1,16 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="ciudades-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Ciudad</th>
-                    <th>Departamento</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$ciudades"
+                  id="ciudades-table"
+                  empty="No hay ciudades para mostrar.">
                 @foreach ($ciudades as $ciudad)
                     <tr style="{{ !$ciudad->estado ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $ciudad->id_ciudad }}</td>
@@ -52,9 +43,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

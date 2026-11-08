@@ -53,7 +53,18 @@ class DepartamentoController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_departamento DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_departamento', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         $departamentos = DB::select($query, $params);
 
@@ -79,10 +90,10 @@ class DepartamentoController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('departamentos.table')->with('departamentos', $departamentos);
+            return view('departamentos.table')->with('departamentos', $departamentos)->with('columns', $columns)->with('sort', $sort);
         }
 
-        return view('departamentos.index')->with('departamentos', $departamentos);
+        return view('departamentos.index')->with('departamentos', $departamentos)->with('columns', $columns)->with('sort', $sort);
     }
 
     public function create()

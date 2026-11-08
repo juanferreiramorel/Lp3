@@ -1,16 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="cajas-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripcion</th>
-                    <th>Sucursal</th>
-                    <th>Estado</th>
-                    <th colspan="3">Accion</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$cajas"
+                  id="cajas-table"
+                  empty="No hay cajas para mostrar.">
                 @foreach ($cajas as $caja)
                     <tr style="{{ !$caja->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $caja->id_caja }}</td>
@@ -51,9 +42,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

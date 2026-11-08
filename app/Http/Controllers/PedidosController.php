@@ -125,6 +125,21 @@ class PedidosController extends AppBaseController
                       JOIN clientes c ON p.id_cliente = c.id_cliente
                       JOIN users u ON p.id_usuario = u.id";
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'p.id_pedido', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci'],
+            'cliente' => ['label' => 'Cliente', 'sort' => "CONCAT(c.clie_nombre, ' ', c.clie_apellido)"],
+            'fecha' => ['label' => 'Fecha Pedido', 'sort' => 'p.fecha_pedido', 'tiebreaker' => 'p.id_pedido', 'first' => 'desc'],
+            'total' => ['label' => 'Total Pedido', 'sort' => 'p.total_pedido', 'first' => 'desc'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
+            'estado' => ['label' => 'Estado', 'sort' => 'p.estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
+
         // Contar total de registros
         $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
         $totalResult = DB::select($totalQuery);
@@ -139,7 +154,7 @@ class PedidosController extends AppBaseController
         $query = "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
                          u.name AS usuario
                   {$queryBase} {$where}
-                  ORDER BY p.fecha_pedido DESC
+                  ORDER BY {$sort->orderBy()}
                   LIMIT {$perPage} OFFSET {$offset}";
 
         $pedidos = DB::select($query);
@@ -158,7 +173,10 @@ class PedidosController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('pedidos.table')->with('pedidos', $pedidos);
+            return view('pedidos.table')
+                ->with('pedidos', $pedidos)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Obtener datos para los filtros
@@ -172,7 +190,9 @@ class PedidosController extends AppBaseController
             'CANCELADO' => 'Cancelado'
         ];
 
-        return view('pedidos.index', compact('pedidos', 'clientes', 'sucursales', 'estados'));
+        return view('pedidos.index', compact('pedidos', 'clientes', 'sucursales', 'estados'))
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     /** CREAR */

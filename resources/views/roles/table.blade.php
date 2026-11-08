@@ -1,15 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="roles-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Guard Name</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$roles"
+                  id="roles-table"
+                  empty="No hay roles para mostrar.">
                 @foreach ($roles as $rol)
                     <tr>
                         <td>{{ $rol->id }}</td>
@@ -31,9 +23,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

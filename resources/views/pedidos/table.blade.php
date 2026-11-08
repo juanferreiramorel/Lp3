@@ -1,19 +1,7 @@
 <div class="p-0 card-body">
-    <div class="table-responsive">
-        <table class="table" id="pedidos-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Ci/Ruc</th>
-                    <th>Cliente</th>
-                    <th>Fecha Pedido</th>
-                    <th>Total Pedido</th>
-                    <th>Usuario</th>
-                    <th>Estado</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$pedidos"
+                  id="pedidos-table"
+                  empty="No hay pedidos para mostrar.">
                 @foreach ($pedidos as $pedido)
                     <tr>
                         <td>{{ $pedido->id_pedido }}</td>
@@ -49,9 +37,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="clearfix card-footer">
         <div class="float-right">

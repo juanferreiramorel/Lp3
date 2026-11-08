@@ -1,19 +1,22 @@
-<div class="card card-info">
-    <div class="card-header">
-        <h3 class="card-title">Detalle de Productos</h3>
+{{-- A solid colour bar for a section heading reads as an alert, not as structure.
+     The card is now delimited by its hairline, like every other panel. --}}
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h3 class="card-title m-0">Detalle de Productos</h3>
 
         <div class="card-tools">
-            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                <i class="fas fa-minus"></i>
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"
+                    aria-label="Mostrar u ocultar el detalle">
+                <i class="fas fa-minus" aria-hidden="true"></i>
             </button>
         </div>
     </div>
     <div class="card-body">
         <div class="row">
             <!-- Botón para buscar productos -->
-            <div class="col-12 mb-3">
-                <button type="button" class="btn btn-primary btn-block d-sm-inline float-sm-right" id="buscar">
-                    <i class="fas fa-search" aria-hidden="true"></i> Buscar Producto
+            <div class="col-12 mb-3 d-flex justify-content-sm-end">
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center" id="buscar">
+                    <i class="fas fa-search mr-2" aria-hidden="true"></i> Buscar Producto
                 </button>
             </div>
 

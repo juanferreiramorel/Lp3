@@ -236,7 +236,12 @@
 
         // Initialize Select2 if not already initialized (or re-initialize if needed specific options)
         // Initialize Select2
-         $('.select2').select2({
+         // Scoped to this one multi-select: a bare $('.select2') also matches
+         // the container Select2 generates, and rebuilding that as a select
+         // empties the combo.
+         $('select[name="shortcuts[]"]').select2({
+            theme: 'bootstrap4',
+            width: '100%',
             maximumSelectionLength: 5,
             language: {
                 maximumSelected: function (e) {

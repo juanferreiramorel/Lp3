@@ -71,7 +71,19 @@ class CajaController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_caja DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_caja', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 'sucursal'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Accion', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= ' ORDER BY ' . $sort->orderBy();
 
         // Ejecutar la consulta
         $cajas = DB::select($query, $params);
@@ -101,14 +113,19 @@ class CajaController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('cajas.table')->with('cajas', $cajas);
+            return view('cajas.table')
+                ->with('cajas', $cajas)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         return view('cajas.index')
             ->with('cajas', $cajas)
             ->with('estadoFilter', $estadoFilter)
             ->with('sucursalFilter', $sucursalFilter)
-            ->with('sucursales', $sucursales);
+            ->with('sucursales', $sucursales)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
     public function create()
     {

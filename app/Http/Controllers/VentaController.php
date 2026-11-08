@@ -125,6 +125,24 @@ class VentaController extends AppBaseController
             return Excel::download(new VentasExport($filtros, $buscar, $idsPermitidos), 'ventas.xlsx');
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'v.id_venta', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci'],
+            'cliente' => ['label' => 'Cliente', 'sort' => "concat(c.clie_nombre,' ', c.clie_apellido)"],
+            'fecha' => ['label' => 'Fecha Venta', 'sort' => 'v.fecha_venta', 'tiebreaker' => 'v.id_venta', 'first' => 'desc'],
+            'factura' => ['label' => 'Factura Nro', 'sort' => 'v.factura_nro'],
+            'condicion' => ['label' => 'Condición Venta', 'sort' => 'v.condicion_venta'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
+            'total' => ['label' => 'Total', 'sort' => 'v.total', 'first' => 'desc'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'users.name'],
+            'estado' => ['label' => 'Estado', 'sort' => 'v.estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
+
         $ventas = DB::select(
             "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario, s.descripcion as sucursal
@@ -133,7 +151,7 @@ class VentaController extends AppBaseController
                 JOIN users ON v.user_id = users.id
                 JOIN sucursales s ON v.id_sucursal = s.id_sucursal
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
-            ORDER BY v.fecha_venta DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         // Definimos los valores de paginación
@@ -167,7 +185,9 @@ class VentaController extends AppBaseController
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         if ($request->ajax()) {
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('ventas.table')->with('ventas', $ventas)->with('caja_abierta', $caja_abierta);
+            return view('ventas.table')->with('ventas', $ventas)->with('caja_abierta', $caja_abierta)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Consulta para recuperar cajas
@@ -194,7 +214,9 @@ class VentaController extends AppBaseController
             ->with('caja_abierta', $caja_abierta)
             ->with('clientes', $clientes)
             ->with('sucursales', $sucursales)
-            ->with('condiciones_venta', $condiciones_venta);
+            ->with('condiciones_venta', $condiciones_venta)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

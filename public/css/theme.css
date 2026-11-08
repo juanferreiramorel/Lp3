@@ -1,0 +1,1516 @@
+/* ==========================================================================
+   TAP ERP — Theme layer
+   --------------------------------------------------------------------------
+   Loaded LAST, after app-styles.css and navbar-custom.css.
+
+   Token vocabulary comes from the product's own world: a receipt book.
+     paper  — the surface a document is printed on
+     ink    — what is written on it
+     rule   — the ruled lines that divide it
+     stamp  — the accent: the ink stamp that authorizes an action
+     ledger — the bound book, i.e. the sidebar
+     voided — a receipt is never deleted, it is voided (ANULADO)
+
+   Legacy variables (--navbar-*, --sidebar-*, --input-*, --nav-*) are re-pointed
+   at these tokens further down, so every rule already written against them
+   themes correctly without editing 46 view files.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens — light
+   Declared on `body` so this wins over navbar-custom.css's `:root` block
+   (`body` beats `:root`) and over app-styles.css's `body` block (same
+   specificity, later source order).
+   -------------------------------------------------------------------------- */
+body {
+    /* Surfaces — whisper-quiet steps, never pure white */
+    --paper: #f4f4f5;
+    --paper-raised: #fcfcfd;
+    --paper-sunken: #ebebed;
+
+    /* Text */
+    --ink: #18181b;
+    --ink-muted: #52525b;
+    --ink-faint: #71717a;
+
+    /* Hairlines */
+    --rule: #e4e4e7;
+    --rule-strong: #d4d4d8;
+
+    /* Accent — one, and only one */
+    --stamp: #0284c7;
+    --stamp-strong: #0369a1;
+    --stamp-press: #075985;
+    --stamp-on: #ffffff;
+    --stamp-text: #0369a1;
+    --stamp-wash: #e0f2fe;
+    --stamp-ring: rgba(2, 132, 199, 0.28);
+
+    /* Semantic state */
+    --voided: #b91c1c;
+    --voided-text: #b91c1c;
+    --voided-wash: #fef2f2;
+    --voided-ring: rgba(185, 28, 28, 0.25);
+    --valid-text: #15803d;
+    --valid-wash: #dcfce7;
+    --valid-ring: rgba(21, 128, 61, 0.22);
+
+    /* A solid neutral button: the search action is secondary, so it stays out
+       of the accent's way instead of competing with the page's primary action. */
+    --solid: #18181b;
+    --solid-hover: #27272a;
+    --solid-on: #fafafa;
+
+    /* The bound book — sidebar */
+    --ledger: #efeff1;
+    --ledger-rule: #e0e0e4;
+    --ledger-ink: #52525b;
+    --ledger-ink-strong: #18181b;
+    --ledger-fill: #e4e4e7;
+
+    /* Elevation — borders carry structure, shadows only float */
+    --lift-menu: 0 4px 6px -2px rgba(24, 24, 27, 0.06), 0 12px 24px -8px rgba(24, 24, 27, 0.12);
+    --lift-modal: 0 8px 12px -4px rgba(24, 24, 27, 0.08), 0 24px 48px -12px rgba(24, 24, 27, 0.18);
+
+    /* Shape */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+
+    /* Motion */
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --speed: 150ms;
+
+    color-scheme: light;
+}
+
+/* --------------------------------------------------------------------------
+   2. Tokens — dark
+   -------------------------------------------------------------------------- */
+body.dark-mode {
+    --paper: #0e0e11;
+    --paper-raised: #17171b;
+    --paper-sunken: #1f1f24;
+
+    --ink: #fafafa;
+    --ink-muted: #a1a1aa;
+    --ink-faint: #8b8b94;
+
+    --rule: #27272a;
+    --rule-strong: #3f3f46;
+
+    --stamp: #0284c7;
+    --stamp-strong: #0ea5e9;
+    --stamp-press: #38bdf8;
+    --stamp-on: #ffffff;
+    --stamp-text: #38bdf8;
+    --stamp-wash: rgba(14, 165, 233, 0.14);
+    --stamp-ring: rgba(56, 189, 248, 0.35);
+
+    --voided: #b91c1c;
+    --voided-text: #f87171;
+    --voided-wash: rgba(248, 113, 113, 0.12);
+    --voided-ring: rgba(248, 113, 113, 0.32);
+    --valid-text: #4ade80;
+    --valid-wash: rgba(74, 222, 128, 0.12);
+    --valid-ring: rgba(74, 222, 128, 0.3);
+
+    --solid: #3f3f46;
+    --solid-hover: #52525b;
+    --solid-on: #fafafa;
+
+    --ledger: #09090b;
+    --ledger-rule: #27272a;
+    --ledger-ink: #a1a1aa;
+    --ledger-ink-strong: #fafafa;
+    --ledger-fill: #27272a;
+
+    --lift-menu: 0 4px 6px -2px rgba(0, 0, 0, 0.4), 0 12px 24px -8px rgba(0, 0, 0, 0.55);
+    --lift-modal: 0 8px 12px -4px rgba(0, 0, 0, 0.45), 0 24px 48px -12px rgba(0, 0, 0, 0.65);
+
+    color-scheme: dark;
+}
+
+/* Native widgets (date picker, scrollbars, spinners) follow the theme.
+   `color-scheme` on the root element is what makes the browser's own
+   calendar popup render dark — no CSS can reach inside that popup. */
+html.dark-mode { color-scheme: dark; }
+html:not(.dark-mode) { color-scheme: light; }
+
+/* --------------------------------------------------------------------------
+   3. Legacy variable bridge
+   Everything already written against these names now follows the tokens.
+   -------------------------------------------------------------------------- */
+body,
+body.dark-mode {
+    --navbar-bg: var(--paper-raised);
+    --navbar-fg: var(--ink-muted);
+    --navbar-muted: var(--ink-faint);
+    --navbar-border: var(--rule);
+    --navbar-hover: var(--paper-sunken);
+    --navbar-hover-bg: var(--paper-sunken);
+    --navbar-hover-fg: var(--ink);
+    --navbar-active-fg: var(--stamp-text);
+    --navbar-input-bg: var(--paper-sunken);
+    --navbar-input-border: var(--rule);
+    --navbar-input-fg: var(--ink);
+    --input-bg: var(--paper-sunken);
+    --input-border: var(--rule);
+
+    --sidebar-bg: var(--ledger);
+    --sidebar-border: var(--ledger-rule);
+    --sidebar-fg: var(--ledger-ink);
+    --sidebar-fg-hover: var(--ledger-ink-strong);
+    --sidebar-bg-hover: var(--ledger-fill);
+    --sidebar-input-bg: var(--paper-sunken);
+    --sidebar-input-border: var(--ledger-rule);
+
+    --nav-sky: var(--stamp-text);
+    --nav-mint: var(--ink-muted);
+}
+
+/* --------------------------------------------------------------------------
+   4. Page chrome
+   -------------------------------------------------------------------------- */
+/* AdminLTE ships a `body.dark-mode` background of its own, which outranks a
+   bare `body` selector, so the page kept its grey behind the content wrapper. */
+body,
+body.dark-mode {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+.content-wrapper,
+body.dark-mode .content-wrapper {
+    background-color: var(--paper);
+    color: var(--ink);
+}
+
+.main-footer,
+body.dark-mode .main-footer {
+    background-color: var(--paper-raised);
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+}
+
+.content-header h1,
+.content-header .h1 {
+    color: var(--ink);
+    font-weight: 650;
+    letter-spacing: -0.015em;
+}
+
+/* Browser surfaces that ship with no design system of their own. */
+::selection {
+    background-color: var(--stamp-wash);
+    color: var(--ink);
+}
+
+* {
+    scrollbar-color: var(--rule-strong) transparent;
+    scrollbar-width: thin;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background-color: var(--rule-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--ink-faint); }
+
+/* One focus ring for the whole product. */
+:focus-visible {
+    outline: 2px solid var(--stamp-text);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   5. Brand mark and wordmark
+   -------------------------------------------------------------------------- */
+.brand-link,
+.brand-link-elevated {
+    background-color: var(--ledger);
+    border-bottom: 1px solid var(--ledger-rule) !important;
+    transition: background-color var(--speed) var(--ease);
+}
+
+.brand-mark {
+    width: 30px;
+    height: 30px;
+    display: block;
+    flex-shrink: 0;
+    color: var(--stamp);
+}
+
+/* The old mark was an <img> of an SVG whose gradients referenced variables
+   that never existed, then flattened to white by a filter. Both are gone. */
+.brand-image-rounded { filter: none; }
+
+.brand-title {
+    font-family: var(--font-sans);
+    font-weight: 650;
+    font-size: 0.95rem;
+    letter-spacing: -0.02em;
+    color: var(--ledger-ink-strong);
+}
+
+.brand-title-primary { color: var(--ledger-ink-strong); }
+.brand-title-accent { color: var(--stamp-text); }
+
+/* --------------------------------------------------------------------------
+   6. Sidebar
+   -------------------------------------------------------------------------- */
+.main-sidebar,
+.modern-sidebar,
+body.dark-mode .main-sidebar {
+    background-color: var(--ledger) !important;
+    border-right: 1px solid var(--ledger-rule);
+}
+
+.modern-sidebar .nav-sidebar .nav-link {
+    color: var(--ledger-ink);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.modern-sidebar .nav-sidebar .nav-link:hover {
+    background-color: var(--ledger-fill);
+    color: var(--ledger-ink-strong);
+}
+
+.modern-sidebar .nav-sidebar .nav-link i,
+.modern-sidebar .nav-sidebar .nav-icon {
+    color: var(--ink-faint);
+    transition: color var(--speed) var(--ease);
+}
+
+.modern-sidebar .nav-sidebar .nav-link:hover i,
+.modern-sidebar .nav-sidebar .nav-link:hover .nav-icon {
+    color: var(--ledger-ink-strong);
+}
+
+/* The active item was hardcoded slate-on-slate and invisible in light mode.
+   It now reads as a marked page: accent text, quiet fill, accent edge. */
+.modern-sidebar .nav-sidebar .nav-link.active,
+.modern-sidebar .nav-sidebar .nav-link.active:hover,
+body.dark-mode .modern-sidebar .nav-sidebar .nav-link.active {
+    background-color: var(--stamp-wash) !important;
+    color: var(--stamp-text) !important;
+    box-shadow: inset 2px 0 0 0 var(--stamp);
+}
+
+.modern-sidebar .nav-sidebar .nav-link.active i,
+.modern-sidebar .nav-sidebar .nav-link.active .nav-icon {
+    color: var(--stamp-text) !important;
+}
+
+/* Submenu items. The incumbent rules painted these slate-on-slate with four
+   !important declarations and a permanently dark dot, which disappeared
+   entirely once the sidebar could be light. */
+.modern-sidebar .nav-treeview .nav-link {
+    color: var(--ledger-ink);
+}
+
+.modern-sidebar .nav-treeview .nav-link:hover {
+    color: var(--ledger-ink-strong) !important;
+    background-color: var(--ledger-fill) !important;
+}
+
+.modern-sidebar .nav-treeview .nav-link.active,
+.modern-sidebar .nav-treeview .nav-link.active:hover {
+    color: var(--stamp-text) !important;
+    background-color: var(--stamp-wash) !important;
+    font-weight: 600;
+}
+
+.modern-sidebar .nav-treeview .nav-link.active i,
+.modern-sidebar .nav-treeview .nav-link.active:hover i {
+    color: var(--stamp-text) !important;
+}
+
+.modern-sidebar .nav-treeview .nav-link.active::before,
+.modern-sidebar .nav-treeview .nav-link.active:hover::before {
+    background-color: var(--stamp);
+    box-shadow: none;
+}
+
+.modern-sidebar .nav-header {
+    color: var(--ink-faint);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   7. Navbar
+   -------------------------------------------------------------------------- */
+.main-header.navbar,
+.shadcn-navbar,
+body.dark-mode .main-header.navbar {
+    background-color: var(--paper-raised) !important;
+    border-bottom: 1px solid var(--rule) !important;
+    color: var(--ink-muted);
+    box-shadow: none;
+}
+
+.navbar-btn-icon,
+.main-header .nav-link {
+    color: var(--ink-muted);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.navbar-btn-icon:hover,
+.main-header .nav-link:hover {
+    background-color: var(--paper-sunken);
+    color: var(--ink);
+}
+
+.hamburger-icon .line { background-color: currentColor; }
+
+/* --------------------------------------------------------------------------
+   8. User avatar
+   Previously three lines of CSS: a letter on a transparent, uncentered circle,
+   specified one way in the navbar and another in the dropdown.
+   One definition now serves both.
+   -------------------------------------------------------------------------- */
+.user-avatar-wrapper {
+    position: relative;
+    display: inline-flex;
+    isolation: isolate;
+}
+
+.user-avatar-letter,
+.user-avatar-letter.user-image,
+.user-avatar-letter.user-image-dropdown {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--stamp-wash) !important;
+    color: var(--stamp-text) !important;
+    font-weight: 650;
+    font-size: 0.8125rem;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--rule);
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.user-avatar-letter.user-image {
+    width: 30px;
+    height: 30px;
+}
+
+.user-avatar-letter.user-image-dropdown {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+}
+
+.user-image.img-circle,
+.user-image-dropdown {
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-name-dropdown {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.user-role-dropdown { color: var(--ink-faint) !important; }
+
+/* --------------------------------------------------------------------------
+   9. Dropdown menus
+   -------------------------------------------------------------------------- */
+.dropdown-menu,
+body.dark-mode .dropdown-menu {
+    background-color: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-md);
+    box-shadow: var(--lift-menu);
+    color: var(--ink);
+    padding: 0.25rem;
+    isolation: isolate;
+}
+
+.dropdown-menu .dropdown-item,
+body.dark-mode .dropdown-menu .dropdown-item {
+    color: var(--ink-muted);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    background-color: var(--paper-sunken);
+    color: var(--ink);
+}
+
+.dropdown-menu .dropdown-item i { color: var(--ink-faint); }
+.dropdown-menu .dropdown-item:hover i { color: var(--ink); }
+
+.dropdown-divider {
+    border-top-color: var(--rule);
+    margin: 0.25rem 0;
+}
+
+.dropdown-item-danger,
+.dropdown-item-danger:hover,
+.dropdown-item-danger:focus {
+    color: var(--voided-text) !important;
+}
+
+.dropdown-item-danger:hover,
+.dropdown-item-danger:focus {
+    background-color: var(--voided-wash) !important;
+}
+
+.dropdown-item-danger i,
+.dropdown-item-danger:hover i { color: var(--voided-text) !important; }
+
+.user-header-list { background-color: transparent; }
+
+/* --------------------------------------------------------------------------
+   10. Cards
+   Borders carry structure. Shadows are reserved for things that float.
+   -------------------------------------------------------------------------- */
+.card,
+body.dark-mode .card {
+    background-color: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+    color: var(--ink);
+}
+
+.card.shadow-sm, .card.shadow, .card.elevation-1, .card.elevation-2 { box-shadow: none; }
+
+/* `.card > .card-header` rather than a bare `.card-header`: AdminLTE has
+   two-class rules of its own, and a bare one lost to them in the light theme
+   only, leaving a near-black divider under every card title. */
+.card-header,
+.card > .card-header,
+body.dark-mode .card-header,
+body.dark-mode .card > .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+}
+
+.card-header.bg-white,
+.card-body.bg-light,
+body.dark-mode .card-header.bg-white,
+body.dark-mode .card-body.bg-light {
+    background-color: transparent !important;
+    color: inherit;
+}
+
+.card-title { color: var(--ink); }
+.card-footer { background-color: transparent; border-top: 1px solid var(--rule); }
+
+.btn-tool {
+    color: var(--ink-faint) !important;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.btn-tool:hover {
+    background-color: var(--paper-sunken);
+    color: var(--ink) !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons
+   One shape language, one accent. Size follows the label, never the column.
+   -------------------------------------------------------------------------- */
+.btn {
+    border-radius: var(--radius-sm);
+    font-weight: 550;
+    font-size: 0.8125rem;
+    letter-spacing: -0.005em;
+    padding: 0.5rem 0.875rem;
+    transition: background-color var(--speed) var(--ease),
+                border-color var(--speed) var(--ease),
+                color var(--speed) var(--ease),
+                box-shadow var(--speed) var(--ease);
+}
+
+.btn:focus,
+.btn.focus { box-shadow: none; }
+
+.btn:focus-visible {
+    outline: 2px solid var(--stamp-text);
+    outline-offset: 2px;
+}
+
+.btn:disabled,
+.btn.disabled {
+    opacity: 1;
+    background-color: var(--paper-sunken);
+    border-color: var(--rule);
+    color: var(--ink-faint);
+    cursor: not-allowed;
+}
+
+.btn-primary,
+body.dark-mode .btn-primary {
+    background-color: var(--stamp);
+    border-color: var(--stamp);
+    color: var(--stamp-on);
+}
+
+.btn-primary:hover,
+body.dark-mode .btn-primary:hover {
+    background-color: var(--stamp-strong);
+    border-color: var(--stamp-strong);
+    color: var(--stamp-on);
+}
+
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active {
+    background-color: var(--stamp-press);
+    border-color: var(--stamp-press);
+}
+
+.btn-secondary,
+.btn-default,
+.btn-light,
+body.dark-mode .btn-default,
+body.dark-mode .btn-light {
+    background-color: var(--paper-raised);
+    border-color: var(--rule);
+    color: var(--ink-muted);
+}
+
+.btn-secondary:hover,
+.btn-default:hover,
+.btn-light:hover,
+body.dark-mode .btn-default:hover,
+body.dark-mode .btn-light:hover {
+    background-color: var(--paper-sunken);
+    border-color: var(--rule-strong);
+    color: var(--ink);
+}
+
+.btn-danger,
+body.dark-mode .btn-danger {
+    background-color: var(--voided);
+    border-color: var(--voided);
+    color: #ffffff;
+}
+
+.btn-danger:hover,
+body.dark-mode .btn-danger:hover {
+    background-color: #991b1b;
+    border-color: #991b1b;
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: var(--rule-strong);
+    color: var(--stamp-text);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--stamp-wash);
+    border-color: var(--stamp);
+    color: var(--stamp-text);
+}
+
+/* --------------------------------------------------------------------------
+   12. Row actions
+   Each action keeps its own colour so the row can be read at a glance, but the
+   colour lives in the icon rather than in a filled block: four saturated chips
+   per row, times twenty rows, is what made the old table shout.
+   -------------------------------------------------------------------------- */
+.table td .btn-group,
+.table th .btn-group {
+    display: inline-flex;
+    gap: 2px;
+    box-shadow: none;
+}
+
+.table td .btn-group > .btn,
+.table td .btn-group > form > .btn,
+.table td .btn-group .btn-xs,
+body.dark-mode .table td .btn-group > .btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm) !important;
+    background-color: transparent;
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    margin: 0;
+    float: none;
+    transition: background-color var(--speed) var(--ease),
+                border-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+/* Ver — neutral: it changes nothing. */
+.table td .btn-group > .btn-default,
+.table td .btn-group .btn-default.btn-xs,
+body.dark-mode .table td .btn-group > .btn-default {
+    color: var(--ink-muted);
+}
+
+.table td .btn-group > .btn-default:hover,
+.table td .btn-group .btn-default.btn-xs:hover {
+    background-color: var(--paper-sunken);
+    border-color: var(--rule);
+    color: var(--ink);
+}
+
+/* Imprimir — the receipt leaves the system. */
+.table td .btn-group > .btn-success,
+.table td .btn-group .btn-success.btn-xs,
+body.dark-mode .table td .btn-group > .btn-success {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--valid-text);
+}
+
+.table td .btn-group > .btn-success:hover,
+.table td .btn-group .btn-success.btn-xs:hover {
+    background-color: var(--valid-wash);
+    border-color: var(--valid-ring);
+    color: var(--valid-text);
+}
+
+/* Editar — the accent, same as every other edit affordance. */
+.table td .btn-group > .btn-primary,
+.table td .btn-group > .btn-info,
+.table td .btn-group .btn-primary.btn-xs,
+.table td .btn-group .btn-info.btn-xs,
+body.dark-mode .table td .btn-group > .btn-primary {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--stamp-text);
+}
+
+.table td .btn-group > .btn-primary:hover,
+.table td .btn-group > .btn-info:hover,
+.table td .btn-group .btn-primary.btn-xs:hover,
+.table td .btn-group .btn-info.btn-xs:hover {
+    background-color: var(--stamp-wash);
+    border-color: var(--stamp-ring);
+    color: var(--stamp-text);
+}
+
+/* Anular — the one you cannot undo. */
+.table td .btn-group > .btn-danger,
+.table td .btn-group .btn-danger.btn-xs,
+body.dark-mode .table td .btn-group > .btn-danger {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--voided-text);
+}
+
+.table td .btn-group > .btn-danger:hover,
+.table td .btn-group .btn-danger.btn-xs:hover {
+    background-color: var(--voided-wash);
+    border-color: var(--voided-ring);
+    color: var(--voided-text);
+}
+
+.table td .btn-group > .btn:active,
+.table td .btn-group .btn-xs:active {
+    background-color: var(--rule);
+}
+
+/* --------------------------------------------------------------------------
+   13. Tables
+   -------------------------------------------------------------------------- */
+.table,
+body.dark-mode .table {
+    color: var(--ink);
+    border-color: var(--rule);
+    margin-bottom: 0;
+}
+
+.table thead th,
+.table thead td,
+body.dark-mode .table thead th {
+    background-color: var(--paper-sunken);
+    color: var(--ink-muted);
+    border-top: none;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    padding: 0.625rem 0.75rem;
+    white-space: nowrap;
+}
+
+.table tbody td,
+body.dark-mode .table tbody td {
+    border-top: 1px solid var(--rule);
+    padding: 0.625rem 0.75rem;
+    vertical-align: middle;
+    font-size: 0.8125rem;
+}
+
+.table tbody tr,
+body.dark-mode .table tbody tr {
+    background-color: transparent;
+    transition: background-color var(--speed) var(--ease);
+}
+
+.table tbody tr:hover,
+.table-hover tbody tr:hover,
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: var(--stamp-wash);
+    color: inherit;
+}
+
+/* The receipt number is the anchor of the row: tabular, and marked with the
+   thin rule of a talonario stub. */
+.table tbody td:first-child {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ink);
+    box-shadow: inset 2px 0 0 0 var(--rule);
+}
+
+.table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 0 var(--stamp); }
+
+/* Guaraníes carry no decimals, so amounts are long integers. They only read
+   as a column when the digits line up. */
+.table .text-right,
+.table td.monto,
+.table th.monto { font-variant-numeric: tabular-nums; }
+
+.table-responsive { border-radius: var(--radius-lg); }
+
+.pagination .page-link {
+    background-color: transparent;
+    border-color: var(--rule);
+    color: var(--ink-muted);
+    border-radius: var(--radius-sm);
+    margin: 0 2px;
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--paper-sunken);
+    color: var(--ink);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--stamp);
+    border-color: var(--stamp);
+    color: var(--stamp-on);
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: transparent;
+    color: var(--ink-faint);
+    border-color: var(--rule);
+}
+
+/* --------------------------------------------------------------------------
+   14. State chips
+   A receipt is valid or it is voided. Tonal, not candy.
+   -------------------------------------------------------------------------- */
+.badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+}
+
+.badge-success, .badge.bg-success,
+body.dark-mode .badge-success, body.dark-mode .badge.bg-success {
+    background-color: var(--valid-wash) !important;
+    color: var(--valid-text) !important;
+    box-shadow: inset 0 0 0 1px var(--valid-ring);
+}
+
+.badge-danger, .badge.bg-danger,
+body.dark-mode .badge-danger, body.dark-mode .badge.bg-danger {
+    background-color: var(--voided-wash) !important;
+    color: var(--voided-text) !important;
+    box-shadow: inset 0 0 0 1px var(--voided-ring);
+}
+
+.badge-secondary, .badge.bg-secondary,
+.badge-light, .badge.bg-light {
+    background-color: var(--paper-sunken) !important;
+    color: var(--ink-muted) !important;
+    box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.badge-primary, .badge.bg-primary,
+.badge-info, .badge.bg-info {
+    background-color: var(--stamp-wash) !important;
+    color: var(--stamp-text) !important;
+    box-shadow: inset 0 0 0 1px var(--stamp-ring);
+}
+
+.badge-warning, .badge.bg-warning {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    box-shadow: inset 0 0 0 1px rgba(146, 64, 14, 0.2);
+}
+
+body.dark-mode .badge-warning,
+body.dark-mode .badge.bg-warning {
+    background-color: rgba(251, 191, 36, 0.14) !important;
+    color: #fbbf24 !important;
+}
+
+/* --------------------------------------------------------------------------
+   15. Form controls
+   -------------------------------------------------------------------------- */
+.form-control,
+.custom-select,
+body.dark-mode .form-control,
+body.dark-mode .custom-select {
+    background-color: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-size: 0.8125rem;
+    transition: border-color var(--speed) var(--ease),
+                box-shadow var(--speed) var(--ease);
+}
+
+.form-control:focus,
+.custom-select:focus,
+body.dark-mode .form-control:focus {
+    background-color: var(--paper-raised);
+    border-color: var(--stamp);
+    box-shadow: 0 0 0 3px var(--stamp-ring);
+    color: var(--ink);
+    outline: none;
+}
+
+.form-control::placeholder { color: var(--ink-faint); opacity: 1; }
+
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: var(--paper-sunken);
+    color: var(--ink-faint);
+}
+
+.form-control.is-invalid,
+.was-validated .form-control:invalid {
+    border-color: var(--voided);
+    box-shadow: none;
+}
+
+.invalid-feedback { color: var(--voided-text); }
+
+label, .col-form-label {
+    color: var(--ink-muted);
+    font-size: 0.8125rem;
+    font-weight: 550;
+    margin-bottom: 0.3125rem;
+}
+
+/* The native date widget. Its popup is drawn by the browser from
+   `color-scheme`; only the little calendar button is ours to style. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+    color-scheme: inherit;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+    border-radius: 3px;
+    padding: 2px;
+    transition: opacity var(--speed) var(--ease);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator,
+body.dark-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+body.dark-mode input[type="month"]::-webkit-calendar-picker-indicator,
+body.dark-mode input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.6);
+}
+
+/* Select2 shipped AdminLTE-2 blue, off the palette entirely. */
+.select2-container--bootstrap4 .select2-selection,
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+    background-color: var(--paper-raised) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--ink);
+}
+
+/* One shape for every combo in the app, matching the text inputs beside them:
+   same height, same radius, same focus ring. Everything is initialised from
+   window.initSelects() in the layout, so this is the only place it is styled. */
+/* The height is not set: it comes from the same padding and line-height the
+   text inputs use, so a combo and the field beside it always agree, whatever
+   the base font size ends up being. */
+.select2-container--bootstrap4 .select2-selection--single {
+    height: auto;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    line-height: 1.5;
+    font-size: 0.8125rem;
+}
+
+.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+    padding: 0;
+    line-height: 1.5;
+    color: var(--ink);
+}
+
+.form-control-sm + .select2-container--bootstrap4 .select2-selection--single,
+.select2-container--bootstrap4.select2-sm .select2-selection--single {
+    height: auto;
+    padding: 0.3rem 0.5rem;
+}
+
+.select2-container--bootstrap4.select2-container--focus .select2-selection,
+.select2-container--bootstrap4.select2-container--open .select2-selection {
+    border-color: var(--stamp) !important;
+    box-shadow: 0 0 0 3px var(--stamp-ring) !important;
+}
+
+.select2-container--bootstrap4 .select2-selection__placeholder,
+.select2-container--default .select2-selection__placeholder {
+    color: var(--ink-faint) !important;
+}
+
+.select2-container--bootstrap4 .select2-selection__arrow b,
+.select2-container--default .select2-selection__arrow b {
+    border-top-color: var(--ink-faint) !important;
+}
+
+.select2-container--bootstrap4 .select2-selection__clear,
+.select2-container--default .select2-selection__clear {
+    color: var(--ink-faint) !important;
+    font-weight: 400;
+    margin-right: 0.35rem;
+}
+
+.select2-container--bootstrap4 .select2-selection__clear:hover,
+.select2-container--default .select2-selection__clear:hover {
+    color: var(--voided-text) !important;
+}
+
+.select2-container--bootstrap4 .select2-selection--multiple {
+    min-height: calc(1.5em + 1rem + 2px);
+    padding: 0.25rem 0.5rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered { color: var(--ink); }
+.select2-container--default .select2-selection--single .select2-selection__placeholder { color: var(--ink-faint); }
+.select2-container--default .select2-selection--single .select2-selection__arrow b { border-top-color: var(--ink-faint); }
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: var(--stamp-wash);
+    border-color: var(--stamp-ring);
+    color: var(--stamp-text);
+    border-radius: var(--radius-sm);
+}
+
+/* Select2 ships two themes here — its own `--default` and `--bootstrap4` — and
+   they use different class names. Both have to be covered or one set of combos
+   silently keeps the library's stock colours. */
+.select2-dropdown,
+.select2-container--bootstrap4 .select2-dropdown {
+    background-color: var(--paper-raised) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: var(--radius-md);
+    box-shadow: var(--lift-menu);
+    color: var(--ink);
+    overflow: hidden;
+}
+
+.select2-container--default .select2-results__option,
+.select2-container--bootstrap4 .select2-results__option {
+    color: var(--ink-muted);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted,
+.select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected],
+.select2-container--bootstrap4 .select2-results__option--highlighted {
+    background-color: var(--stamp-wash) !important;
+    color: var(--stamp-text) !important;
+}
+
+/* The option already in force reads as chosen, not as hovered. */
+.select2-container--default .select2-results__option[aria-selected="true"],
+.select2-container--bootstrap4 .select2-results__option[aria-selected="true"],
+.select2-container--bootstrap4 .select2-results__option.select2-results__option--selected {
+    background-color: var(--paper-sunken);
+    color: var(--ink) !important;
+    font-weight: 600;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field,
+.select2-container--bootstrap4 .select2-search--dropdown .select2-search__field {
+    background-color: var(--paper-sunken);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   16. Advanced search panel
+   Was a third hand-copied palette with `transition: all` and no dark variant.
+   -------------------------------------------------------------------------- */
+.search-card {
+    background-color: var(--paper-raised) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: none !important;
+    /* The panel faded up over 0.6s on every single page load. A listing screen
+       is opened to get work done, not to watch it arrive. */
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.search-header h6 { color: var(--ink) !important; }
+.search-header p { color: var(--ink-faint) !important; }
+
+/* The group keeps the quiet grey fill it always had; only the colours now come
+   from tokens, so it holds up in both themes. */
+.input-group-search-modern {
+    background-color: var(--paper-sunken) !important;
+    border: 1px solid var(--rule) !important;
+    border-radius: 12px !important;
+    transform: none !important;
+    transition: border-color var(--speed) var(--ease),
+                box-shadow var(--speed) var(--ease);
+}
+
+.input-group-search-modern:focus-within {
+    background-color: var(--paper-sunken) !important;
+    border-color: var(--rule-strong) !important;
+    box-shadow: 0 0 0 3px var(--stamp-ring);
+}
+
+/* The mode picker runs through Select2, like every other combo in the app, so
+   its open list is ours to style instead of the operating system's. These
+   rules only make the Select2 container sit flush inside the search group. */
+.input-group-search-modern .select2-container {
+    width: 11rem !important;
+    flex: 0 0 auto;
+}
+
+.input-group-search-modern .select2-container--bootstrap4 .select2-selection {
+    background-color: transparent !important;
+    border: none !important;
+    border-right: 1px solid var(--rule) !important;
+    border-radius: 8px 0 0 8px !important;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    transition: background-color var(--speed) var(--ease);
+}
+
+.input-group-search-modern .select2-container--bootstrap4 .select2-selection:hover {
+    background-color: var(--rule) !important;
+}
+
+.input-group-search-modern .select2-container--bootstrap4 .select2-selection__rendered {
+    color: var(--ink-muted) !important;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    line-height: 1.2;
+    padding: 0;
+}
+
+.input-group-search-modern .select2-container--bootstrap4 .select2-selection__arrow {
+    height: 100%;
+    top: 0;
+}
+
+.input-group-search-modern .select2-container--bootstrap4.select2-container--focus .select2-selection,
+.input-group-search-modern .select2-container--bootstrap4.select2-container--open .select2-selection {
+    box-shadow: none !important;
+    background-color: var(--rule) !important;
+}
+
+/* The open list is the part that had no styling of its own, because a native
+   <select> popup is drawn by the operating system. It now sits under the group
+   as one piece, in the product's own colours. */
+.input-group-search-modern .select2-container--bootstrap4 .select2-dropdown {
+    border-radius: 0 0 10px 10px;
+    margin-top: 2px;
+    min-width: 11rem;
+}
+
+/* Before the stylesheet loads, or if Select2 ever fails, the bare <select>
+   still has to look deliberate rather than like a browser default. */
+select.search-mode-select {
+    background-color: var(--paper-sunken) !important;
+    color: var(--ink-muted) !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    cursor: pointer;
+}
+
+.select2-container--bootstrap4 .select2-results__option {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.buscar-input-modern {
+    background-color: transparent !important;
+    color: var(--ink) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.buscar-input-modern::placeholder { color: var(--ink-faint) !important; }
+
+.search-icon { color: var(--ink-faint) !important; }
+
+/* Solid neutral, as it was: searching a list is not the page's main action. */
+.btn-buscar-modern {
+    background-color: var(--solid) !important;
+    color: var(--solid-on) !important;
+    border: none;
+    border-radius: 8px;
+    font-weight: 550;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color var(--speed) var(--ease) !important;
+}
+
+.btn-buscar-modern:hover { background-color: var(--solid-hover) !important; }
+.btn-buscar-modern:active { background-color: var(--solid-hover) !important; }
+
+.btn-buscar-modern:focus-visible {
+    outline: 2px solid var(--stamp-text);
+    outline-offset: 2px;
+}
+
+/* The icon used to rotate and scale on hover. That motion conveyed nothing. */
+.btn-buscar-modern i,
+.btn-buscar-modern:hover i {
+    transform: none !important;
+    transition: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   17. Modals, alerts, misc surfaces
+   -------------------------------------------------------------------------- */
+.modal-content,
+body.dark-mode .modal-content {
+    background-color: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--lift-modal);
+    color: var(--ink);
+}
+
+.modal-header, .modal-footer { border-color: var(--rule); }
+.modal-backdrop.show { opacity: 0.55; }
+.close, .modal-header .close { color: var(--ink-muted); text-shadow: none; opacity: 1; }
+
+.alert { border-radius: var(--radius-md); border-width: 1px; }
+
+.text-muted { color: var(--ink-faint) !important; }
+.text-dark { color: var(--ink) !important; }
+.bg-white { background-color: var(--paper-raised) !important; }
+.bg-light { background-color: var(--paper-sunken) !important; }
+
+hr { border-top-color: var(--rule); }
+
+.swal2-popup {
+    background-color: var(--paper-raised) !important;
+    color: var(--ink) !important;
+    border-radius: var(--radius-lg) !important;
+}
+
+.swal2-title, .swal2-html-container { color: var(--ink) !important; }
+
+/* --------------------------------------------------------------------------
+   18. Collapsed sidebar
+   In mini mode only the icon rail is visible, so everything that needs a label
+   to make sense has to step out of the way instead of being clipped.
+   -------------------------------------------------------------------------- */
+/* Every rule below is scoped with :not(:hover), so hovering the rail restores
+   the expanded sidebar untouched instead of needing a second set of overrides.
+
+   The measured faults this fixes: the inner .sidebar scrolled 199px of content
+   inside a 73px rail (that was the stray scrollbar), the brand mark sat at
+   left:-3px against the edge, the nav items were 4px wider than the rail, and
+   an open submenu left a 124px hole because its hidden children still took up
+   space. */
+.sidebar-collapse .main-sidebar:not(:hover) {
+    overflow: hidden;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar {
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Brand */
+.sidebar-collapse .main-sidebar:not(:hover) .brand-link {
+    justify-content: center;
+    padding: 0 !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .brand-link > span:first-child {
+    margin: 0 !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .brand-mark {
+    margin: 0 !important;
+}
+
+/* AdminLTE hides the wordmark with `visibility: hidden`, which still reserves
+   its width. Inside a centred flex row that made the whole line wider than the
+   rail and pushed the mark to left:-3px, clipping it. It has to leave the flow. */
+.sidebar-collapse .main-sidebar:not(:hover) .brand-text {
+    display: none !important;
+}
+
+/* Menu search collapses to its icon. */
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar-search-wrapper {
+    padding: 0.5rem 0 !important;
+    margin: 0 !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar-search-container {
+    display: flex;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar-search-container .form-control,
+.sidebar-collapse .main-sidebar:not(:hover) .search-results-dropdown {
+    display: none !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar-search-container .search-icon {
+    position: static !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transform: none !important;
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .sidebar-search-container .search-icon:hover {
+    background-color: var(--ledger-fill);
+    color: var(--ledger-ink-strong);
+}
+
+/* Navigation: one centred icon per row, nothing wider than the rail. */
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar {
+    margin: 0 !important;
+    padding: 0 0.5rem !important;
+    width: 100%;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar > .nav-item {
+    margin: 0 !important;
+    width: 100%;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar > .nav-item > .nav-link {
+    width: 100%;
+    margin: 2px 0 !important;
+    padding: 0.625rem 0 !important;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar .nav-link > p,
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar .nav-link > span,
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar .right,
+.sidebar-collapse .main-sidebar:not(:hover) .nav-header {
+    display: none !important;
+}
+
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar > .nav-item > .nav-link > .nav-icon {
+    margin: 0 !important;
+    font-size: 1rem;
+}
+
+/* An open submenu keeps its height when its rows are merely invisible. */
+.sidebar-collapse .main-sidebar:not(:hover) .nav-sidebar .nav-treeview {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   19. Sortable column headers
+   -------------------------------------------------------------------------- */
+.table thead th.is-sortable { padding: 0; }
+
+.table thead th.is-sortable > .th-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-decoration: none;
+    transition: background-color var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.table thead th.is-sortable > .th-sort:hover {
+    background-color: var(--rule);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.table thead th.is-sortable > .th-sort:focus-visible {
+    outline: 2px solid var(--stamp-text);
+    outline-offset: -2px;
+}
+
+.th-sort .th-sort-icon {
+    font-size: 0.75rem;
+    opacity: 0.3;
+    transition: opacity var(--speed) var(--ease),
+                color var(--speed) var(--ease);
+}
+
+.th-sort:hover .th-sort-icon { opacity: 0.65; }
+
+/* Font Awesome 5 draws fa-sort-up and fa-sort-down offset inside their em box,
+   because they are meant to stack into fa-sort. Pull them back to the middle so
+   the arrow lines up with the label. */
+.th-sort--asc .th-sort-icon { transform: translateY(0.22em); }
+.th-sort--desc .th-sort-icon { transform: translateY(-0.22em); }
+
+/* The column actually doing the ordering is the only coloured thing in the
+   header, so it is findable at a glance. */
+.table thead th.is-sorted > .th-sort { color: var(--stamp-text); }
+
+.table thead th.is-sorted .th-sort-icon,
+.table thead th.is-sorted > .th-sort:hover .th-sort-icon {
+    opacity: 1;
+    color: var(--stamp-text);
+}
+
+/* Numeric columns sort from the right edge, where their digits line up. */
+.table thead th.is-sortable.text-right > .th-sort { justify-content: flex-end; }
+
+/* An empty grid should say why it is empty and what to try next. */
+.table-empty { color: var(--ink-faint); }
+.table-empty i { font-size: 1.5rem; display: block; }
+.table-empty p { color: var(--ink-muted); font-weight: 550; }
+
+/* --------------------------------------------------------------------------
+   20. Small screens
+   The counter is worked from a phone as often as from the desktop, so the
+   controls have to stay reachable rather than merely fit.
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    /* A page title and its primary action stack instead of fighting for a row. */
+    .content-header .row { row-gap: 0.75rem; }
+    .content-header h1 { font-size: 1.25rem; }
+    .content-header .col-sm-6.justify-content-sm-end { justify-content: flex-start !important; }
+
+    .content.px-3, .content { padding-left: 0.75rem; padding-right: 0.75rem; }
+
+    .card-body { padding: 0.875rem; }
+    .card-header { padding: 0.75rem 0.875rem; }
+
+    /* Filter rows: one field per line, with room to tap. */
+    .card-body .form-group { margin-bottom: 0.75rem; }
+
+    /* Touch targets. 44px is the smallest reliably hittable size. */
+    .form-control, .custom-select, .btn { min-height: 42px; }
+    .table td .btn-group > .btn,
+    .table td .btn-group .btn-xs { width: 38px; height: 38px; font-size: 0.9375rem; }
+    .table td .btn-group { gap: 4px; }
+
+    /* A wide grid scrolls sideways rather than crushing its columns. */
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+    }
+
+    .table thead th, .table tbody td { white-space: nowrap; }
+
+    /* Dialogs use the whole screen; a centred card wastes it. */
+    .modal-dialog { margin: 0.5rem; max-width: calc(100% - 1rem); }
+    .modal-body { padding: 0.875rem; }
+    .modal-footer { flex-direction: column-reverse; gap: 0.5rem; }
+    .modal-footer > .btn { width: 100%; margin: 0; }
+
+    .pagination { flex-wrap: wrap; row-gap: 0.25rem; }
+}
+
+@media (max-width: 640px) {
+    /* The search group stacks, so its Select2 has to stop being a fixed width. */
+    .input-group-search-modern .select2-container { width: 100% !important; }
+    .input-group-search-modern { align-items: stretch; }
+    .btn-buscar-modern { width: 100%; justify-content: center; }
+}
+
+/* Anything that would push the page sideways is a bug, not a layout. */
+html, body { max-width: 100%; overflow-x: hidden; }

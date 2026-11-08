@@ -97,6 +97,23 @@ class NotaDebitoController extends AppBaseController
             $sqlSucursales = ' AND nd.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'tiebreaker' => 'nd.id_nota_debito'],
+            'cliente' => ['label' => 'Cliente', 'sort' => "concat(c.clie_nombre,' ', c.clie_apellido)", 'tiebreaker' => 'nd.id_nota_debito'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion', 'tiebreaker' => 'nd.id_nota_debito'],
+            'fecha_emision' => ['label' => 'Fecha Emisión', 'sort' => 'nd.fecha_emision', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'nro_nota' => ['label' => 'Nro Nota', 'sort' => 'nd.nro_nota', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'nd.total', 'align' => 'right', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'users.name', 'tiebreaker' => 'nd.id_nota_debito'],
+            'estado' => ['label' => 'Estado', 'sort' => 'nd.estado', 'tiebreaker' => 'nd.id_nota_debito'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha_emision', 'desc', $request);
+
         $notas = DB::select(
             "SELECT nd.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario, s.descripcion as sucursal
@@ -105,7 +122,7 @@ class NotaDebitoController extends AppBaseController
                 JOIN users ON nd.user_id = users.id
                 JOIN sucursales s ON nd.id_sucursal = s.id_sucursal
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
-            ORDER BY nd.fecha_emision DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         // Paginación manual
@@ -142,7 +159,7 @@ class NotaDebitoController extends AppBaseController
             [auth()->user()->id]
         );
 
-        return view('notas_debito.index', compact('notas', 'clientes', 'sucursales', 'estados', 'cajas', 'caja_abierta'));
+        return view('notas_debito.index', compact('notas', 'clientes', 'sucursales', 'estados', 'cajas', 'caja_abierta', 'columns', 'sort'));
     }
 
     public function create()

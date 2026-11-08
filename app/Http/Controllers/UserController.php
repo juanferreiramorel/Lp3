@@ -32,6 +32,23 @@ class UserController extends AppBaseController
         $searchMode = $request->get('search_mode', 'all');
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'u.id', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => 'u.name'],
+            'username' => ['label' => 'Username', 'sort' => 'u.email'],
+            'documento' => ['label' => 'Nro Doc.', 'sort' => 'u.ci'],
+            'telefono' => ['label' => 'Teléfono', 'sort' => 'u.telefono'],
+            'fecha_ingreso' => ['label' => 'Fecha Ingreso', 'sort' => 'u.fecha_ingreso', 'tiebreaker' => 'u.id', 'first' => 'desc'],
+            'estado' => ['label' => 'Estado', 'sort' => 'u.estado'],
+            'rol' => ['label' => 'Rol', 'sort' => 'r.name'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         // Construir consulta con filtros de búsqueda
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
@@ -42,7 +59,7 @@ class UserController extends AppBaseController
                         LEFT JOIN roles r ON u.role_id = r.id
                         LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
                     WHERE u.id = ?
-                    ORDER BY u.id DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     [(int)$searchConfig['term']]
                 );
             } else {
@@ -69,7 +86,7 @@ class UserController extends AppBaseController
                     OR TO_CHAR(u.fecha_ingreso, \'DD/MM/YYYY\') ILIKE ?
                     OR r.name ILIKE ?
                     OR s.descripcion ILIKE ?
-                    ORDER BY u.id DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarFecha . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                 );
             }
@@ -78,7 +95,7 @@ class UserController extends AppBaseController
             FROM users u
                 LEFT JOIN roles r ON u.role_id = r.id
                 LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
-            ORDER BY u.id DESC');
+            ORDER BY ' . $sort->orderBy());
         }
 
         // Definimos los valores de paginación
@@ -103,10 +120,16 @@ class UserController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('users.table')->with('users', $users);
+            return view('users.table')
+                ->with('users', $users)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('users.index')->with('users', $users);
+        return view('users.index')
+            ->with('users', $users)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

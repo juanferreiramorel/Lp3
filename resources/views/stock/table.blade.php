@@ -1,16 +1,7 @@
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table" id="productos-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Sucursal</th>
-                        <th>Producto</th>
-                        <th>Marca</th>
-                        <th>Cantidad</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-data-table :columns="$columns" :sort="$sort" :paginator="$stock"
+                      id="productos-table"
+                      empty="No hay registros de stock para mostrar.">
                     @foreach ($stock as $fila)
                         <tr>
                             <td>{{ $fila->id }}</td>
@@ -20,9 +11,7 @@
                             <td>{{ $fila->cantidad }}</td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+        </x-data-table>
 
         <div class="card-footer clearfix">
             <div class="float-right">

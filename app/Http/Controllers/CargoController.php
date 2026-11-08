@@ -52,7 +52,18 @@ class CargoController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_cargo DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_cargo', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         $cargos = DB::select($query, $params);
 
@@ -79,10 +90,10 @@ class CargoController extends AppBaseController
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         if ($request->ajax()) {
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('cargos.table')->with('cargos', $cargos);
+            return view('cargos.table')->with('cargos', $cargos)->with('columns', $columns)->with('sort', $sort);
         }
 
-        return view('cargos.index')->with('cargos', $cargos);
+        return view('cargos.index')->with('cargos', $cargos)->with('columns', $columns)->with('sort', $sort);
     }
 
     public function create()

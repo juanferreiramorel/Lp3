@@ -29,10 +29,20 @@ class PermissionController extends AppBaseController
         // Construir consulta con filtros de búsqueda por todos los campos visibles
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id', 'first' => 'desc'],
+            'name' => ['label' => 'Permisos', 'sort' => 'name'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 $permisos = DB::select(
-                    'SELECT * FROM permissions WHERE id = ? ORDER BY id DESC',
+                    'SELECT * FROM permissions WHERE id = ? ORDER BY ' . $sort->orderBy(),
                     [(int)$searchConfig['term']]
                 );
             } else {
@@ -42,7 +52,7 @@ class PermissionController extends AppBaseController
                     WHERE CAST(id AS TEXT) ILIKE ?
                     OR name ILIKE ?
                     OR guard_name ILIKE ?
-                    ORDER BY id DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     [
                         '%' . $buscarTerm . '%',
                         '%' . $buscarTerm . '%',
@@ -51,7 +61,7 @@ class PermissionController extends AppBaseController
                 );
             }
         } else {
-            $permisos = DB::select('SELECT * FROM permissions ORDER BY id DESC');
+            $permisos = DB::select('SELECT * FROM permissions ORDER BY ' . $sort->orderBy());
         }
 
         // Definimos los valores de paginación
@@ -76,10 +86,16 @@ class PermissionController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('permissions.table')->with('permisos', $permisos);
+            return view('permissions.table')
+                ->with('permisos', $permisos)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('permissions.index')->with('permisos', $permisos);
+        return view('permissions.index')
+            ->with('permisos', $permisos)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

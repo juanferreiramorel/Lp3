@@ -25,7 +25,22 @@ class HelpTopicController extends Controller
     {
         $buscar = trim($request->get('buscar'));
 
-        $query = DB::table('help_topics')->orderByDesc('id_help');
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_help', 'first' => 'desc'],
+            'titulo' => ['label' => 'Titulo', 'sort' => 'title'],
+            'modulo' => ['label' => 'Modulo', 'sort' => 'module'],
+            'ruta' => ['label' => 'Ruta', 'sort' => 'route_name'],
+            'permiso' => ['label' => 'Permiso', 'sort' => 'permission_slug'],
+            'estado' => ['label' => 'Estado', 'sort' => 'is_active'],
+            'pdf' => ['label' => 'PDF'],
+            'acciones' => ['label' => 'Acciones', 'width' => '160px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query = DB::table('help_topics')->orderByRaw($sort->orderBy());
 
         if ($buscar) {
             $query->where(function ($sub) use ($buscar) {
@@ -41,10 +56,16 @@ class HelpTopicController extends Controller
         $helpTopics = $query->paginate(10)->withQueryString();
 
         if ($request->ajax()) {
-            return view('ayuda.table')->with('helpTopics', $helpTopics);
+            return view('ayuda.table')
+                ->with('helpTopics', $helpTopics)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('ayuda.index')->with('helpTopics', $helpTopics);
+        return view('ayuda.index')
+            ->with('helpTopics', $helpTopics)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

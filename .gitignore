@@ -16,6 +16,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-/public/img
+/public/img/*
+!/public/img/pwa/
 /public/uploads/ckeditor
 /docker/postgres_data

@@ -1,15 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="marcas-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripcion</th>
-                    <th>Estado</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$marcas"
+                  id="marcas-table"
+                  empty="No hay marcas para mostrar.">
                 @foreach ($marcas as $marca)
                     <tr style="{{ !$marca->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $marca->id_marca }}</td>
@@ -49,9 +41,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

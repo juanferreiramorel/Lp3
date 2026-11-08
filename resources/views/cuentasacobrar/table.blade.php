@@ -1,23 +1,7 @@
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover" id="cuentas-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>N° de Factura</th>
-                        <th>Cliente</th>
-                        <th>Fecha de Venta</th>
-                        <th>Monto Total</th>
-                        <th>Saldo Pendiente</th>
-                        <th>Total Cuotas</th>
-                        <th>Cuotas Pendientes</th>
-                        <th>Cuotas Pagadas</th>
-                        <th>Cuotas Vencidas</th>
-                        <th>Rango Vencimientos</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-data-table :columns="$columns" :sort="$sort" :paginator="$cuentasacobrar"
+                      id="cuentas-table"
+                      empty="No hay cuentas a cobrar que coincidan con la búsqueda.">
                     @foreach ($cuentasacobrar as $fila)
                         <tr class="factura-row" style="cursor: pointer;">
                             <td>{{ $fila->id_venta }}</td>
@@ -60,9 +44,7 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+        </x-data-table>
 
         <div class="card-footer clearfix">
             <div class="float-right">

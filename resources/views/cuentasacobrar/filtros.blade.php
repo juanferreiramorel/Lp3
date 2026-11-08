@@ -1,9 +1,9 @@
 <!-- Componente de filtros para cuentas a cobrar -->
-<div class="card shadow-sm border-0 mb-4 collapsed-card" id="card-filtros-cxc" style="border-radius: 0.5rem;">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"
-         style="border-bottom: 1px solid #f0f0f0; border-radius: 0.5rem 0.5rem 0 0; cursor: pointer;"
+<div class="card mb-4 collapsed-card" id="card-filtros-cxc" style="border-radius: 0.5rem;">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center"
+         style="cursor: pointer;"
          data-card-widget="collapse">
-        <h5 class="card-title text-dark m-0" style="font-size: 0.95rem; font-weight: 600;">
+        <h5 class="card-title m-0" style="font-size: 0.95rem; font-weight: 600;">
             <i class="fas fa-filter text-muted mr-2"></i> Filtros de Búsqueda
         </h5>
         <div class="card-tools">
@@ -12,34 +12,32 @@
             </button>
         </div>
     </div>
-    <div class="card-body bg-light" style="display: none; border-radius: 0 0 0.5rem 0.5rem;">
+    <div class="card-body" style="display: none;">
         <form id="form-busqueda">
             <div class="row">
                 <!-- RANGO DE FECHAS -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::input('date', 'fecha_desde', request()->get('fecha_desde', null), [
                         'class' => 'form-control form-control-sm shadow-none border-0',
-                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                        'id' => 'fecha_desde',
+                                                'id' => 'fecha_desde',
                     ]) !!}
                 </div>
 
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::input('date', 'fecha_hasta', request()->get('fecha_hasta', null), [
                         'class' => 'form-control form-control-sm shadow-none border-0',
-                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                        'id' => 'fecha_hasta',
+                                                'id' => 'fecha_hasta',
                     ]) !!}
                 </div>
 
                 <!-- COMBO CLIENTE -->
                 <div class="form-group col-md-3">
-                    {!! Form::label('id_cliente', 'Cliente:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('id_cliente', 'Cliente:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('id_cliente', $clientes, request()->get('id_cliente', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todos los clientes',
                         'id' => 'id_cliente',
                     ]) !!}
@@ -47,10 +45,10 @@
 
                 <!-- COMBO ESTADO CUOTA -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('estado_cuota', 'Estado:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('estado_cuota', 'Estado:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('estado_cuota', $estados_cuota, request()->get('estado_cuota', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todos',
                         'id' => 'estado_cuota',
                     ]) !!}
@@ -58,10 +56,10 @@
 
                 <!-- COMBO SUCURSAL -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('id_sucursal', $sucursales, request()->get('id_sucursal', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todas',
                         'id' => 'id_sucursal',
                     ]) !!}
@@ -71,7 +69,7 @@
                 <div class="form-group col-md-1 text-center d-flex align-items-end">
                     <button class="btn btn-light btn-sm btn-block border" type="button"
                         id="btn-limpiar-filtros"
-                        style="color: #64748b; background-color: #fff; border-color: #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-radius: 0.375rem;"
+                        
                         data-toggle="tooltip" data-placement="top"
                         title="Limpiar filtros">
                         <i class="fas fa-broom"></i>
@@ -89,11 +87,6 @@
     <script>
         $(document).ready(function() {
             // Inicializar Select2 en los filtros con tamaño pequeño
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%',
-                allowClear: true
-            });
 
             // LIMPIAR TODOS LOS FILTROS
             $('#btn-limpiar-filtros').click(function() {

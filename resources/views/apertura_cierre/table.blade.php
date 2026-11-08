@@ -1,20 +1,7 @@
-<div class="table-responsive">
-    <table class="table table-hover table-striped" id="apertura-cierre-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Fecha Apertura</th>
-                <th>Usuario</th>
-                <th>Caja</th>
-                <th>Sucursal</th>
-                <th>Estado</th>
-                <th class="text-right">Monto Apertura</th>
-                <th class="text-right">Monto Cierre</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($aperturas as $apertura)
+<x-data-table :columns="$columns" :sort="$sort" :paginator="$aperturas"
+              id="apertura-cierre-table" table-class="table table-hover table-striped"
+              empty="No se encontraron registros para mostrar.">
+            @foreach($aperturas as $apertura)
                 <tr>
                     <td>{{ $apertura->id_apertura }}</td>
                     <td>{{ \Carbon\Carbon::parse($apertura->fecha_apertura)->format('d/m/Y') }}</td>
@@ -39,13 +26,8 @@
                         </div>
                     </td>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="9" class="text-center">No se encontraron registros.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+            @endforeach
+</x-data-table>
     <div class="card-footer clearfix">
         <div class="float-right">
             @if($aperturas instanceof \Illuminate\Pagination\LengthAwarePaginator)
@@ -53,7 +35,6 @@
             @endif
         </div>
     </div>
-</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

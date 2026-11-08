@@ -1,20 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="clientes-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nombre y Apellido</th>
-                    <th>Nro. C.I</th>
-                    <th>Telefono</th>
-                    <th>Ciudad</th>
-                    <th>Fecha de Nacimiento</th>
-                    <th>Departamento</th>
-                    <th>Estado</th>
-                    <th colspan="3">Accion</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$clientes"
+                  id="clientes-table"
+                  empty="No hay clientes para mostrar.">
                 @foreach ($clientes as $cliente)
                     <tr style="{{ !$cliente->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $cliente->id_cliente }}</td>
@@ -60,9 +47,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

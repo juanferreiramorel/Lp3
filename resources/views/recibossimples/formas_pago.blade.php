@@ -1,9 +1,9 @@
-<div class="card card-success">
-    <div class="card-header">
-        <h3 class="card-title">Formas de Pago</h3>
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h3 class="card-title m-0">Formas de Pago</h3>
         <div class="card-tools">
-            <button type="button" class="btn btn-sm btn-success btn-block d-sm-inline" id="agregar-pago">
-                <i class="fas fa-plus"></i><span class="d-none d-sm-inline"> Agregar Forma de Pago</span>
+            <button type="button" class="btn btn-default d-inline-flex align-items-center" id="agregar-pago">
+                <i class="fas fa-plus mr-2" aria-hidden="true"></i><span>Agregar Forma de Pago</span>
             </button>
         </div>
     </div>
@@ -58,8 +58,11 @@
                             ]) !!}
                         </td>
                         <td>
+                            {{-- data-autofill marks an amount the form filled in. It is
+                                 cleared the moment the cashier types, so their number is
+                                 never overwritten. --}}
                             <input type="text" name="importe_pago[]" class="form-control form-control-sm importe-pago-input text-right"
-                                value="0" required>
+                                value="0" data-autofill="1" inputmode="numeric" required>
                         </td>
                         <td class="d-none d-md-table-cell">
                             <input type="text" name="nro_voucher[]" class="form-control form-control-sm">
@@ -68,8 +71,9 @@
                             <input type="text" name="observacion_pago[]" class="form-control form-control-sm">
                         </td>
                         <td>
-                            <button type="button" class="btn btn-danger btn-sm remove-pago">
-                                <i class="fas fa-trash"></i>
+                            <button type="button" class="btn btn-danger btn-sm remove-pago"
+                                    title="Quitar esta forma de pago" aria-label="Quitar esta forma de pago">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
                             </button>
                         </td>
                     </tr>
@@ -80,17 +84,20 @@
         <div class="mt-3 row">
             <div class="col-md-6 col-12 mb-2 mb-md-0">
                 <strong>Total de Productos: </strong>
-                <span id="total-productos" class="text-primary font-weight-bold">0</span> Gs.
+                <span id="total-productos" class="font-weight-bold" style="font-variant-numeric: tabular-nums;">0</span> Gs.
             </div>
             <div class="col-md-6 col-12 text-md-right">
                 <strong>Total Pagado: </strong>
-                <span id="total-pagado" class="text-success font-weight-bold">0</span> Gs.
+                <span id="total-pagado" class="font-weight-bold" style="font-variant-numeric: tabular-nums;">0</span> Gs.
             </div>
         </div>
         <div class="mt-2">
-            <div class="alert alert-info" id="diferencia-alert" style="display: none;">
-                <strong>Diferencia: </strong>
-                <span id="diferencia-monto" class="font-weight-bold"></span> Gs.
+            {{-- The label lives in its own node. The previous version called
+                 .before() on every recalculation, which appended a fresh text
+                 node each time instead of replacing the old one. --}}
+            <div class="alert" id="diferencia-alert" role="status" style="display: none;">
+                <strong id="diferencia-label"></strong>
+                <span id="diferencia-monto" class="font-weight-bold" style="font-variant-numeric: tabular-nums;"></span>
             </div>
         </div>
     </div>
@@ -99,8 +106,44 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    // --- Saldo pendiente -------------------------------------------------
+    // The cashier should never have to do the subtraction. A new payment row
+    // opens holding whatever is still owed, and the amounts already typed are
+    // left alone.
+
+    function leerImporte($input) {
+        return parseInt(String($input.val()).replace(/\./g, ''), 10) || 0;
+    }
+
+    function totalProductos() {
+        return parseInt(String($('#total').val()).replace(/\./g, ''), 10) || 0;
+    }
+
+    // What is still owed, ignoring the row passed in (if any).
+    function saldoPendiente(excluir) {
+        let pagado = 0;
+        $('.importe-pago-input').each(function() {
+            if (excluir && this === excluir) return;
+            pagado += leerImporte($(this));
+        });
+        return Math.max(totalProductos() - pagado, 0);
+    }
+
+    // Keep rows the cashier has not touched in step with the balance.
+    function refrescarAutocompletados(excluir) {
+        const $pendientes = $('.importe-pago-input[data-autofill="1"]').filter(function() {
+            return this !== excluir;
+        });
+
+        if ($pendientes.length !== 1) return;
+
+        const $fila = $pendientes.first();
+        $fila.val(formatMoneyPago(saldoPendiente($fila[0])));
+    }
+
     // Agregar nueva forma de pago
     $('#agregar-pago').on('click', function() {
+        const restante = saldoPendiente();
         const newRow = `
             <tr>
                 <td>
@@ -113,7 +156,7 @@ $(document).ready(function() {
                 </td>
                 <td>
                     <input type="text" name="importe_pago[]" class="form-control form-control-sm importe-pago-input text-right"
-                        value="0" required>
+                        value="${formatMoneyPago(restante)}" data-autofill="1" inputmode="numeric" required>
                 </td>
                 <td class="d-none d-md-table-cell">
                     <input type="text" name="nro_voucher[]" class="form-control form-control-sm">
@@ -122,29 +165,39 @@ $(document).ready(function() {
                     <input type="text" name="observacion_pago[]" class="form-control form-control-sm">
                 </td>
                 <td>
-                    <button type="button" class="btn btn-danger btn-sm remove-pago">
-                        <i class="fas fa-trash"></i>
+                    <button type="button" class="btn btn-danger btn-sm remove-pago"
+                            title="Quitar esta forma de pago" aria-label="Quitar esta forma de pago">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
                     </button>
                 </td>
             </tr>
         `;
         $('#formas-pago-tbody').append(newRow);
+        $('#formas-pago-tbody tr:last select').trigger('focus');
+        actualizarTotalesPago();
     });
 
     // Eliminar forma de pago
     $(document).on('click', '.remove-pago', function() {
         if ($('#formas-pago-tbody tr').length > 1) {
             $(this).closest('tr').remove();
+            refrescarAutocompletados();
             actualizarTotalesPago();
         } else {
             alert('Debe haber al menos una forma de pago');
         }
     });
 
+    // Typing claims the amount: it stops being auto-filled from here on.
+    $(document).on('input', '.importe-pago-input', function() {
+        $(this).attr('data-autofill', '0');
+    });
+
     // Formatear importes al perder foco
     $(document).on('blur', '.importe-pago-input', function() {
-        const valor = parseInt($(this).val().replace(/\./g, '')) || 0;
+        const valor = leerImporte($(this));
         $(this).val(formatMoneyPago(valor));
+        refrescarAutocompletados(this);
         actualizarTotalesPago();
     });
 
@@ -152,35 +205,38 @@ $(document).ready(function() {
     function actualizarTotalesPago() {
         let totalPagado = 0;
         $('.importe-pago-input').each(function() {
-            const valor = parseInt($(this).val().replace(/\./g, '')) || 0;
-            totalPagado += valor;
+            totalPagado += leerImporte($(this));
         });
 
-        let totalProductos = parseInt($('#total').val().replace(/\./g, '')) || 0;
+        const total = totalProductos();
 
-        $('#total-productos').text(formatMoneyPago(totalProductos));
+        $('#total-productos').text(formatMoneyPago(total));
         $('#total-pagado').text(formatMoneyPago(totalPagado));
 
-        // Calcular diferencia
-        let diferencia = totalProductos - totalPagado;
-        if (diferencia !== 0) {
-            $('#diferencia-monto').text(formatMoneyPago(Math.abs(diferencia)));
-            if (diferencia > 0) {
-                $('#diferencia-alert').removeClass('alert-success alert-danger').addClass('alert-warning').show();
-                $('#diferencia-monto').before('Falta pagar: ');
-            } else {
-                $('#diferencia-alert').removeClass('alert-warning alert-danger').addClass('alert-success').show();
-                $('#diferencia-monto').before('Excedente: ');
-            }
+        const diferencia = total - totalPagado;
+        const $alerta = $('#diferencia-alert');
+
+        $alerta.removeClass('alert-warning alert-success alert-info');
+
+        if (diferencia > 0) {
+            $('#diferencia-label').text('Falta pagar:');
+            $('#diferencia-monto').text(formatMoneyPago(diferencia) + ' Gs.');
+            $alerta.addClass('alert-warning').show();
+        } else if (diferencia < 0) {
+            $('#diferencia-label').text('Excedente:');
+            $('#diferencia-monto').text(formatMoneyPago(-diferencia) + ' Gs.');
+            $alerta.addClass('alert-warning').show();
         } else {
-            $('#diferencia-alert').removeClass('alert-warning alert-success').addClass('alert-success').show();
-            $('#diferencia-monto').text('Pagos coinciden con el total');
-            $('#diferencia-monto').before('');
+            $('#diferencia-label').text('Los pagos cubren el total.');
+            $('#diferencia-monto').text('');
+            $alerta.addClass('alert-success').show();
         }
     }
 
-    // Función para actualizar desde el total de productos (llamada desde modal_producto.blade.php)
+    // Llamada desde modal_producto.blade.php cuando cambia el detalle.
+    // Al cargar el primer producto, la fila intacta toma el total completo.
     window.actualizarTotalPago = function(total) {
+        refrescarAutocompletados();
         actualizarTotalesPago();
     };
 
@@ -198,6 +254,7 @@ $(document).ready(function() {
     }
 
     // Actualizar al cargar la página
+    refrescarAutocompletados();
     actualizarTotalesPago();
 });
 </script>

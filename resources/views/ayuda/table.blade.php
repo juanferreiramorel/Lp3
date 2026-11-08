@@ -1,19 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="ayuda-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Titulo</th>
-                    <th>Modulo</th>
-                    <th>Ruta</th>
-                    <th>Permiso</th>
-                    <th>Estado</th>
-                    <th>PDF</th>
-                    <th colspan="3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$helpTopics"
+                  id="ayuda-table"
+                  empty="No hay temas de ayuda para mostrar.">
                 @foreach ($helpTopics as $helpTopic)
                     <tr>
                         <td>{{ $helpTopic->id_help }}</td>
@@ -52,9 +40,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

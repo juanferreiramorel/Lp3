@@ -64,7 +64,19 @@ class MetodoPagoController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY mp.id_metodo_pago DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'mp.id_metodo_pago', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripción', 'sort' => 'mp.descripcion'],
+            'tipo' => ['label' => 'Tipo', 'sort' => 'tmp.descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'mp.estado'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         $metodos = \Illuminate\Support\Facades\DB::select($query, $params);
 
@@ -104,12 +116,14 @@ class MetodoPagoController extends AppBaseController
         $tipos = TipoMetodoPago::where('estado', true)->pluck('descripcion', 'id_tipo_metodo_pago');
 
         if ($request->ajax()) {
-            return view('metodo_pagos.table')->with('metodos', $metodosPaginados);
+            return view('metodo_pagos.table')->with('metodos', $metodosPaginados)->with('columns', $columns)->with('sort', $sort);
         }
 
         return view('metodo_pagos.index')
             ->with('metodos', $metodosPaginados)
-            ->with('tipos', $tipos);
+            ->with('tipos', $tipos)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

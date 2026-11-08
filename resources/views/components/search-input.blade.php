@@ -189,6 +189,32 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        // The mode picker was the only native <select> left in the app. A native
+        // dropdown is drawn by the operating system, so no stylesheet can reach
+        // it — it is the one control that never matched the rest of the UI.
+        // Select2 is already what every other combo here uses.
+        if ($.fn.select2) {
+            $('.search-mode-select').each(function() {
+                const $select = $(this);
+                if ($select.data('select2')) return;
+
+                $select.select2({
+                    theme: 'bootstrap4',
+                    // Two options never need a search box.
+                    minimumResultsForSearch: Infinity,
+                    width: '100%',
+                });
+
+                // Select2 tags the container it generates with the class
+                // `select2`. Any pass that selects `.select2` would then treat
+                // that container as a select and rebuild it into an empty
+                // combo. window.initSelects() skips this control by class, but
+                // the guard stays: it is what makes the combo safe no matter
+                // who runs a selector over the page next.
+                $select.next('.select2-container').removeClass('select2');
+            });
+        }
+
         // Debounce setup for real-time search
         let searchTimeout = null;
 

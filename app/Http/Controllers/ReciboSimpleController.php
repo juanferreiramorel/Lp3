@@ -102,6 +102,22 @@ class ReciboSimpleController extends AppBaseController
             $sql_busqueda .= ' AND r.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'r.id_recibo', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 'r.fecha_recibo', 'tiebreaker' => 'r.id_recibo', 'first' => 'desc'],
+            'ci' => ['label' => 'CI/RUC', 'sort' => 'c.clie_ci'],
+            'cliente' => ['label' => 'Cliente', 'sort' => "CONCAT(c.clie_nombre, ' ', c.clie_apellido)"],
+            'total' => ['label' => 'Total', 'sort' => 'r.total', 'align' => 'right', 'first' => 'desc'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'users.name'],
+            'estado' => ['label' => 'Estado', 'sort' => 'r.estado'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         $perPage = 20;
         $page = $request->get('page', 1);
 
@@ -129,7 +145,7 @@ class ReciboSimpleController extends AppBaseController
                 JOIN users ON r.user_id = users.id
                 JOIN sucursales s ON r.id_sucursal = s.id_sucursal
             {$sql_busqueda}
-            ORDER BY r.id_recibo DESC
+            ORDER BY {$sort->orderBy()}
             LIMIT {$perPage} OFFSET " . ($page - 1) * $perPage
         );
 
@@ -157,7 +173,10 @@ class ReciboSimpleController extends AppBaseController
 
         // Si es petición AJAX, solo retornar la tabla
         if ($request->ajax()) {
-            return view('recibossimples.table')->with('recibos', $recibos);
+            return view('recibossimples.table')
+                ->with('recibos', $recibos)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         return view('recibossimples.index')
@@ -165,7 +184,9 @@ class ReciboSimpleController extends AppBaseController
             ->with('clientes', $clientes)
             ->with('sucursales', $sucursales)
             ->with('estados', $estados)
-            ->with('filtros', $input);
+            ->with('filtros', $input)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

@@ -1,22 +1,7 @@
 <div class="p-0 card-body">
-    <div class="table-responsive">
-        <table class="table" id="ventas-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Ci/Ruc</th>
-                    <th>Cliente</th>
-                    <th>Fecha Venta</th>
-                    <th>Factura Nro</th>
-                    <th>Condición Venta</th>
-                    <th>Sucursal</th>
-                    <th>Total</th>
-                    <th>Usuario</th>
-                    <th>Estado</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$ventas"
+                  id="ventas-table"
+                  empty="No hay ventas para mostrar.">
                 @foreach ($ventas as $venta)
                     <tr>
                         <td>{{ $venta->id_venta }}</td>
@@ -75,9 +60,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="clearfix card-footer">
         <div class="float-right">

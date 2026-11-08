@@ -120,6 +120,21 @@ class OrdenCompraController extends AppBaseController
             }
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => 'N° OC', 'sort' => 'oc.id_orden_compra', 'first' => 'desc'],
+            'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion'],
+            'fecha' => ['label' => 'Fecha Orden', 'sort' => 'oc.fecha_orden', 'tiebreaker' => 'oc.id_orden_compra', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'oc.total', 'first' => 'desc'],
+            'estado' => ['label' => 'Estado', 'sort' => 'oc.estado'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         // Contar total de registros
         $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
         $totalResult = DB::select($totalQuery, $params);
@@ -132,7 +147,7 @@ class OrdenCompraController extends AppBaseController
                          u.name as usuario,
                          s.descripcion as sucursal
                   {$queryBase} {$where}
-                  ORDER BY oc.id_orden_compra DESC
+                  ORDER BY {$sort->orderBy()}
                   LIMIT {$porPagina} OFFSET {$offset}";
 
         $ordenesCompra = DB::select($query, $params);
@@ -142,7 +157,9 @@ class OrdenCompraController extends AppBaseController
 
         // Si es petición AJAX, solo retornar la tabla
         if ($request->ajax()) {
-            return view('ordencompra.table', compact('ordenesCompra', 'page', 'totalPages', 'total'));
+            return view('ordencompra.table', compact('ordenesCompra', 'page', 'totalPages', 'total'))
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Obtener datos para los filtros
@@ -155,7 +172,9 @@ class OrdenCompraController extends AppBaseController
             'PROCESADO' => 'Procesado'
         ];
 
-        return view('ordencompra.index', compact('ordenesCompra', 'page', 'totalPages', 'total', 'proveedores', 'sucursales', 'estados'));
+        return view('ordencompra.index', compact('ordenesCompra', 'page', 'totalPages', 'total', 'proveedores', 'sucursales', 'estados'))
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     /**

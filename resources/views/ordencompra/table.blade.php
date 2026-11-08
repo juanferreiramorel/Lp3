@@ -1,20 +1,8 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table table-hover" id="ordencompra-table">
-            <thead>
-                <tr>
-                    <th>N° OC</th>
-                    <th>Proveedor</th>
-                    <th>Fecha Orden</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th>Sucursal</th>
-                    <th>Usuario</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($ordenesCompra as $ordenCompra)
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$ordenesCompra"
+                  id="ordencompra-table"
+                  empty="No se encontraron registros.">
+                @foreach($ordenesCompra as $ordenCompra)
                     <tr>
                         <td>{{ $ordenCompra->id_orden_compra }}</td>
                         <td>{{ $ordenCompra->proveedor }}</td>
@@ -53,14 +41,8 @@
                             {!! Form::close() !!}
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center">No se encontraron registros</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                @endforeach
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-left">

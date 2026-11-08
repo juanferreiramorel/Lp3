@@ -1,19 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="sucursales-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripcion</th>
-                    <th>Direccion</th>
-                    <th>Telefono</th>
-                    <th>Ciudad</th>
-                    <th>Empresa</th>
-                    <th>Estado</th>
-                    <th colspan="3">Accion</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$sucursales"
+                  id="sucursales-table"
+                  empty="No hay sucursales para mostrar.">
                 @foreach ($sucursales as $sucursal)
                     <tr style="{{ !$sucursal->estado ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                         <td>{{ $sucursal->id_sucursal }}</td>
@@ -58,9 +46,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

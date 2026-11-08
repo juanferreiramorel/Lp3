@@ -1,9 +1,9 @@
 <!-- Componente de filtros para auditoría -->
-<div class="card shadow-sm border-0 mb-4 collapsed-card" id="card-filtros-auditoria" style="border-radius: 0.5rem;">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"
-         style="border-bottom: 1px solid #f0f0f0; border-radius: 0.5rem 0.5rem 0 0; cursor: pointer;"
+<div class="card mb-4 collapsed-card" id="card-filtros-auditoria" style="border-radius: 0.5rem;">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center"
+         style="cursor: pointer;"
          data-card-widget="collapse">
-        <h5 class="card-title text-dark m-0" style="font-size: 0.95rem; font-weight: 600;">
+        <h5 class="card-title m-0" style="font-size: 0.95rem; font-weight: 600;">
             <i class="fas fa-filter text-muted mr-2"></i> Filtros de Auditoría
         </h5>
         <div class="card-tools">
@@ -12,34 +12,32 @@
             </button>
         </div>
     </div>
-    <div class="card-body bg-light" style="display: none; border-radius: 0 0 0.5rem 0.5rem;">
+    <div class="card-body" style="display: none;">
         <form id="form-busqueda">
             <div class="row">
                 <!-- RANGO DE FECHAS -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_desde', 'Fecha Desde:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::input('date', 'fecha_desde', request()->get('fecha_desde', null), [
                         'class' => 'form-control form-control-sm shadow-none border-0',
-                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                        'id' => 'fecha_desde',
+                                                'id' => 'fecha_desde',
                     ]) !!}
                 </div>
 
                 <div class="form-group col-md-2">
-                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('fecha_hasta', 'Fecha Hasta:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::input('date', 'fecha_hasta', request()->get('fecha_hasta', null), [
                         'class' => 'form-control form-control-sm shadow-none border-0',
-                        'style' => 'background-color: #fff; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
-                        'id' => 'fecha_hasta',
+                                                'id' => 'fecha_hasta',
                     ]) !!}
                 </div>
 
                 <!-- COMBO USUARIO -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('user_id', 'Usuario:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('user_id', 'Usuario:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('user_id', $usuarios, request()->get('user_id', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todos',
                         'id' => 'user_id',
                     ]) !!}
@@ -47,10 +45,10 @@
 
                 <!-- COMBO OPERACIÓN -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('operation', 'Operación:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('operation', 'Operación:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('operation', $operaciones, request()->get('operation', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todas',
                         'id' => 'operation',
                     ]) !!}
@@ -58,10 +56,10 @@
 
                 <!-- COMBO TABLA -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('table_name', 'Tabla:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('table_name', 'Tabla:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('table_name', $tablas, request()->get('table_name', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todas',
                         'id' => 'table_name',
                     ]) !!}
@@ -69,10 +67,10 @@
 
                 <!-- COMBO SUCURSAL -->
                 <div class="form-group col-md-2">
-                    {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem; color: #555;']) !!}
+                    {!! Form::label('id_sucursal', 'Sucursal:', ['style' => 'font-size: 0.85rem;']) !!}
                     {!! Form::select('id_sucursal', $sucursales, request()->get('id_sucursal', null), [
                         'class' => 'form-control form-control-sm select2 shadow-none',
-                        'style' => 'width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem;',
+                        'style' => 'width: 100%;',
                         'placeholder' => 'Todas',
                         'id' => 'id_sucursal',
                     ]) !!}
@@ -82,7 +80,7 @@
                 <div class="form-group col-md-2 text-center d-flex align-items-end">
                     <button class="btn btn-light btn-sm btn-block border" type="button"
                         id="btn-limpiar-filtros"
-                        style="color: #64748b; background-color: #fff; border-color: #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-radius: 0.375rem;"
+                        
                         data-toggle="tooltip" data-placement="top"
                         title="Limpiar todos los filtros">
                         <i class="fas fa-broom mr-2"></i> Clean
@@ -102,11 +100,6 @@
     <script>
         $(document).ready(function() {
             // Inicializar Select2 en los filtros con tamaño pequeño
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%',
-                allowClear: true
-            });
 
             // LIMPIAR TODOS LOS FILTROS
             $('#btn-limpiar-filtros').click(function() {

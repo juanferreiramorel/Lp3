@@ -7,10 +7,13 @@
                 <div class="col-sm-6 col-12 mb-2 mb-sm-0">
                     <h1>Recibos Simples</h1>
                 </div>
-                <div class="col-sm-6 col-12">
+                <div class="col-sm-6 col-12 d-flex align-items-center justify-content-sm-end">
                     @can('recibossimples create')
-                        <a class="btn btn-primary float-sm-right btn-block d-sm-inline-block" href="{{ route('recibossimples.create') }}">
-                            <i class="fas fa-plus"></i>
+                        {{-- Sized to its label. It used to stretch the full width of
+                             the column, which made one ordinary action the loudest
+                             thing on the page. --}}
+                        <a class="btn btn-primary d-inline-flex align-items-center" href="{{ route('recibossimples.create') }}">
+                            <i class="fas fa-plus mr-2" aria-hidden="true"></i>
                             Nuevo Recibo
                         </a>
                     @endcan

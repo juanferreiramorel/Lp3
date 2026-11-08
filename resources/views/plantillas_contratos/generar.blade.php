@@ -52,7 +52,8 @@
                         <!-- Selección de Cliente -->
                         <div class="form-group">
                             {!! Form::label('id_cliente', 'Seleccionar Cliente:') !!}
-                            <select name="id_cliente" id="id_cliente" class="form-control select2" required>
+                            <select name="id_cliente" id="id_cliente" class="form-control select2"
+                                    data-placeholder="-- Seleccione un Cliente --" required>
                                 <option value="">-- Seleccione un Cliente --</option>
                                 @foreach ($clientes as $cliente)
                                     <option value="{{ $cliente->id_cliente }}">
@@ -103,12 +104,8 @@
     @push('page_scripts')
         <script>
             $(document).ready(function() {
-                // Inicializar Select2
-                $('#id_cliente').select2({
-                    placeholder: '-- Seleccione un Cliente --',
-                    allowClear: true,
-                    width: '100%'
-                });
+                // Select2 comes from window.initSelects() in the layout; the
+                // placeholder travels on the element's data-placeholder.
 
                 // Cargar datos del cliente cuando se selecciona
                 $('#id_cliente').on('change', function() {

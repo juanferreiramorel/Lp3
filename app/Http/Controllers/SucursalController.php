@@ -27,6 +27,21 @@ class SucursalController extends AppBaseController
        // Procesar modo de búsqueda
        $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 's.id_sucursal', 'first' => 'desc'],
+            'descripcion' => ['label' => 'Descripcion', 'sort' => 's.descripcion'],
+            'direccion' => ['label' => 'Direccion', 'sort' => 's.direccion'],
+            'telefono' => ['label' => 'Telefono', 'sort' => 's.telefono'],
+            'ciudad' => ['label' => 'Ciudad', 'sort' => 'c.descripcion'],
+            'empresa' => ['label' => 'Empresa', 'sort' => 'COALESCE(e.nombre_comercial, e.razon_social)'],
+            'estado' => ['label' => 'Estado', 'sort' => 's.estado'],
+            'acciones' => ['label' => 'Accion', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
        if ($searchConfig) {
            if ($searchConfig['mode'] === 'id') {
                // Búsqueda exacta por ID
@@ -36,7 +51,7 @@ class SucursalController extends AppBaseController
                     JOIN ciudades c ON s.id_ciudad = c.id_ciudad
                     LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
                     WHERE s.id_sucursal = ?
-                    ORDER BY s.id_sucursal DESC',
+                    ORDER BY ' . $sort->orderBy(),
                    [(int)$searchConfig['term']]
                );
            } else {
@@ -53,7 +68,7 @@ class SucursalController extends AppBaseController
                     OR c.descripcion ILIKE ?
                     OR COALESCE(e.nombre_comercial, e.razon_social) ILIKE ?
                     OR cast(s.id_sucursal as text) ILIKE ?
-                    ORDER BY s.id_sucursal DESC',
+                    ORDER BY ' . $sort->orderBy(),
                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                );
            }
@@ -63,7 +78,7 @@ class SucursalController extends AppBaseController
                 FROM sucursales s
                 JOIN ciudades c ON s.id_ciudad = c.id_ciudad
                 LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
-                ORDER BY s.id_sucursal DESC'
+                ORDER BY ' . $sort->orderBy()
            );
        }
 
@@ -89,10 +104,16 @@ class SucursalController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('sucursales.table')->with('sucursales', $sucursales);
+            return view('sucursales.table')
+                ->with('sucursales', $sucursales)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('sucursales.index')->with('sucursales', $sucursales);
+        return view('sucursales.index')
+            ->with('sucursales', $sucursales)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
     public function create(){
         //Obtener ciudades

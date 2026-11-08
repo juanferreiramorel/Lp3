@@ -88,6 +88,25 @@ class NotaCreditoController extends AppBaseController
             $sqlSucursales = ' AND nc.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'nc.id_nota_credito', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'tiebreaker' => 'nc.id_nota_credito'],
+            'cliente' => ['label' => 'Cliente', 'sort' => "concat(c.clie_nombre,' ', c.clie_apellido)", 'tiebreaker' => 'nc.id_nota_credito'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion', 'tiebreaker' => 'nc.id_nota_credito'],
+            'fecha_emision' => ['label' => 'Fecha Emisión', 'sort' => 'nc.fecha_emision', 'tiebreaker' => 'nc.id_nota_credito', 'first' => 'desc'],
+            'nro_nota' => ['label' => 'Nro Nota', 'sort' => 'nc.nro_nota', 'tiebreaker' => 'nc.id_nota_credito', 'first' => 'desc'],
+            'factura' => ['label' => 'Factura Ref', 'sort' => 'v.factura_nro', 'tiebreaker' => 'nc.id_nota_credito'],
+            'motivo' => ['label' => 'Motivo', 'sort' => 'nc.motivo', 'tiebreaker' => 'nc.id_nota_credito'],
+            'total' => ['label' => 'Total', 'sort' => 'nc.total', 'align' => 'right', 'tiebreaker' => 'nc.id_nota_credito', 'first' => 'desc'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'users.name', 'tiebreaker' => 'nc.id_nota_credito'],
+            'estado' => ['label' => 'Estado', 'sort' => 'nc.estado', 'tiebreaker' => 'nc.id_nota_credito'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha_emision', 'desc', $request);
+
         $notas = DB::select(
             "SELECT nc.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario, s.descripcion as sucursal, v.factura_nro as factura
@@ -97,7 +116,7 @@ class NotaCreditoController extends AppBaseController
                 JOIN sucursales s ON nc.id_sucursal = s.id_sucursal
                 LEFT JOIN ventas v ON nc.id_venta = v.id_venta
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
-            ORDER BY nc.fecha_emision DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         $page = $request->input('page', 1);
@@ -133,7 +152,7 @@ class NotaCreditoController extends AppBaseController
             [auth()->user()->id]
         );
 
-        return view('notas_credito.index', compact('notas', 'clientes', 'sucursales', 'estados', 'cajas', 'caja_abierta'));
+        return view('notas_credito.index', compact('notas', 'clientes', 'sucursales', 'estados', 'cajas', 'caja_abierta', 'columns', 'sort'));
     }
 
     public function create()

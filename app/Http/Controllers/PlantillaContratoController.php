@@ -38,6 +38,20 @@ class PlantillaContratoController extends AppBaseController
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'pc.id_plantilla_contrato', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre Plantilla', 'sort' => 'pc.nombre_plantilla', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'descripcion' => ['label' => 'Descripción', 'sort' => 'pc.descripcion', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'estado' => ['label' => 'Estado', 'sort' => 'pc.activo', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'fecha_modificacion' => ['label' => 'Última Modificación', 'sort' => 'pc.fecha_modificacion', 'tiebreaker' => 'pc.id_plantilla_contrato', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acción', 'width' => '180px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha_modificacion', 'desc', $request);
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
@@ -46,7 +60,7 @@ class PlantillaContratoController extends AppBaseController
                     FROM plantillas_contratos pc
                     LEFT JOIN users u ON u.id = pc.user_id
                     WHERE pc.id_plantilla_contrato = ?
-                    ORDER BY pc.fecha_modificacion DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     [(int)$searchConfig['term']]
                 );
             } else {
@@ -61,7 +75,7 @@ class PlantillaContratoController extends AppBaseController
                     OR pc.contenido_plantilla ILIKE ?
                     OR u.name ILIKE ?
                     OR cast(pc.id_plantilla_contrato as text) ILIKE ?
-                    ORDER BY pc.fecha_modificacion DESC',
+                    ORDER BY ' . $sort->orderBy(),
                     [
                         '%' . $buscarTerm . '%',
                         '%' . $buscarTerm . '%',
@@ -76,8 +90,7 @@ class PlantillaContratoController extends AppBaseController
                 SELECT pc.*, u.name as usuario_nombre
                 FROM plantillas_contratos pc
                 LEFT JOIN users u ON u.id = pc.user_id
-                ORDER BY pc.fecha_modificacion DESC
-            ');
+                ORDER BY ' . $sort->orderBy());
         }
 
         // Paginación manual
@@ -100,10 +113,16 @@ class PlantillaContratoController extends AppBaseController
 
         // Si es petición AJAX, retornar solo la tabla
         if ($request->ajax()) {
-            return view('plantillas_contratos.table')->with('plantillas', $plantillas);
+            return view('plantillas_contratos.table')
+                ->with('plantillas', $plantillas)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('plantillas_contratos.index')->with('plantillas', $plantillas);
+        return view('plantillas_contratos.index')
+            ->with('plantillas', $plantillas)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     /**

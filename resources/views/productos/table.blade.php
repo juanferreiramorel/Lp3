@@ -1,21 +1,7 @@
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table" id="productos-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Imagen</th>
-                        <th>Descripción</th>
-                        <th>Código de Barras</th>
-                        <th>Precio</th>
-                        <th>Impuesto</th>
-                        <th>Controla Stock</th>
-                        <th>Marca</th>
-                        <th>Estado</th>
-                        <th colspan="3">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <x-data-table :columns="$columns" :sort="$sort" :paginator="$productos"
+                      id="productos-table"
+                      empty="No hay productos para mostrar.">
                     @foreach ($productos as $producto)
                         <tr style="{{ !$producto->activo ? 'opacity: 0.6; background-color: #f8f9fa;' : '' }}">
                             <td>{{ $producto->id_producto }}</td>
@@ -74,9 +60,7 @@
                             </td>
                         </tr>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+        </x-data-table>
 
         <div class="card-footer clearfix">
             <div class="float-right">

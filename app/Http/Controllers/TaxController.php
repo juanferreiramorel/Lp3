@@ -29,11 +29,24 @@ class TaxController extends AppBaseController
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_tax', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre', 'sort' => 'nombre'],
+            'descripcion' => ['label' => 'Descripción', 'sort' => 'descripcion'],
+            'porcentaje' => ['label' => 'Porcentaje', 'sort' => 'porcentaje', 'first' => 'desc'],
+            'estado' => ['label' => 'Estado', 'sort' => 'activo'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
                 $taxes = DB::select(
-                    'SELECT * FROM taxes WHERE id_tax = ? ORDER BY id_tax DESC',
+                    "SELECT * FROM taxes WHERE id_tax = ? ORDER BY {$sort->orderBy()}",
                     [(int)$searchConfig['term']]
                 );
             } else {
@@ -41,18 +54,18 @@ class TaxController extends AppBaseController
                 $buscarTerm = $searchConfig['term'];
 
                 $taxes = DB::select(
-                    'SELECT * FROM taxes
+                    "SELECT * FROM taxes
                      WHERE nombre ILIKE ?
                      OR descripcion ILIKE ?
                      OR cast(porcentaje as text) ILIKE ?
                      OR cast(id_tax as text) ILIKE ?
-                     ORDER BY id_tax DESC',
+                     ORDER BY {$sort->orderBy()}",
                     ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
                 );
             }
         } else {
             // Consulta para obtener todos los impuestos
-            $taxes = DB::select('SELECT * FROM taxes ORDER BY id_tax DESC');
+            $taxes = DB::select("SELECT * FROM taxes ORDER BY {$sort->orderBy()}");
         }
 
         // Definimos los valores de paginación
@@ -77,10 +90,10 @@ class TaxController extends AppBaseController
 
         // Si la acción es búsqueda mediante ajax
         if ($request->ajax()) {
-            return view('taxes.table')->with('taxes', $taxes);
+            return view('taxes.table')->with('taxes', $taxes)->with('columns', $columns)->with('sort', $sort);
         }
 
-        return view('taxes.index')->with('taxes', $taxes);
+        return view('taxes.index')->with('taxes', $taxes)->with('columns', $columns)->with('sort', $sort);
     }
 
     public function create()

@@ -1,20 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table table-hover" id="timbrados-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Empresa</th>
-                    <th>Tipo</th>
-                    <th>Nro. Timbrado</th>
-                    <th>Vigencia</th>
-                    <th>Rango</th>
-                    <th>Disponibles</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$timbrados"
+                  id="timbrados-table"
+                  empty="No hay timbrados que coincidan con la búsqueda.">
                 @foreach ($timbrados as $timbrado)
                     <tr>
                         <td>{{ $timbrado->id_timbrado }}</td>
@@ -108,13 +95,6 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
-    @if(count($timbrados) == 0)
-    <div class="card-body">
-        <p class="text-center">No hay timbrados registrados</p>
-    </div>
-    @endif
 </div>

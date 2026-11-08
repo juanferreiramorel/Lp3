@@ -138,10 +138,6 @@
     <script>
         $(document).ready(function() {
             // Inicializar Select2
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%'
-            });
 
             /** CONSULTAR AJAX PARA LLENAR POR DEFECTO EL MODAL AL ABRIR */
             document.getElementById('buscar').addEventListener('click', function() {

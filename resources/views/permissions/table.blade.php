@@ -1,14 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="permissions-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Permisos</th>
-                    <th colspan="3">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$permisos"
+                  id="permissions-table"
+                  empty="No hay permisos para mostrar.">
                 @foreach ($permisos as $permiso)
                     <tr>
                         <td>{{ $permiso->id }}</td>
@@ -29,9 +22,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

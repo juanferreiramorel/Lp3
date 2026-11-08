@@ -106,7 +106,25 @@ class ProductoController extends AppBaseController
             }
         }
 
-        $query .= ' ORDER BY id_producto DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        // The outer SELECT flattens the subquery, so the expressions carry no alias.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id_producto', 'first' => 'desc'],
+            'imagen' => ['label' => 'Imagen'],
+            'descripcion' => ['label' => 'Descripción', 'sort' => 'descripcion'],
+            'codigo_barras' => ['label' => 'Código de Barras', 'sort' => 'codigo_barras'],
+            'precio' => ['label' => 'Precio', 'sort' => 'precio', 'first' => 'desc'],
+            'impuesto' => ['label' => 'Impuesto', 'sort' => 'tax_nombre'],
+            'controla_stock' => ['label' => 'Controla Stock', 'sort' => 'controlar_stock'],
+            'marca' => ['label' => 'Marca', 'sort' => 'marcas'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         // Ejecutar la consulta
         $productos = DB::select($query, $params);
@@ -134,7 +152,10 @@ class ProductoController extends AppBaseController
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         if ($request->ajax()) {// devuelve true o false si es ajax o no
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('productos.table')->with('productos', $productos);
+            return view('productos.table')
+                ->with('productos', $productos)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
 
@@ -148,7 +169,9 @@ class ProductoController extends AppBaseController
             ->with('productos', $productos)
             ->with('estadoFilter', $estadoFilter)
             ->with('marcas', $marcas)
-            ->with('taxes', $taxes);
+            ->with('taxes', $taxes)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()

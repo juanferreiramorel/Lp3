@@ -31,20 +31,31 @@ class RoleController extends AppBaseController
         // Construir consulta con filtros de búsqueda por todos los campos visibles
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'id', 'first' => 'desc'],
+            'name' => ['label' => 'Name', 'sort' => 'name'],
+            'guard_name' => ['label' => 'Guard Name', 'sort' => 'guard_name'],
+            'acciones' => ['label' => 'Action', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 $roles = DB::select(
-                    'SELECT * FROM roles WHERE id = ? ORDER BY id DESC',
+                    "SELECT * FROM roles WHERE id = ? ORDER BY {$sort->orderBy()}",
                     [(int)$searchConfig['term']]
                 );
             } else {
                 $buscarTerm = $searchConfig['term'];
                 $roles = DB::select(
-                    'SELECT * FROM roles
+                    "SELECT * FROM roles
                     WHERE CAST(id AS TEXT) ILIKE ?
                     OR name ILIKE ?
                     OR guard_name ILIKE ?
-                    ORDER BY id DESC',
+                    ORDER BY {$sort->orderBy()}",
                     [
                         '%' . $buscarTerm . '%',
                         '%' . $buscarTerm . '%',
@@ -53,7 +64,7 @@ class RoleController extends AppBaseController
                 );
             }
         } else {
-            $roles = DB::select('SELECT * FROM roles ORDER BY id DESC');
+            $roles = DB::select("SELECT * FROM roles ORDER BY {$sort->orderBy()}");
         }
 
         // Definimos los valores de paginación
@@ -78,10 +89,10 @@ class RoleController extends AppBaseController
 
         // Si es petición AJAX, devolver solo la tabla
         if ($request->ajax()) {
-            return view('roles.table')->with('roles', $roles);
+            return view('roles.table')->with('roles', $roles)->with('columns', $columns)->with('sort', $sort);
         }
 
-        return view('roles.index')->with('roles', $roles);
+        return view('roles.index')->with('roles', $roles)->with('columns', $columns)->with('sort', $sort);
     }
 
     public function create()

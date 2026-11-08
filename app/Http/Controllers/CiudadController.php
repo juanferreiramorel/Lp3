@@ -59,7 +59,19 @@ class CiudadController extends AppBaseController
             }
         }
         
-        $query .= ' ORDER BY c.id_ciudad DESC';
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'c.id_ciudad', 'first' => 'desc'],
+            'ciudad' => ['label' => 'Ciudad', 'sort' => 'c.descripcion'],
+            'departamento' => ['label' => 'Departamento', 'sort' => 'd.descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'c.estado'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $query .= " ORDER BY {$sort->orderBy()}";
 
         $ciudades = DB::select($query, $params);
 
@@ -86,11 +98,11 @@ class CiudadController extends AppBaseController
         // si la accion es buscardor entonces significa que se debe recargar mediante ajax la tabla
         if ($request->ajax()) {
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('ciudades.table')->with('ciudades', $ciudades);
+            return view('ciudades.table')->with('ciudades', $ciudades)->with('columns', $columns)->with('sort', $sort);
         }
 
 
-        return view('ciudades.index')->with('ciudades', $ciudades);
+        return view('ciudades.index')->with('ciudades', $ciudades)->with('columns', $columns)->with('sort', $sort);
     }
 
     public function create()

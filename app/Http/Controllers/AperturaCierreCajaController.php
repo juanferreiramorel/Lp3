@@ -70,6 +70,22 @@ class AperturaCierreCajaController extends Controller
         // Simplificado: filtrar por sucursal del usuario actual si no es admin (ajustar según lógica de permisos)
         // Por ahora lo dejamos abierto o filtramos por la sucursal actual si se desea estricto
         
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => 'ID', 'sort' => 'ape.id_apertura', 'first' => 'desc'],
+            'fecha_apertura' => ['label' => 'Fecha Apertura', 'sort' => 'ape.fecha_apertura', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'tiebreaker' => 'ape.id_apertura'],
+            'caja' => ['label' => 'Caja', 'sort' => 'c.descripcion', 'tiebreaker' => 'ape.id_apertura'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion', 'tiebreaker' => 'ape.id_apertura'],
+            'estado' => ['label' => 'Estado', 'sort' => 'ape.estado', 'tiebreaker' => 'ape.id_apertura'],
+            'monto_apertura' => ['label' => 'Monto Apertura', 'sort' => 'ape.monto_apertura', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'monto_cierre' => ['label' => 'Monto Cierre', 'sort' => 'ape.monto_cierre', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'fecha_apertura', 'desc', $request);
+
         $aperturas = DB::select(
             "SELECT ape.*, s.descripcion as sucursal, c.descripcion as caja, u.name as usuario
             FROM apertura_cierre_cajas ape
@@ -77,7 +93,7 @@ class AperturaCierreCajaController extends Controller
             JOIN users u ON u.id = ape.user_id
             JOIN sucursales s ON s.id_sucursal = c.id_sucursal
             {$sql_filtros}
-            ORDER BY ape.fecha_apertura DESC, ape.id_apertura DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         // Paginación manual
@@ -92,7 +108,10 @@ class AperturaCierreCajaController extends Controller
         );
 
         if ($request->ajax()) {
-            return view('apertura_cierre.table')->with('aperturas', $aperturas);
+            return view('apertura_cierre.table')
+                ->with('aperturas', $aperturas)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
         // Datos para filtros
@@ -100,7 +119,7 @@ class AperturaCierreCajaController extends Controller
         $usuarios = DB::table('users')->pluck('name', 'id');
         $sucursales = DB::table('sucursales')->pluck('descripcion', 'id_sucursal');
 
-        return view('apertura_cierre.index', compact('aperturas', 'cajas', 'usuarios', 'sucursales'));
+        return view('apertura_cierre.index', compact('aperturas', 'cajas', 'usuarios', 'sucursales', 'columns', 'sort'));
     }
 
     public function store(Request $request)

@@ -1,15 +1,7 @@
 <div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table" id="cargos-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Descripcion</th>
-                    <th>Estado</th>
-                    <th colspan="3">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$cargos"
+                  id="cargos-table"
+                  empty="No hay cargos para mostrar.">
                 @foreach ($cargos as $cargo)
                     <tr class="{{ isset($cargo->estado) && !$cargo->estado ? 'text-muted' : '' }}" 
                         style="{{ isset($cargo->estado) && !$cargo->estado ? 'background-color: #f8f9fa;' : '' }}">
@@ -53,9 +45,7 @@
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
+    </x-data-table>
 
     <div class="card-footer clearfix">
         <div class="float-right">

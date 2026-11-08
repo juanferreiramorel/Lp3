@@ -1,14 +1,24 @@
-<aside class="main-sidebar sidebar-dark-primary elevation-4 modern-sidebar">
+<aside class="main-sidebar elevation-4 modern-sidebar">
     <a href="{{ route('home') }}" class="brand-link brand-link-elevated d-flex align-items-center">
-        <span class="mr-2">
-            <img src="{{ asset('img/mintapererp.svg') }}"
-                 alt="{{ config('app.name') }} logo"
-                 class="brand-image brand-image-rounded">
+        <span class="mr-2 d-inline-flex">
+            {{-- Drawn inline so it can read the theme tokens. The previous mark was an
+                 external SVG whose gradients referenced variables that never existed,
+                 and an <img> cannot see the page's CSS anyway. --}}
+            <svg class="brand-mark" viewBox="0 0 32 32" role="img"
+                 aria-label="{{ config('app.name') }}" focusable="false">
+                <rect width="32" height="32" rx="8" fill="currentColor"/>
+                <path d="M9 7h14v15l-2.333 2-2.333-2-2.334 2-2.333-2-2.334 2L9 22z"
+                      fill="var(--paper-raised, #fff)"/>
+                <rect x="12" y="11" width="8" height="1.7" rx="0.85" fill="currentColor"/>
+                <rect x="12" y="14.8" width="5.4" height="1.7" rx="0.85" fill="currentColor"/>
+            </svg>
         </span>
-        <span class="brand-text-wrapper">
+        {{-- `brand-text` is the class AdminLTE keys its collapse behaviour on.
+             Without it the wordmark stayed visible and spilled out of the icon
+             rail instead of folding away. --}}
+        <span class="brand-text brand-text-wrapper">
             <span class="brand-title d-block">
-                <span class="brand-title-primary">TAP</span>
-                <span class="brand-title-accent">ERP</span>
+                <span class="brand-title-primary">TAP</span> <span class="brand-title-accent">ERP</span>
             </span>
             <small class="brand-tagline">Gestión integrada</small>
         </span>

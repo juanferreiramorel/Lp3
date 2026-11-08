@@ -56,6 +56,21 @@ class StockController extends AppBaseController
             $filtroSucursalesPermitidas = ' AND sc.id_sucursal IN (' . implode(',', $idsPermitidos) . ')';
         }
         
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 's.id_stock', 'first' => 'desc'],
+            'sucursal' => ['label' => 'Sucursal', 'sort' => 'sc.descripcion'],
+            'producto' => ['label' => 'Producto', 'sort' => 'p.descripcion'],
+            'marca' => ['label' => 'Marca', 'sort' => 'm.descripcion'],
+            'cantidad' => ['label' => 'Cantidad', 'sort' => 's.cantidad', 'first' => 'desc'],
+        ];
+
+        // This listing's natural order is by product, which the grid does not
+        // show as a column, so it is passed as the default expression instead
+        // of being approximated with s.id_stock.
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request, 'p.id_producto');
+
         // Consulta para obtener los productos con la marca asociada y si posee filtros
         // Solo mostrar productos que controlan stock, están activos y tienen marcas activas
         $stock = DB::select(
@@ -69,7 +84,7 @@ class StockController extends AppBaseController
              AND p.activo = true
              AND m.activo = true
              ' . $sql . ' ' . $filtro_sucursales . ' ' . $filtro_productos . ' ' . $filtroSucursalesPermitidas . '
-             ORDER BY p.id_producto desc'
+             ORDER BY ' . $sort->orderBy()
         );
 
         // Definimos los valores de paginación
@@ -103,10 +118,20 @@ class StockController extends AppBaseController
          // Verificamos si la petición es AJAX
         if ($request->ajax()) { //devuelve true o false si es ajax o no
             //solo llmamamos a table.blade.php y mediante compact pasamos la variable users
-            return view('stock.table')->with('stock', $stock)->with('sucursales', $sucursales)->with('productos', $productos);
+            return view('stock.table')
+                ->with('stock', $stock)
+                ->with('sucursales', $sucursales)
+                ->with('productos', $productos)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
 
-        return view('stock.index')->with('stock', $stock)->with('sucursales', $sucursales)->with('productos', $productos);
+        return view('stock.index')
+            ->with('stock', $stock)
+            ->with('sucursales', $sucursales)
+            ->with('productos', $productos)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 }

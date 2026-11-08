@@ -52,17 +52,38 @@ class EmpresaController extends AppBaseController
              $sql_busqueda .= " AND e.estado = $valor";
         }
 
+        // One definition drives both the ORDER BY below and the table header.
+        // A column without 'sort' simply is not sortable.
+        $columns = [
+            'id' => ['label' => '#', 'sort' => 'e.id_empresa', 'first' => 'desc'],
+            'razon_social' => ['label' => 'Razón Social', 'sort' => 'e.razon_social', 'tiebreaker' => 'e.id_empresa'],
+            'nombre_comercial' => ['label' => 'Nombre Comercial', 'sort' => 'e.nombre_comercial', 'tiebreaker' => 'e.id_empresa'],
+            'ruc' => ['label' => 'RUC', 'sort' => 'e.ruc', 'tiebreaker' => 'e.id_empresa'],
+            'telefono' => ['label' => 'Teléfono', 'sort' => 'e.telefono', 'tiebreaker' => 'e.id_empresa'],
+            'email' => ['label' => 'Email', 'sort' => 'e.email', 'tiebreaker' => 'e.id_empresa'],
+            'estado' => ['label' => 'Estado', 'sort' => 'e.estado', 'tiebreaker' => 'e.id_empresa'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+        ];
+
+        $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
         $empresas = DB::select(
             "SELECT e.* FROM empresas e
             {$sql_busqueda}
-            ORDER BY e.id_empresa DESC"
+            ORDER BY {$sort->orderBy()}"
         );
 
         if ($request->ajax()) {
-            return view('empresas.table')->with('empresas', $empresas);
+            return view('empresas.table')
+                ->with('empresas', $empresas)
+                ->with('columns', $columns)
+                ->with('sort', $sort);
         }
 
-        return view('empresas.index')->with('empresas', $empresas);
+        return view('empresas.index')
+            ->with('empresas', $empresas)
+            ->with('columns', $columns)
+            ->with('sort', $sort);
     }
 
     public function create()
