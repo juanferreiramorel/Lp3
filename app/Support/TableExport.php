@@ -36,8 +36,20 @@ class TableExport
     public const XLSX = 'xlsx';
     public const PDF = 'pdf';
 
-    /** Guards against a request asking for the whole table at once. */
-    private const MAX_ROWS = 20000;
+    /**
+     * Ceiling on how many rows one export may carry.
+     *
+     * It is public because the cap has to be applied by the query, not here:
+     * trimming an array that the database already materialised means the whole
+     * table was loaded into memory first, which is exactly what the limit
+     * exists to prevent. Callers append it:
+     *
+     *     DB::select($seleccion . ' LIMIT ' . TableExport::MAX_ROWS)
+     *     $query->limit(TableExport::MAX_ROWS)->get()
+     *
+     * The check below stays as a backstop for a caller that forgets.
+     */
+    public const MAX_ROWS = 20000;
 
     private function __construct(
         private readonly string $format,

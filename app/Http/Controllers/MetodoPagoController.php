@@ -84,7 +84,7 @@ class MetodoPagoController extends AppBaseController
         // carries every row the current filters match, not just this page.
         if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
             return $export->download(
-                fn () => \Illuminate\Support\Facades\DB::select($seleccion, $params),
+                fn () => \Illuminate\Support\Facades\DB::select($seleccion . ' LIMIT ' . \App\Support\TableExport::MAX_ROWS, $params),
                 'metodo_pagos'
             );
         }

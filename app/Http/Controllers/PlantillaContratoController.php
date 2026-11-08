@@ -93,7 +93,7 @@ class PlantillaContratoController extends AppBaseController
         // carries every row the current search matches, not just this page.
         if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
             return $export->download(
-                fn () => DB::select($seleccion, $parametros),
+                fn () => DB::select($seleccion . ' LIMIT ' . \App\Support\TableExport::MAX_ROWS, $parametros),
                 'plantillas_contratos'
             );
         }

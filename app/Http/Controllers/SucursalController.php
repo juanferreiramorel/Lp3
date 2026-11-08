@@ -83,7 +83,7 @@ class SucursalController extends AppBaseController
         // Exports run the same query without the page window, so the file
         // carries every row the current filters match, not just this page.
         if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
-            return $export->download(fn () => DB::select($seleccion, $params), 'sucursales');
+            return $export->download(fn () => DB::select($seleccion . ' LIMIT ' . \App\Support\TableExport::MAX_ROWS, $params), 'sucursales');
         }
 
         $sucursales = DB::select($seleccion, $params);

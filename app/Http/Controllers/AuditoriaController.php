@@ -140,10 +140,22 @@ class AuditoriaController extends AppBaseController
                   {$queryBase} {$where}
                   ORDER BY {$sort->orderBy()}";
 
-        // The export runs the same query without the page window, so the
-        // file carries every row the current filters match.
+        // The export carries every row the current filters match, so it leaves
+        // out old_data and new_data: those are the full before/after JSON of
+        // each change, read only by the detail modal, and on an audit log they
+        // are by far the heaviest thing in the row.
         if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
-            return $export->download(fn () => DB::select($seleccion), 'auditoria');
+            $paraExportar = "SELECT s.id AS id,
+                         sc.descripcion AS sucursal,
+                         u.name AS usuario,
+                         s.operation AS operacion,
+                         s.table_name AS tabla,
+                         s.changed_at AS fecha
+                  {$queryBase} {$where}
+                  ORDER BY {$sort->orderBy()}
+                  LIMIT " . \App\Support\TableExport::MAX_ROWS;
+
+            return $export->download(fn () => DB::select($paraExportar), 'auditoria');
         }
 
         $query = $seleccion . " LIMIT {$perPage} OFFSET {$offset}";

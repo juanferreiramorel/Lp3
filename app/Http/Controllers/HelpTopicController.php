@@ -72,7 +72,7 @@ class HelpTopicController extends Controller
         // file carries every row the current search matches. The builder is
         // only executed once, because this branch returns.
         if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
-            return $export->download(fn () => $query->get(), 'ayuda');
+            return $export->download(fn () => $query->limit(\App\Support\TableExport::MAX_ROWS)->get(), 'ayuda');
         }
 
         $helpTopics = $query->paginate(10)->withQueryString();
