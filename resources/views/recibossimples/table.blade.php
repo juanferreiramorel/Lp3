@@ -1,7 +1,7 @@
 <div class="p-0 card-body">
     <!-- Vista de tabla para desktop -->
-    <div class="d-none d-md-block">
-        <x-data-table :columns="$columns" :sort="$sort" :paginator="$recibos"
+    <x-data-table :columns="$columns" :sort="$sort" :paginator="$recibos"
+                  wrapper-class="d-none d-md-block"
                       id="recibos-table"
                       empty="No hay recibos que coincidan con la búsqueda."
                       empty-hint="Probá quitar algún filtro o ampliar el rango de fechas.">
@@ -67,8 +67,7 @@
                         </td>
                     </tr>
                 @endforeach
-        </x-data-table>
-    </div>
+    </x-data-table>
 
     <!-- Vista de cards para mobile -->
     <div class="d-block d-md-none">

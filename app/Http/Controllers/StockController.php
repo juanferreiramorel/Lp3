@@ -58,12 +58,14 @@ class StockController extends AppBaseController
         
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
             'id' => ['label' => '#', 'sort' => 's.id_stock', 'first' => 'desc'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 'sc.descripcion'],
             'producto' => ['label' => 'Producto', 'sort' => 'p.descripcion'],
             'marca' => ['label' => 'Marca', 'sort' => 'm.descripcion'],
-            'cantidad' => ['label' => 'Cantidad', 'sort' => 's.cantidad', 'first' => 'desc'],
+            'cantidad' => ['label' => 'Cantidad', 'sort' => 's.cantidad', 'format' => 'number', 'first' => 'desc'],
         ];
 
         // This listing's natural order is by product, which the grid does not
@@ -73,19 +75,25 @@ class StockController extends AppBaseController
 
         // Consulta para obtener los productos con la marca asociada y si posee filtros
         // Solo mostrar productos que controlan stock, están activos y tienen marcas activas
-        $stock = DB::select(
-            'SELECT s.cantidad, m.descripcion as marca, p.descripcion AS producto, sc.descripcion as sucursal,
+        $seleccion = 'SELECT s.cantidad, m.descripcion as marca, p.descripcion AS producto, sc.descripcion as sucursal,
             s.id_stock AS id, p.descripcion
              FROM stocks s
              JOIN sucursales sc USING(id_sucursal)
-             JOIN productos p USING(id_producto) 
+             JOIN productos p USING(id_producto)
              JOIN marcas m USING(id_marca)
              WHERE p.controlar_stock = true
              AND p.activo = true
              AND m.activo = true
              ' . $sql . ' ' . $filtro_sucursales . ' ' . $filtro_productos . ' ' . $filtroSucursalesPermitidas . '
-             ORDER BY ' . $sort->orderBy()
-        );
+             ORDER BY ' . $sort->orderBy();
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'stock');
+        }
+
+        $stock = DB::select($seleccion);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

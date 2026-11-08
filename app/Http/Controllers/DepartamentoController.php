@@ -55,18 +55,26 @@ class DepartamentoController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_departamento', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'id_departamento', 'field' => 'id_departamento', 'first' => 'desc'],
             'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
-            'estado' => ['label' => 'Estado', 'sort' => 'estado'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'estado' => ['label' => 'Estado', 'sort' => 'estado', 'format' => 'estado'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query .= " ORDER BY {$sort->orderBy()}";
+        $seleccion = $query . " ORDER BY {$sort->orderBy()}";
 
-        $departamentos = DB::select($query, $params);
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'departamentos');
+        }
+
+        $departamentos = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

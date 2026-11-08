@@ -28,24 +28,34 @@ class HelpTopicController extends Controller
 
     public function index(Request $request)
     {
-        $buscar = trim($request->get('buscar'));
+        // trim(null) is deprecated in PHP 8.1+, and `buscar` is absent on the
+        // first load of the page.
+        $buscar = trim((string) $request->get('buscar'));
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_help', 'first' => 'desc'],
-            'titulo' => ['label' => 'Titulo', 'sort' => 'title'],
-            'modulo' => ['label' => 'Modulo', 'sort' => 'module'],
-            'ruta' => ['label' => 'Ruta', 'sort' => 'route_name'],
-            'permiso' => ['label' => 'Permiso', 'sort' => 'permission_slug'],
-            'estado' => ['label' => 'Estado', 'sort' => 'is_active'],
-            'pdf' => ['label' => 'PDF'],
-            'acciones' => ['label' => 'Acciones', 'width' => '160px'],
+            'id' => ['label' => '#', 'sort' => 'id_help', 'field' => 'id_help', 'first' => 'desc'],
+            'titulo' => ['label' => 'Titulo', 'sort' => 'title', 'field' => 'title'],
+            'modulo' => ['label' => 'Modulo', 'sort' => 'module', 'field' => 'module'],
+            'ruta' => ['label' => 'Ruta', 'sort' => 'route_name', 'field' => 'route_name'],
+            'permiso' => ['label' => 'Permiso', 'sort' => 'permission_slug', 'field' => 'permission_slug'],
+            // The flag itself would land in the file as 1 or an empty cell, so
+            // the query resolves it into the same words the grid shows.
+            'estado' => ['label' => 'Estado', 'sort' => 'is_active', 'field' => 'estado_texto'],
+            // Nothing but a link to the file lives in this cell.
+            'pdf' => ['label' => 'PDF', 'export' => false],
+            'acciones' => ['label' => 'Acciones', 'width' => '160px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query = DB::table('help_topics')->orderByRaw($sort->orderBy());
+        $query = DB::table('help_topics')
+            ->select('help_topics.*')
+            ->selectRaw("CASE WHEN is_active::boolean THEN 'Activo' ELSE 'Inactivo' END as estado_texto")
+            ->orderByRaw($sort->orderBy());
 
         if ($buscar) {
             $query->where(function ($sub) use ($buscar) {
@@ -56,6 +66,13 @@ class HelpTopicController extends Controller
                     ->orWhere('permission_slug', 'ILIKE', $like)
                     ->orWhere('action_key', 'ILIKE', $like);
             });
+        }
+
+        // The export reads the same builder before it is paginated, so the
+        // file carries every row the current search matches. The builder is
+        // only executed once, because this branch returns.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => $query->get(), 'ayuda');
         }
 
         $helpTopics = $query->paginate(10)->withQueryString();

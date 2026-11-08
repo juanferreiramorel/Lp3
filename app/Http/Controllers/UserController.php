@@ -34,34 +34,42 @@ class UserController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
             'id' => ['label' => '#', 'sort' => 'u.id', 'first' => 'desc'],
-            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => 'u.name'],
-            'username' => ['label' => 'Username', 'sort' => 'u.email'],
-            'documento' => ['label' => 'Nro Doc.', 'sort' => 'u.ci'],
+            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => 'u.name', 'field' => 'name'],
+            'username' => ['label' => 'Username', 'sort' => 'u.email', 'field' => 'email'],
+            'documento' => ['label' => 'Nro Doc.', 'sort' => 'u.ci', 'field' => 'ci'],
             'telefono' => ['label' => 'Teléfono', 'sort' => 'u.telefono'],
-            'fecha_ingreso' => ['label' => 'Fecha Ingreso', 'sort' => 'u.fecha_ingreso', 'tiebreaker' => 'u.id', 'first' => 'desc'],
-            'estado' => ['label' => 'Estado', 'sort' => 'u.estado'],
+            'fecha_ingreso' => ['label' => 'Fecha Ingreso', 'sort' => 'u.fecha_ingreso', 'format' => 'date', 'tiebreaker' => 'u.id', 'first' => 'desc'],
+            // The flag itself would land in the file as 1 or an empty cell, so
+            // the query resolves it into the same words the grid shows.
+            'estado' => ['label' => 'Estado', 'sort' => 'u.estado', 'field' => 'estado_texto'],
             'rol' => ['label' => 'Rol', 'sort' => 'r.name'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        // Construir consulta con filtros de búsqueda
+        // Construir consulta con filtros de búsqueda. La consulta no lleva la
+        // ventana de paginación, así que el listado y la exportación leen las
+        // mismas filas con los mismos filtros.
+        $base = 'SELECT u.*, r.name as rol, s.descripcion as sucursal,
+                        CASE WHEN u.estado::boolean THEN \'Activo\' ELSE \'Inactivo\' END as estado_texto
+                    FROM users u
+                        LEFT JOIN roles r ON u.role_id = r.id
+                        LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal';
+        $params = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $users = DB::select(
-                    'SELECT u.*, r.name as rol, s.descripcion as sucursal
-                    FROM users u
-                        LEFT JOIN roles r ON u.role_id = r.id
-                        LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+                $seleccion = $base . '
                     WHERE u.id = ?
-                    ORDER BY ' . $sort->orderBy(),
-                    [(int)$searchConfig['term']]
-                );
+                    ORDER BY ' . $sort->orderBy();
+                $params = [(int)$searchConfig['term']];
             } else {
                 // Búsqueda general en múltiples campos
                 $buscarTerm = $searchConfig['term'];
@@ -72,11 +80,7 @@ class UserController extends AppBaseController
                     $buscarFecha = sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1]);
                 }
 
-                $users = DB::select(
-                    'SELECT u.*, r.name as rol, s.descripcion as sucursal
-                    FROM users u
-                        LEFT JOIN roles r ON u.role_id = r.id
-                        LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
+                $seleccion = $base . '
                     WHERE cast(u.id as text) ILIKE ?
                     OR u.name ILIKE ?
                     OR u.email ILIKE ?
@@ -86,17 +90,21 @@ class UserController extends AppBaseController
                     OR TO_CHAR(u.fecha_ingreso, \'DD/MM/YYYY\') ILIKE ?
                     OR r.name ILIKE ?
                     OR s.descripcion ILIKE ?
-                    ORDER BY ' . $sort->orderBy(),
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarFecha . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                    ORDER BY ' . $sort->orderBy();
+                $params = ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarFecha . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%'];
             }
         } else {
-            $users = DB::select('SELECT u.*, r.name as rol, s.descripcion as sucursal
-            FROM users u
-                LEFT JOIN roles r ON u.role_id = r.id
-                LEFT JOIN sucursales s ON u.id_sucursal = s.id_sucursal
-            ORDER BY ' . $sort->orderBy());
+            $seleccion = $base . '
+            ORDER BY ' . $sort->orderBy();
         }
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'usuarios');
+        }
+
+        $users = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

@@ -99,31 +99,39 @@ class NotaDebitoController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'nd.id_nota_debito', 'first' => 'desc'],
-            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'tiebreaker' => 'nd.id_nota_debito'],
+            'id' => ['label' => '#', 'sort' => 'nd.id_nota_debito', 'field' => 'id_nota_debito', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'field' => 'clie_ci', 'tiebreaker' => 'nd.id_nota_debito'],
             'cliente' => ['label' => 'Cliente', 'sort' => "concat(c.clie_nombre,' ', c.clie_apellido)", 'tiebreaker' => 'nd.id_nota_debito'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion', 'tiebreaker' => 'nd.id_nota_debito'],
-            'fecha_emision' => ['label' => 'Fecha Emisión', 'sort' => 'nd.fecha_emision', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'fecha_emision' => ['label' => 'Fecha Emisión', 'sort' => 'nd.fecha_emision', 'format' => 'date', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
             'nro_nota' => ['label' => 'Nro Nota', 'sort' => 'nd.nro_nota', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
-            'total' => ['label' => 'Total', 'sort' => 'nd.total', 'align' => 'right', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'nd.total', 'format' => 'money', 'align' => 'right', 'tiebreaker' => 'nd.id_nota_debito', 'first' => 'desc'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'users.name', 'tiebreaker' => 'nd.id_nota_debito'],
             'estado' => ['label' => 'Estado', 'sort' => 'nd.estado', 'tiebreaker' => 'nd.id_nota_debito'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha_emision', 'desc', $request);
 
-        $notas = DB::select(
-            "SELECT nd.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
+        $seleccion = "SELECT nd.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario, s.descripcion as sucursal
             FROM notas_debito nd
                 JOIN clientes c ON nd.id_cliente = c.id_cliente
                 JOIN users ON nd.user_id = users.id
                 JOIN sucursales s ON nd.id_sucursal = s.id_sucursal
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
-            ORDER BY {$sort->orderBy()}"
-        );
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'notas_debito');
+        }
+
+        $notas = DB::select($seleccion);
 
         // Paginación manual
         $page = $request->input('page', 1);

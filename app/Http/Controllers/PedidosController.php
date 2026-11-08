@@ -127,18 +127,31 @@ class PedidosController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'p.id_pedido', 'first' => 'desc'],
-            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci'],
+            'id' => ['label' => '#', 'sort' => 'p.id_pedido', 'field' => 'id_pedido', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'field' => 'clie_ci'],
             'cliente' => ['label' => 'Cliente', 'sort' => "CONCAT(c.clie_nombre, ' ', c.clie_apellido)"],
-            'fecha' => ['label' => 'Fecha Pedido', 'sort' => 'p.fecha_pedido', 'tiebreaker' => 'p.id_pedido', 'first' => 'desc'],
-            'total' => ['label' => 'Total Pedido', 'sort' => 'p.total_pedido', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha Pedido', 'sort' => 'p.fecha_pedido', 'field' => 'fecha_pedido', 'format' => 'date', 'tiebreaker' => 'p.id_pedido', 'first' => 'desc'],
+            'total' => ['label' => 'Total Pedido', 'sort' => 'p.total_pedido', 'field' => 'total_pedido', 'format' => 'money', 'first' => 'desc'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
             'estado' => ['label' => 'Estado', 'sort' => 'p.estado'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
+
+        $seleccion = "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
+                         u.name AS usuario
+                  {$queryBase} {$where}
+                  ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'pedidos');
+        }
 
         // Contar total de registros
         $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
@@ -151,13 +164,7 @@ class PedidosController extends AppBaseController
         $offset = ($page - 1) * $perPage;
 
         // Obtener registros paginados
-        $query = "SELECT p.*, CONCAT(c.clie_nombre,' ', c.clie_apellido) AS cliente, c.clie_ci,
-                         u.name AS usuario
-                  {$queryBase} {$where}
-                  ORDER BY {$sort->orderBy()}
-                  LIMIT {$perPage} OFFSET {$offset}";
-
-        $pedidos = DB::select($query);
+        $pedidos = DB::select($seleccion . " LIMIT {$perPage} OFFSET {$offset}");
 
         // Crear paginador manual
         $pedidos = new LengthAwarePaginator(

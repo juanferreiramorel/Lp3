@@ -199,6 +199,25 @@ class Timbrado extends Model
     }
 
     /**
+     * Razón social de la empresa como texto plano.
+     *
+     * The listing export reads one property per column, and the relation
+     * itself is an Empresa instance, so the flat value needs an accessor.
+     */
+    public function getEmpresaNombreAttribute()
+    {
+        return $this->empresa->razon_social ?? '';
+    }
+
+    /**
+     * Descripción del tipo de timbrado como texto plano.
+     */
+    public function getTipoDescripcionAttribute()
+    {
+        return $this->tipotimbrado->descripcion ?? '';
+    }
+
+    /**
      * Obtiene el porcentaje de uso
      */
     public function getPorcentajeUsoAttribute()

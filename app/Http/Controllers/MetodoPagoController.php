@@ -66,19 +66,30 @@ class MetodoPagoController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'mp.id_metodo_pago', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'mp.id_metodo_pago', 'field' => 'id_metodo_pago', 'first' => 'desc'],
             'descripcion' => ['label' => 'Descripción', 'sort' => 'mp.descripcion'],
-            'tipo' => ['label' => 'Tipo', 'sort' => 'tmp.descripcion'],
-            'estado' => ['label' => 'Estado', 'sort' => 'mp.estado'],
-            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+            'tipo' => ['label' => 'Tipo', 'sort' => 'tmp.descripcion', 'field' => 'tipo_descripcion'],
+            'estado' => ['label' => 'Estado', 'sort' => 'mp.estado', 'format' => 'estado'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query .= " ORDER BY {$sort->orderBy()}";
+        $seleccion = $query . " ORDER BY {$sort->orderBy()}";
 
-        $metodos = \Illuminate\Support\Facades\DB::select($query, $params);
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(
+                fn () => \Illuminate\Support\Facades\DB::select($seleccion, $params),
+                'metodo_pagos'
+            );
+        }
+
+        $metodos = \Illuminate\Support\Facades\DB::select($seleccion, $params);
 
         // Paginación manual
         $page = $request->input('page', 1);

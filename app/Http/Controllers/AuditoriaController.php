@@ -117,8 +117,8 @@ class AuditoriaController extends AppBaseController
             'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'icon' => 'fa-user', 'class' => 'th-usuario'],
             'operacion' => ['label' => 'Operación', 'sort' => 's.operation', 'icon' => 'fa-cog', 'class' => 'th-operacion'],
             'tabla' => ['label' => 'Tabla', 'sort' => 's.table_name', 'icon' => 'fa-table', 'class' => 'th-tabla'],
-            'fecha' => ['label' => 'Fecha', 'sort' => 's.changed_at', 'tiebreaker' => 's.id', 'icon' => 'fa-calendar-alt', 'class' => 'th-fecha', 'first' => 'desc'],
-            'accion' => ['label' => 'Acción', 'icon' => 'fa-tools', 'class' => 'th-accion text-center'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 's.changed_at', 'format' => 'datetime', 'tiebreaker' => 's.id', 'icon' => 'fa-calendar-alt', 'class' => 'th-fecha', 'first' => 'desc'],
+            'accion' => ['label' => 'Acción', 'icon' => 'fa-tools', 'class' => 'th-accion text-center', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
@@ -129,7 +129,7 @@ class AuditoriaController extends AppBaseController
         $offset = ($page - 1) * $perPage;
 
         // Obtener registros paginados
-        $query = "SELECT s.id AS id,
+        $seleccion = "SELECT s.id AS id,
                          sc.descripcion AS sucursal,
                          u.name AS usuario,
                          s.operation AS operacion,
@@ -138,8 +138,15 @@ class AuditoriaController extends AppBaseController
                          old_data AS anterior,
                          new_data AS nuevo
                   {$queryBase} {$where}
-                  ORDER BY {$sort->orderBy()}
-                  LIMIT {$perPage} OFFSET {$offset}";
+                  ORDER BY {$sort->orderBy()}";
+
+        // The export runs the same query without the page window, so the
+        // file carries every row the current filters match.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'auditoria');
+        }
+
+        $query = $seleccion . " LIMIT {$perPage} OFFSET {$offset}";
 
         $auditoria = DB::select($query);
 

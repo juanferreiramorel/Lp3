@@ -109,25 +109,34 @@ class ProductoController extends AppBaseController
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
         // The outer SELECT flattens the subquery, so the expressions carry no alias.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_producto', 'first' => 'desc'],
-            'imagen' => ['label' => 'Imagen'],
+            'id' => ['label' => '#', 'sort' => 'id_producto', 'field' => 'id_producto', 'first' => 'desc'],
+            // The image column renders a thumbnail, so it has nothing to export.
+            'imagen' => ['label' => 'Imagen', 'export' => false],
             'descripcion' => ['label' => 'Descripción', 'sort' => 'descripcion'],
             'codigo_barras' => ['label' => 'Código de Barras', 'sort' => 'codigo_barras'],
-            'precio' => ['label' => 'Precio', 'sort' => 'precio', 'first' => 'desc'],
-            'impuesto' => ['label' => 'Impuesto', 'sort' => 'tax_nombre'],
-            'controla_stock' => ['label' => 'Controla Stock', 'sort' => 'controlar_stock'],
-            'marca' => ['label' => 'Marca', 'sort' => 'marcas'],
+            'precio' => ['label' => 'Precio', 'sort' => 'precio', 'format' => 'money', 'first' => 'desc'],
+            'impuesto' => ['label' => 'Impuesto', 'sort' => 'tax_nombre', 'field' => 'tax_nombre'],
+            'controla_stock' => ['label' => 'Controla Stock', 'sort' => 'controlar_stock', 'field' => 'controlar_stock'],
+            'marca' => ['label' => 'Marca', 'sort' => 'marcas', 'field' => 'marcas'],
             'estado' => ['label' => 'Estado', 'sort' => 'estado'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query .= " ORDER BY {$sort->orderBy()}";
+        $seleccion = $query . " ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'productos');
+        }
 
         // Ejecutar la consulta
-        $productos = DB::select($query, $params);
+        $productos = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

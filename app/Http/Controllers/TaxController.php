@@ -31,42 +31,50 @@ class TaxController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_tax', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'id_tax', 'field' => 'id_tax', 'first' => 'desc'],
             'nombre' => ['label' => 'Nombre', 'sort' => 'nombre'],
             'descripcion' => ['label' => 'Descripción', 'sort' => 'descripcion'],
             'porcentaje' => ['label' => 'Porcentaje', 'sort' => 'porcentaje', 'first' => 'desc'],
-            'estado' => ['label' => 'Estado', 'sort' => 'activo'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'estado' => ['label' => 'Estado', 'sort' => 'activo', 'field' => 'activo', 'format' => 'estado'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
+        // The WHERE clause is built apart from the SELECT so the listing and
+        // the export can share one statement.
+        $sql_busqueda = '';
+        $params = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $taxes = DB::select(
-                    "SELECT * FROM taxes WHERE id_tax = ? ORDER BY {$sort->orderBy()}",
-                    [(int)$searchConfig['term']]
-                );
+                $sql_busqueda = 'WHERE id_tax = ?';
+                $params = [(int)$searchConfig['term']];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
 
-                $taxes = DB::select(
-                    "SELECT * FROM taxes
-                     WHERE nombre ILIKE ?
+                $sql_busqueda = 'WHERE nombre ILIKE ?
                      OR descripcion ILIKE ?
                      OR cast(porcentaje as text) ILIKE ?
-                     OR cast(id_tax as text) ILIKE ?
-                     ORDER BY {$sort->orderBy()}",
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                     OR cast(id_tax as text) ILIKE ?';
+                $params = ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%'];
             }
-        } else {
-            // Consulta para obtener todos los impuestos
-            $taxes = DB::select("SELECT * FROM taxes ORDER BY {$sort->orderBy()}");
         }
+
+        $seleccion = "SELECT * FROM taxes {$sql_busqueda} ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'impuestos');
+        }
+
+        $taxes = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);

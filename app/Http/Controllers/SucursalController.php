@@ -29,58 +29,64 @@ class SucursalController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 's.id_sucursal', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 's.id_sucursal', 'field' => 'id_sucursal', 'first' => 'desc'],
             'descripcion' => ['label' => 'Descripcion', 'sort' => 's.descripcion'],
             'direccion' => ['label' => 'Direccion', 'sort' => 's.direccion'],
             'telefono' => ['label' => 'Telefono', 'sort' => 's.telefono'],
-            'ciudad' => ['label' => 'Ciudad', 'sort' => 'c.descripcion'],
+            'ciudad' => ['label' => 'Ciudad', 'sort' => 'c.descripcion', 'field' => 'ciudades'],
             'empresa' => ['label' => 'Empresa', 'sort' => 'COALESCE(e.nombre_comercial, e.razon_social)'],
-            'estado' => ['label' => 'Estado', 'sort' => 's.estado'],
-            'acciones' => ['label' => 'Accion', 'width' => '140px'],
+            // The flag itself would land in the file as 1 or an empty cell, so
+            // the query resolves it into the same words the grid shows.
+            'estado' => ['label' => 'Estado', 'sort' => 's.estado', 'field' => 'estado_texto'],
+            'acciones' => ['label' => 'Accion', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
+       // The listing query without its page window, shared by the page and the
+       // export so both read the same rows under the same filters.
+       $base = 'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa,
+                    CASE WHEN s.estado::boolean THEN \'Activo\' ELSE \'Inactivo\' END as estado_texto
+                FROM sucursales s
+                JOIN ciudades c ON s.id_ciudad = c.id_ciudad
+                LEFT JOIN empresas e ON s.id_empresa = e.id_empresa';
+       $params = [];
+
        if ($searchConfig) {
            if ($searchConfig['mode'] === 'id') {
                // Búsqueda exacta por ID
-               $sucursales = DB::select(
-                   'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
-                    FROM sucursales s
-                    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
-                    LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
+               $seleccion = $base . '
                     WHERE s.id_sucursal = ?
-                    ORDER BY ' . $sort->orderBy(),
-                   [(int)$searchConfig['term']]
-               );
+                    ORDER BY ' . $sort->orderBy();
+               $params = [(int)$searchConfig['term']];
            } else {
                // Búsqueda múltiple en todos los campos
                $buscarTerm = $searchConfig['term'];
-               $sucursales = DB::select(
-                   'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
-                    FROM sucursales s
-                    JOIN ciudades c ON s.id_ciudad = c.id_ciudad
-                    LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
+               $seleccion = $base . '
                     WHERE s.descripcion ILIKE ?
                     OR s.direccion ILIKE ?
                     OR s.telefono ILIKE ?
                     OR c.descripcion ILIKE ?
                     OR COALESCE(e.nombre_comercial, e.razon_social) ILIKE ?
                     OR cast(s.id_sucursal as text) ILIKE ?
-                    ORDER BY ' . $sort->orderBy(),
-                   ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-               );
+                    ORDER BY ' . $sort->orderBy();
+               $params = ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%'];
            }
        } else {
-           $sucursales = DB::select(
-               'SELECT s.*, c.descripcion as ciudades, COALESCE(e.nombre_comercial, e.razon_social) as empresa
-                FROM sucursales s
-                JOIN ciudades c ON s.id_ciudad = c.id_ciudad
-                LEFT JOIN empresas e ON s.id_empresa = e.id_empresa
-                ORDER BY ' . $sort->orderBy()
-           );
+           $seleccion = $base . '
+                ORDER BY ' . $sort->orderBy();
        }
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'sucursales');
+        }
+
+        $sucursales = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

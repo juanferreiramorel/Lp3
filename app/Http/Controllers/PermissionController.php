@@ -31,38 +31,48 @@ class PermissionController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
             'id' => ['label' => '#', 'sort' => 'id', 'first' => 'desc'],
             'name' => ['label' => 'Permisos', 'sort' => 'name'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
+        // The listing query without its page window, so the export and the
+        // page both read the same rows under the same filters.
+        $params = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
-                $permisos = DB::select(
-                    'SELECT * FROM permissions WHERE id = ? ORDER BY ' . $sort->orderBy(),
-                    [(int)$searchConfig['term']]
-                );
+                $seleccion = 'SELECT * FROM permissions WHERE id = ? ORDER BY ' . $sort->orderBy();
+                $params = [(int)$searchConfig['term']];
             } else {
                 $buscarTerm = $searchConfig['term'];
-                $permisos = DB::select(
-                    'SELECT * FROM permissions
+                $seleccion = 'SELECT * FROM permissions
                     WHERE CAST(id AS TEXT) ILIKE ?
                     OR name ILIKE ?
                     OR guard_name ILIKE ?
-                    ORDER BY ' . $sort->orderBy(),
-                    [
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%'
-                    ]
-                );
+                    ORDER BY ' . $sort->orderBy();
+                $params = [
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%'
+                ];
             }
         } else {
-            $permisos = DB::select('SELECT * FROM permissions ORDER BY ' . $sort->orderBy());
+            $seleccion = 'SELECT * FROM permissions ORDER BY ' . $sort->orderBy();
         }
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'permisos');
+        }
+
+        $permisos = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

@@ -33,39 +33,48 @@ class RoleController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
             'id' => ['label' => '#', 'sort' => 'id', 'first' => 'desc'],
             'name' => ['label' => 'Name', 'sort' => 'name'],
             'guard_name' => ['label' => 'Guard Name', 'sort' => 'guard_name'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
+        // The WHERE clause is built apart from the SELECT so the listing and
+        // the export can share one statement.
+        $sql_busqueda = '';
+        $params = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
-                $roles = DB::select(
-                    "SELECT * FROM roles WHERE id = ? ORDER BY {$sort->orderBy()}",
-                    [(int)$searchConfig['term']]
-                );
+                $sql_busqueda = 'WHERE id = ?';
+                $params = [(int)$searchConfig['term']];
             } else {
                 $buscarTerm = $searchConfig['term'];
-                $roles = DB::select(
-                    "SELECT * FROM roles
-                    WHERE CAST(id AS TEXT) ILIKE ?
+                $sql_busqueda = 'WHERE CAST(id AS TEXT) ILIKE ?
                     OR name ILIKE ?
-                    OR guard_name ILIKE ?
-                    ORDER BY {$sort->orderBy()}",
-                    [
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%'
-                    ]
-                );
+                    OR guard_name ILIKE ?';
+                $params = [
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%'
+                ];
             }
-        } else {
-            $roles = DB::select("SELECT * FROM roles ORDER BY {$sort->orderBy()}");
         }
+
+        $seleccion = "SELECT * FROM roles {$sql_busqueda} ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'roles');
+        }
+
+        $roles = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

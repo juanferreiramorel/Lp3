@@ -29,6 +29,12 @@
     'empty' => 'No hay registros para mostrar.',
     'emptyHint' => null,
     'tableClass' => 'table table-hover',
+    // Set to false for a listing whose controller has no export hook yet.
+    'exportable' => true,
+    // Classes for the scrolling wrapper around the table only. A listing that
+    // swaps to cards on a phone passes "d-none d-md-block" here instead of
+    // wrapping the whole component, which would hide the export toolbar too.
+    'wrapperClass' => '',
 ])
 
 @php
@@ -43,9 +49,121 @@
     $baseQuery = collect(request()->query())->except(['sort', 'dir', 'page'])->all();
 
     $isEmpty = $paginator !== null && count($paginator) === 0;
+
+    // Columns worth offering in an export: the actions column has no value to
+    // carry, and anything marked export => false opts out.
+    $exportColumns = collect($columns)
+        ->filter(fn ($c, $k) => ($c['export'] ?? true) !== false && !empty($c['label']) && !empty($c['field'] ?? $k))
+        ->all();
+
+    $showExport = $exportable && !empty($exportColumns) && !$isEmpty;
 @endphp
 
-<div class="table-responsive">
+@if ($showExport)
+    {{-- The export carries whatever filter and order the user is looking at,
+         so what comes out of the file matches what is on the screen. --}}
+    <div class="data-table-toolbar">
+        @if ($paginator !== null && method_exists($paginator, 'total'))
+            {{-- The strip held one lonely button. Saying how many rows the file
+                 will carry gives it a reason to be there. --}}
+            <span class="data-table-count">
+                {{ number_format($paginator->total(), 0, ',', '.') }}
+                {{ $paginator->total() === 1 ? 'registro' : 'registros' }}
+            </span>
+        @else
+            <span></span>
+        @endif
+
+        <div class="dropdown">
+            <button class="btn btn-export d-inline-flex align-items-center" type="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-file-download mr-2" aria-hidden="true"></i>
+                <span>Exportar</span>
+                <i class="fas fa-caret-down ml-2" aria-hidden="true"></i>
+            </button>
+
+            <div class="dropdown-menu dropdown-menu-right export-menu" data-export-base="{{ request()->url() }}">
+                <div class="export-menu__head">
+                    <strong>Columnas a exportar</strong>
+                    <button type="button" class="btn btn-link p-0 export-toggle-all">Marcar todas</button>
+                </div>
+
+                <div class="export-menu__cols">
+                    @foreach ($exportColumns as $key => $column)
+                        <label class="export-col">
+                            <input type="checkbox" class="export-col-check" value="{{ $key }}" checked>
+                            <span>{{ $column['label'] }}</span>
+                        </label>
+                    @endforeach
+                </div>
+
+                <p class="export-menu__note">
+                    Se exporta el listado completo con los filtros y el orden actuales,
+                    no sólo esta página.
+                </p>
+
+                <div class="export-menu__actions">
+                    <button type="button" class="btn btn-default export-go" data-format="xlsx">
+                        <i class="fas fa-file-excel mr-1" aria-hidden="true"></i> Excel
+                    </button>
+                    <button type="button" class="btn btn-default export-go" data-format="pdf">
+                        <i class="fas fa-file-pdf mr-1" aria-hidden="true"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @once
+        @push('scripts')
+        <script>
+            // These listeners run in the CAPTURE phase on purpose.
+            //
+            // layouts/app.blade.php binds `$('.dropdown-menu').on('click', e =>
+            // e.stopPropagation())` directly on every dropdown, to keep the user
+            // menu open while it is clicked. That handler sits on an ancestor of
+            // these buttons, so it kills every delegated handler inside any
+            // dropdown in the app — the clicks never reached document at all.
+            // Capturing happens on the way down, before that stop can run, and
+            // it keeps working after the table is swapped by AJAX.
+            document.addEventListener('click', function (e) {
+                const alternar = e.target.closest('.export-toggle-all');
+                if (alternar) {
+                    const menu = alternar.closest('.export-menu');
+                    const casillas = menu.querySelectorAll('.export-col-check');
+                    const marcadas = menu.querySelectorAll('.export-col-check:checked').length;
+                    const marcarTodas = marcadas !== casillas.length;
+                    casillas.forEach(c => { c.checked = marcarTodas; });
+                    alternar.textContent = marcarTodas ? 'Desmarcar todas' : 'Marcar todas';
+                    return;
+                }
+
+                const boton = e.target.closest('.export-go');
+                if (!boton) return;
+
+                const menu = boton.closest('.export-menu');
+                const cols = [...menu.querySelectorAll('.export-col-check:checked')].map(c => c.value);
+
+                if (cols.length === 0) {
+                    alert('Elegí al menos una columna para exportar.');
+                    return;
+                }
+
+                // Start from the current query so the file matches the screen,
+                // minus the page number: an export is not paged.
+                const params = new URLSearchParams(window.location.search);
+                params.delete('page');
+                params.set('export', boton.dataset.format);
+                params.set('cols', cols.join(','));
+
+                window.location.href = menu.dataset.exportBase + '?' + params.toString();
+            }, true);
+        </script>
+        @endpush
+    @endonce
+@endif
+
+<div class="table-responsive {{ $wrapperClass }}">
     <table {{ $attributes->merge(['class' => $tableClass]) }}>
         <thead>
             <tr>

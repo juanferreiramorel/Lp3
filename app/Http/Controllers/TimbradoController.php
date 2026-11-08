@@ -52,22 +52,33 @@ class TimbradoController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the model holds the value and 'format'
+        // how to print it; both are only read by the export. The two columns
+        // that print a pair of values (Vigencia: start and end date, Rango:
+        // first and last number) have no single field, so they stay out.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'timbrados.id_timbrado', 'first' => 'desc'],
-            'empresa' => ['label' => 'Empresa', 'sort' => '(SELECT e.razon_social FROM empresas e WHERE e.id_empresa = timbrados.id_empresa)', 'tiebreaker' => 'timbrados.id_timbrado'],
-            'tipo' => ['label' => 'Tipo', 'sort' => '(SELECT tt.descripcion FROM tipos_timbrados tt WHERE tt.id_tipo_timbrado = timbrados.id_tipo_timbrado)', 'tiebreaker' => 'timbrados.id_timbrado'],
-            'numero' => ['label' => 'Nro. Timbrado', 'sort' => 'timbrados.numero_timbrado', 'tiebreaker' => 'timbrados.id_timbrado'],
-            'vigencia' => ['label' => 'Vigencia', 'sort' => 'timbrados.fecha_vencimiento', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
-            'rango' => ['label' => 'Rango', 'sort' => 'timbrados.rango_inicio', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
-            'disponibles' => ['label' => 'Disponibles', 'sort' => '(timbrados.rango_fin - (timbrados.rango_inicio + timbrados.numero_actual) + 1)', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'timbrados.id_timbrado', 'field' => 'id_timbrado', 'first' => 'desc'],
+            'empresa' => ['label' => 'Empresa', 'sort' => '(SELECT e.razon_social FROM empresas e WHERE e.id_empresa = timbrados.id_empresa)', 'field' => 'empresa_nombre', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'tipo' => ['label' => 'Tipo', 'sort' => '(SELECT tt.descripcion FROM tipos_timbrados tt WHERE tt.id_tipo_timbrado = timbrados.id_tipo_timbrado)', 'field' => 'tipo_descripcion', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'numero' => ['label' => 'Nro. Timbrado', 'sort' => 'timbrados.numero_timbrado', 'field' => 'numero_timbrado', 'tiebreaker' => 'timbrados.id_timbrado'],
+            'vigencia' => ['label' => 'Vigencia', 'sort' => 'timbrados.fecha_vencimiento', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc', 'export' => false],
+            'rango' => ['label' => 'Rango', 'sort' => 'timbrados.rango_inicio', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc', 'export' => false],
+            'disponibles' => ['label' => 'Disponibles', 'sort' => '(timbrados.rango_fin - (timbrados.rango_inicio + timbrados.numero_actual) + 1)', 'field' => 'facturas_disponibles', 'format' => 'number', 'tiebreaker' => 'timbrados.id_timbrado', 'first' => 'desc'],
             'estado' => ['label' => 'Estado', 'sort' => 'timbrados.estado', 'tiebreaker' => 'timbrados.id_timbrado'],
-            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'vigencia', 'desc', $request);
 
-        $timbrados = $query->orderByRaw($sort->orderBy())
-                          ->paginate(15);
+        $query->orderByRaw($sort->orderBy());
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => $query->get(), 'timbrados');
+        }
+
+        $timbrados = $query->paginate(15);
 
         // Actualizar estados automáticamente
         foreach ($timbrados as $timbrado) {

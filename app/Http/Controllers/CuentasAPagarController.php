@@ -97,24 +97,27 @@ class CuentasAPagarController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which alias of the aggregate query holds the value and
+        // 'format' how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'field' => 'id_compra', 'first' => 'desc'],
             'factura' => ['label' => 'N° de Factura', 'sort' => 'c.factura', 'tiebreaker' => 'c.id_compra'],
             'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion', 'tiebreaker' => 'c.id_compra'],
-            'fecha_compra' => ['label' => 'Fecha de Compra', 'sort' => 'c.fecha_compra', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'monto_total' => ['label' => 'Monto Total', 'sort' => 'c.total', 'align' => 'right', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'total_cuotas' => ['label' => 'Total Cuotas', 'sort' => 'COUNT(ca.id_cta)', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'cuotas_pendientes' => ['label' => 'Cuotas Pendientes', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'cuotas_vencidas' => ['label' => 'Cuotas Vencidas', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'cuotas_pagadas' => ['label' => 'Cuotas Pagadas', 'sort' => "SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END)", 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'vencimientos' => ['label' => 'Rango Vencimientos', 'sort' => 'MIN(ca.vencimiento)', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'fecha_compra' => ['label' => 'Fecha de Compra', 'sort' => 'c.fecha_compra', 'format' => 'date', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'monto_total' => ['label' => 'Monto Total', 'sort' => 'c.total', 'format' => 'money', 'align' => 'right', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'total_cuotas' => ['label' => 'Total Cuotas', 'sort' => 'COUNT(ca.id_cta)', 'format' => 'number', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_pendientes' => ['label' => 'Cuotas Pendientes', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' THEN 1 ELSE 0 END)", 'format' => 'number', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_vencidas' => ['label' => 'Cuotas Vencidas', 'sort' => "SUM(CASE WHEN ca.estado = 'PENDIENTE' AND ca.vencimiento < CURRENT_DATE THEN 1 ELSE 0 END)", 'field' => 'cuotas_vencidas_count', 'format' => 'number', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'cuotas_pagadas' => ['label' => 'Cuotas Pagadas', 'sort' => "SUM(CASE WHEN ca.estado = 'PAGADO' THEN 1 ELSE 0 END)", 'format' => 'number', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            // Two dates in one cell (first and last due date); no single field
+            // stands for it, so it stays out of the export.
+            'vencimientos' => ['label' => 'Rango Vencimientos', 'sort' => 'MIN(ca.vencimiento)', 'tiebreaker' => 'c.id_compra', 'first' => 'desc', 'export' => false],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha_compra', 'desc', $request);
 
-        $cuentasapagar = DB::select(
-            "SELECT
+        $seleccion = "SELECT
                 c.id_compra,
                 c.factura,
                 p.descripcion AS proveedor,
@@ -131,8 +134,15 @@ class CuentasAPagarController extends AppBaseController
             JOIN cuentas_a_pagar ca USING(id_compra)
             {$sql_busqueda} {$sql_filtros}
             GROUP BY c.id_compra, c.factura, proveedor, c.fecha_compra, c.total
-            ORDER BY {$sort->orderBy()}"
-        );
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'cuentas_a_pagar');
+        }
+
+        $cuentasapagar = DB::select($seleccion);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

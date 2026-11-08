@@ -127,32 +127,40 @@ class VentaController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'v.id_venta', 'first' => 'desc'],
-            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci'],
+            'id' => ['label' => '#', 'sort' => 'v.id_venta', 'field' => 'id_venta', 'first' => 'desc'],
+            'ci' => ['label' => 'Ci/Ruc', 'sort' => 'c.clie_ci', 'field' => 'clie_ci'],
             'cliente' => ['label' => 'Cliente', 'sort' => "concat(c.clie_nombre,' ', c.clie_apellido)"],
-            'fecha' => ['label' => 'Fecha Venta', 'sort' => 'v.fecha_venta', 'tiebreaker' => 'v.id_venta', 'first' => 'desc'],
-            'factura' => ['label' => 'Factura Nro', 'sort' => 'v.factura_nro'],
-            'condicion' => ['label' => 'Condición Venta', 'sort' => 'v.condicion_venta'],
+            'fecha' => ['label' => 'Fecha Venta', 'sort' => 'v.fecha_venta', 'field' => 'fecha_venta', 'format' => 'date', 'tiebreaker' => 'v.id_venta', 'first' => 'desc'],
+            'factura' => ['label' => 'Factura Nro', 'sort' => 'v.factura_nro', 'field' => 'factura_nro'],
+            'condicion' => ['label' => 'Condición Venta', 'sort' => 'v.condicion_venta', 'field' => 'condicion_venta'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
-            'total' => ['label' => 'Total', 'sort' => 'v.total', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'v.total', 'format' => 'money', 'first' => 'desc'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'users.name'],
             'estado' => ['label' => 'Estado', 'sort' => 'v.estado'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
 
-        $ventas = DB::select(
-            "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
+        $seleccion = "SELECT v.*, concat(c.clie_nombre,' ', c.clie_apellido) as cliente, c.clie_ci,
             users.name as usuario, s.descripcion as sucursal
             FROM ventas v
                 JOIN clientes c ON v.id_cliente = c.id_cliente
                 JOIN users ON v.user_id = users.id
                 JOIN sucursales s ON v.id_sucursal = s.id_sucursal
             {$sql_busqueda} {$sql_filtros} {$sqlSucursales}
-            ORDER BY {$sort->orderBy()}"
-        );
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'ventas');
+        }
+
+        $ventas = DB::select($seleccion);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

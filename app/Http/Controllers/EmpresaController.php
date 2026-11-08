@@ -54,24 +54,32 @@ class EmpresaController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value; it is only
+        // read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'e.id_empresa', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'e.id_empresa', 'field' => 'id_empresa', 'first' => 'desc'],
             'razon_social' => ['label' => 'Razón Social', 'sort' => 'e.razon_social', 'tiebreaker' => 'e.id_empresa'],
             'nombre_comercial' => ['label' => 'Nombre Comercial', 'sort' => 'e.nombre_comercial', 'tiebreaker' => 'e.id_empresa'],
             'ruc' => ['label' => 'RUC', 'sort' => 'e.ruc', 'tiebreaker' => 'e.id_empresa'],
             'telefono' => ['label' => 'Teléfono', 'sort' => 'e.telefono', 'tiebreaker' => 'e.id_empresa'],
             'email' => ['label' => 'Email', 'sort' => 'e.email', 'tiebreaker' => 'e.id_empresa'],
-            'estado' => ['label' => 'Estado', 'sort' => 'e.estado', 'tiebreaker' => 'e.id_empresa'],
-            'acciones' => ['label' => 'Acción', 'width' => '140px'],
+            'estado' => ['label' => 'Estado', 'sort' => 'e.estado', 'format' => 'estado', 'tiebreaker' => 'e.id_empresa'],
+            'acciones' => ['label' => 'Acción', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $empresas = DB::select(
-            "SELECT e.* FROM empresas e
+        $seleccion = "SELECT e.* FROM empresas e
             {$sql_busqueda}
-            ORDER BY {$sort->orderBy()}"
-        );
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'empresas');
+        }
+
+        $empresas = DB::select($seleccion);
 
         if ($request->ajax()) {
             return view('empresas.table')

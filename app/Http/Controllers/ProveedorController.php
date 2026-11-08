@@ -30,43 +30,53 @@ class ProveedorController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_proveedor', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'id_proveedor', 'field' => 'id_proveedor', 'first' => 'desc'],
             'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
             'ruc' => ['label' => 'RUC', 'sort' => 'ruc'],
             'direccion' => ['label' => 'Direccion', 'sort' => 'direccion'],
             'telefono' => ['label' => 'Telefono', 'sort' => 'telefono'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
+        // The listing query without its page window, so the export and the
+        // page both read the same rows under the same filters.
+        $params = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $proveedores = DB::select(
-                    'SELECT * FROM proveedores
+                $seleccion = 'SELECT * FROM proveedores
                     WHERE id_proveedor = ?
-                    ORDER BY ' . $sort->orderBy(),
-                    [(int)$searchConfig['term']]
-                );
+                    ORDER BY ' . $sort->orderBy();
+                $params = [(int)$searchConfig['term']];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
-                $proveedores = DB::select(
-                    'SELECT * FROM proveedores
+                $seleccion = 'SELECT * FROM proveedores
                     WHERE descripcion ILIKE ?
                     OR direccion ILIKE ?
                     OR telefono ILIKE ?
                     OR ruc ILIKE ?
                     OR cast(id_proveedor as text) ILIKE ?
-                    ORDER BY ' . $sort->orderBy(),
-                    ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%']
-                );
+                    ORDER BY ' . $sort->orderBy();
+                $params = ['%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%', '%' . $buscarTerm . '%'];
             }
         } else {
-            $proveedores = DB::select('SELECT * FROM proveedores ORDER BY ' . $sort->orderBy());
+            $seleccion = 'SELECT * FROM proveedores ORDER BY ' . $sort->orderBy();
         }
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'proveedores');
+        }
+
+        $proveedores = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

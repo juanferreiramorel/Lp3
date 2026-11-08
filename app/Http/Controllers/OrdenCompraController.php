@@ -122,18 +122,34 @@ class OrdenCompraController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => 'N° OC', 'sort' => 'oc.id_orden_compra', 'first' => 'desc'],
+            'id' => ['label' => 'N° OC', 'sort' => 'oc.id_orden_compra', 'field' => 'id_orden_compra', 'first' => 'desc'],
             'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion'],
-            'fecha' => ['label' => 'Fecha Orden', 'sort' => 'oc.fecha_orden', 'tiebreaker' => 'oc.id_orden_compra', 'first' => 'desc'],
-            'total' => ['label' => 'Total', 'sort' => 'oc.total', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha Orden', 'sort' => 'oc.fecha_orden', 'field' => 'fecha_orden', 'format' => 'date', 'tiebreaker' => 'oc.id_orden_compra', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'oc.total', 'format' => 'money', 'first' => 'desc'],
             'estado' => ['label' => 'Estado', 'sort' => 'oc.estado'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $seleccion = "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
+                         oc.observaciones,
+                         p.descripcion as proveedor,
+                         u.name as usuario,
+                         s.descripcion as sucursal
+                  {$queryBase} {$where}
+                  ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'ordenes_compra');
+        }
 
         // Contar total de registros
         $totalQuery = "SELECT COUNT(*) as total {$queryBase} {$where}";
@@ -141,16 +157,7 @@ class OrdenCompraController extends AppBaseController
         $total = $totalResult[0]->total;
 
         // Obtener registros paginados
-        $query = "SELECT oc.id_orden_compra, oc.fecha_orden, oc.total, oc.estado,
-                         oc.observaciones,
-                         p.descripcion as proveedor,
-                         u.name as usuario,
-                         s.descripcion as sucursal
-                  {$queryBase} {$where}
-                  ORDER BY {$sort->orderBy()}
-                  LIMIT {$porPagina} OFFSET {$offset}";
-
-        $ordenesCompra = DB::select($query, $params);
+        $ordenesCompra = DB::select($seleccion . " LIMIT {$porPagina} OFFSET {$offset}", $params);
 
         // Calcular paginación
         $totalPages = ceil($total / $porPagina);

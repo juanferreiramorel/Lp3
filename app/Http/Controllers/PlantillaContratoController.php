@@ -40,58 +40,65 @@ class PlantillaContratoController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'pc.id_plantilla_contrato', 'first' => 'desc'],
-            'nombre' => ['label' => 'Nombre Plantilla', 'sort' => 'pc.nombre_plantilla', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'id' => ['label' => '#', 'sort' => 'pc.id_plantilla_contrato', 'field' => 'id_plantilla_contrato', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre Plantilla', 'sort' => 'pc.nombre_plantilla', 'field' => 'nombre_plantilla', 'tiebreaker' => 'pc.id_plantilla_contrato'],
             'descripcion' => ['label' => 'Descripción', 'sort' => 'pc.descripcion', 'tiebreaker' => 'pc.id_plantilla_contrato'],
-            'estado' => ['label' => 'Estado', 'sort' => 'pc.activo', 'tiebreaker' => 'pc.id_plantilla_contrato'],
-            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'tiebreaker' => 'pc.id_plantilla_contrato'],
-            'fecha_modificacion' => ['label' => 'Última Modificación', 'sort' => 'pc.fecha_modificacion', 'tiebreaker' => 'pc.id_plantilla_contrato', 'first' => 'desc'],
-            'acciones' => ['label' => 'Acción', 'width' => '180px'],
+            'estado' => ['label' => 'Estado', 'sort' => 'pc.activo', 'field' => 'activo', 'format' => 'estado', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'field' => 'usuario_nombre', 'tiebreaker' => 'pc.id_plantilla_contrato'],
+            'fecha_modificacion' => ['label' => 'Última Modificación', 'sort' => 'pc.fecha_modificacion', 'format' => 'datetime', 'tiebreaker' => 'pc.id_plantilla_contrato', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acción', 'width' => '180px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha_modificacion', 'desc', $request);
 
+        // One query, three possible WHERE clauses: the search mode only decides
+        // the filter and its bindings, so the export can reuse all of it.
+        $seleccion = 'SELECT pc.*, u.name as usuario_nombre
+            FROM plantillas_contratos pc
+            LEFT JOIN users u ON u.id = pc.user_id';
+        $parametros = [];
+
         if ($searchConfig) {
             if ($searchConfig['mode'] === 'id') {
                 // Búsqueda exacta por ID
-                $plantillas = DB::select(
-                    'SELECT pc.*, u.name as usuario_nombre
-                    FROM plantillas_contratos pc
-                    LEFT JOIN users u ON u.id = pc.user_id
-                    WHERE pc.id_plantilla_contrato = ?
-                    ORDER BY ' . $sort->orderBy(),
-                    [(int)$searchConfig['term']]
-                );
+                $seleccion .= '
+                    WHERE pc.id_plantilla_contrato = ?';
+                $parametros = [(int)$searchConfig['term']];
             } else {
                 // Búsqueda múltiple en todos los campos
                 $buscarTerm = $searchConfig['term'];
-                $plantillas = DB::select(
-                    'SELECT pc.*, u.name as usuario_nombre
-                    FROM plantillas_contratos pc
-                    LEFT JOIN users u ON u.id = pc.user_id
+                $seleccion .= '
                     WHERE pc.nombre_plantilla ILIKE ?
                     OR pc.descripcion ILIKE ?
                     OR pc.contenido_plantilla ILIKE ?
                     OR u.name ILIKE ?
-                    OR cast(pc.id_plantilla_contrato as text) ILIKE ?
-                    ORDER BY ' . $sort->orderBy(),
-                    [
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%',
-                        '%' . $buscarTerm . '%'
-                    ]
-                );
+                    OR cast(pc.id_plantilla_contrato as text) ILIKE ?';
+                $parametros = [
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%',
+                    '%' . $buscarTerm . '%'
+                ];
             }
-        } else {
-            $plantillas = DB::select('
-                SELECT pc.*, u.name as usuario_nombre
-                FROM plantillas_contratos pc
-                LEFT JOIN users u ON u.id = pc.user_id
-                ORDER BY ' . $sort->orderBy());
         }
+
+        $seleccion .= '
+            ORDER BY ' . $sort->orderBy();
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current search matches, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(
+                fn () => DB::select($seleccion, $parametros),
+                'plantillas_contratos'
+            );
+        }
+
+        $plantillas = DB::select($seleccion, $parametros);
 
         // Paginación manual
         $page = $request->input('page', 1);

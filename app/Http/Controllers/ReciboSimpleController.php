@@ -104,19 +104,42 @@ class ReciboSimpleController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'r.id_recibo', 'first' => 'desc'],
-            'fecha' => ['label' => 'Fecha', 'sort' => 'r.fecha_recibo', 'tiebreaker' => 'r.id_recibo', 'first' => 'desc'],
-            'ci' => ['label' => 'CI/RUC', 'sort' => 'c.clie_ci'],
+            'id' => ['label' => '#', 'sort' => 'r.id_recibo', 'field' => 'id_recibo', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 'r.fecha_recibo', 'field' => 'fecha_recibo', 'format' => 'date', 'tiebreaker' => 'r.id_recibo', 'first' => 'desc'],
+            'ci' => ['label' => 'CI/RUC', 'sort' => 'c.clie_ci', 'field' => 'clie_ci'],
             'cliente' => ['label' => 'Cliente', 'sort' => "CONCAT(c.clie_nombre, ' ', c.clie_apellido)"],
-            'total' => ['label' => 'Total', 'sort' => 'r.total', 'align' => 'right', 'first' => 'desc'],
+            'total' => ['label' => 'Total', 'sort' => 'r.total', 'format' => 'money', 'align' => 'right', 'first' => 'desc'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'users.name'],
             'estado' => ['label' => 'Estado', 'sort' => 'r.estado'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
+
+        $seleccion = "SELECT r.id_recibo,
+                r.fecha_recibo,
+                CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente,
+                c.clie_ci,
+                r.total,
+                r.estado,
+                users.name as usuario,
+                s.descripcion as sucursal
+            FROM recibos_simples r
+                JOIN clientes c ON r.id_cliente = c.id_cliente
+                JOIN users ON r.user_id = users.id
+                JOIN sucursales s ON r.id_sucursal = s.id_sucursal
+            {$sql_busqueda}
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'recibos');
+        }
 
         $perPage = 20;
         $page = $request->get('page', 1);
@@ -132,21 +155,7 @@ class ReciboSimpleController extends AppBaseController
 
         // Consulta principal con paginación
         $recibos = DB::select(
-            "SELECT r.id_recibo,
-                r.fecha_recibo,
-                CONCAT(c.clie_nombre, ' ', c.clie_apellido) as cliente,
-                c.clie_ci,
-                r.total,
-                r.estado,
-                users.name as usuario,
-                s.descripcion as sucursal
-            FROM recibos_simples r
-                JOIN clientes c ON r.id_cliente = c.id_cliente
-                JOIN users ON r.user_id = users.id
-                JOIN sucursales s ON r.id_sucursal = s.id_sucursal
-            {$sql_busqueda}
-            ORDER BY {$sort->orderBy()}
-            LIMIT {$perPage} OFFSET " . ($page - 1) * $perPage
+            $seleccion . " LIMIT {$perPage} OFFSET " . ($page - 1) * $perPage
         );
 
         // Crear el paginador

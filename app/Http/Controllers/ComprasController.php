@@ -118,22 +118,23 @@ class ComprasController extends AppBaseController
 
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'first' => 'desc'],
-            'fecha' => ['label' => 'Fecha', 'sort' => 'c.fecha_compra', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
-            'condicion' => ['label' => 'Condicion', 'sort' => 'c.condicion_compra'],
+            'id' => ['label' => '#', 'sort' => 'c.id_compra', 'field' => 'id_compra', 'first' => 'desc'],
+            'fecha' => ['label' => 'Fecha', 'sort' => 'c.fecha_compra', 'field' => 'fecha_compra', 'format' => 'date', 'tiebreaker' => 'c.id_compra', 'first' => 'desc'],
+            'condicion' => ['label' => 'Condicion', 'sort' => 'c.condicion_compra', 'field' => 'condicion_compra'],
             'factura' => ['label' => 'Factura', 'sort' => 'c.factura'],
             'proveedor' => ['label' => 'Proveedor', 'sort' => 'p.descripcion'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'u.name'],
             'estado' => ['label' => 'Estado', 'sort' => 'c.estado'],
-            'total' => ['label' => 'Total', 'sort' => 'c.total', 'align' => 'right', 'first' => 'desc'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'total' => ['label' => 'Total', 'sort' => 'c.total', 'format' => 'money', 'align' => 'right', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha', 'desc', $request);
 
-        $compras = DB::select(
-            "SELECT c.*,
+        $seleccion = "SELECT c.*,
                     p.descripcion AS proveedor,
                     u.name        AS usuario,
                     s.descripcion AS sucursal
@@ -142,8 +143,15 @@ class ComprasController extends AppBaseController
           LEFT JOIN users u       ON c.user_id = u.id
           LEFT JOIN sucursales s  ON c.id_sucursal = s.id_sucursal
                {$sql_busqueda} {$sql_filtros} {$sqlSucursalesPermitidas}
-               ORDER BY {$sort->orderBy()}"
-        );
+               ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'compras');
+        }
+
+        $compras = DB::select($seleccion);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

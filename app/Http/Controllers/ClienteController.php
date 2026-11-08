@@ -35,8 +35,10 @@ class ClienteController extends AppBaseController
         // Procesar modo de búsqueda
         $searchConfig = $this->parseSearchMode($buscar, $searchMode);
 
-        // Construir la query base con subconsulta para columna calculada estado
-        $query = 'SELECT * FROM (
+        // Construir la query base con subconsulta para columna calculada estado.
+        // El CONCAT del nombre completo se expone como alias porque la tabla lo
+        // arma en la vista y el export necesita leerlo de una sola propiedad.
+        $query = 'SELECT *, CONCAT(clie_nombre, \' \', clie_apellido) AS cliente FROM (
             SELECT c.*, ciu.descripcion as ciudad,
             d.descripcion as departamento,
             CASE WHEN c.activo = true THEN \'Activo\' ELSE \'Inactivo\' END as estado
@@ -85,24 +87,32 @@ class ClienteController extends AppBaseController
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
         // The outer SELECT flattens the subquery, so the expressions carry no alias.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_cliente', 'first' => 'desc'],
-            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => "CONCAT(clie_nombre, ' ', clie_apellido)"],
-            'ci' => ['label' => 'Nro. C.I', 'sort' => 'clie_ci'],
-            'telefono' => ['label' => 'Telefono', 'sort' => 'clie_telefono'],
+            'id' => ['label' => '#', 'sort' => 'id_cliente', 'field' => 'id_cliente', 'first' => 'desc'],
+            'nombre' => ['label' => 'Nombre y Apellido', 'sort' => "CONCAT(clie_nombre, ' ', clie_apellido)", 'field' => 'cliente'],
+            'ci' => ['label' => 'Nro. C.I', 'sort' => 'clie_ci', 'field' => 'clie_ci'],
+            'telefono' => ['label' => 'Telefono', 'sort' => 'clie_telefono', 'field' => 'clie_telefono'],
             'ciudad' => ['label' => 'Ciudad', 'sort' => 'ciudad'],
-            'fecha_nac' => ['label' => 'Fecha de Nacimiento', 'sort' => 'clie_fecha_nac', 'tiebreaker' => 'id_cliente', 'first' => 'desc'],
+            'fecha_nac' => ['label' => 'Fecha de Nacimiento', 'sort' => 'clie_fecha_nac', 'field' => 'clie_fecha_nac', 'format' => 'date', 'tiebreaker' => 'id_cliente', 'first' => 'desc'],
             'departamento' => ['label' => 'Departamento', 'sort' => 'departamento'],
             'estado' => ['label' => 'Estado', 'sort' => 'estado'],
-            'acciones' => ['label' => 'Accion', 'width' => '140px'],
+            'acciones' => ['label' => 'Accion', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query .= " ORDER BY {$sort->orderBy()}";
+        $seleccion = $query . " ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'clientes');
+        }
 
         // Ejecutar la consulta
-        $clientes = DB::select($query, $params);
+        $clientes = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

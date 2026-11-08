@@ -63,19 +63,27 @@ class MarcaController extends AppBaseController
         // A column without 'sort' simply is not sortable.
         // 'estado' is the computed label the subquery exposes, so the header
         // sorts by the same text the cell shows.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => '#', 'sort' => 'id_marca', 'first' => 'desc'],
+            'id' => ['label' => '#', 'sort' => 'id_marca', 'field' => 'id_marca', 'first' => 'desc'],
             'descripcion' => ['label' => 'Descripcion', 'sort' => 'descripcion'],
             'estado' => ['label' => 'Estado', 'sort' => 'estado'],
-            'acciones' => ['label' => 'Action', 'width' => '140px'],
+            'acciones' => ['label' => 'Action', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'id', 'desc', $request);
 
-        $query .= " ORDER BY {$sort->orderBy()}";
+        $seleccion = $query . " ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion, $params), 'marcas');
+        }
 
         // Ejecutar la consulta
-        $marcas = DB::select($query, $params);
+        $marcas = DB::select($seleccion, $params);
 
         // Definimos los valores de paginación
         $page = $request->input('page', 1);   // página actual (por defecto 1)

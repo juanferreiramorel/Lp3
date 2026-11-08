@@ -72,29 +72,37 @@ class AperturaCierreCajaController extends Controller
         
         // One definition drives both the ORDER BY below and the table header.
         // A column without 'sort' simply is not sortable.
+        // 'field' says which property of the row holds the value and 'format'
+        // how to print it; both are only read by the export.
         $columns = [
-            'id' => ['label' => 'ID', 'sort' => 'ape.id_apertura', 'first' => 'desc'],
-            'fecha_apertura' => ['label' => 'Fecha Apertura', 'sort' => 'ape.fecha_apertura', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'id' => ['label' => 'ID', 'sort' => 'ape.id_apertura', 'field' => 'id_apertura', 'first' => 'desc'],
+            'fecha_apertura' => ['label' => 'Fecha Apertura', 'sort' => 'ape.fecha_apertura', 'format' => 'date', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
             'usuario' => ['label' => 'Usuario', 'sort' => 'u.name', 'tiebreaker' => 'ape.id_apertura'],
             'caja' => ['label' => 'Caja', 'sort' => 'c.descripcion', 'tiebreaker' => 'ape.id_apertura'],
             'sucursal' => ['label' => 'Sucursal', 'sort' => 's.descripcion', 'tiebreaker' => 'ape.id_apertura'],
             'estado' => ['label' => 'Estado', 'sort' => 'ape.estado', 'tiebreaker' => 'ape.id_apertura'],
-            'monto_apertura' => ['label' => 'Monto Apertura', 'sort' => 'ape.monto_apertura', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
-            'monto_cierre' => ['label' => 'Monto Cierre', 'sort' => 'ape.monto_cierre', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
-            'acciones' => ['label' => 'Acciones', 'width' => '140px'],
+            'monto_apertura' => ['label' => 'Monto Apertura', 'sort' => 'ape.monto_apertura', 'format' => 'money', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'monto_cierre' => ['label' => 'Monto Cierre', 'sort' => 'ape.monto_cierre', 'format' => 'money', 'align' => 'right', 'tiebreaker' => 'ape.id_apertura', 'first' => 'desc'],
+            'acciones' => ['label' => 'Acciones', 'width' => '140px', 'export' => false],
         ];
 
         $sort = \App\Support\TableSort::resolve($columns, 'fecha_apertura', 'desc', $request);
 
-        $aperturas = DB::select(
-            "SELECT ape.*, s.descripcion as sucursal, c.descripcion as caja, u.name as usuario
+        $seleccion = "SELECT ape.*, s.descripcion as sucursal, c.descripcion as caja, u.name as usuario
             FROM apertura_cierre_cajas ape
             JOIN cajas c ON c.id_caja = ape.id_caja
             JOIN users u ON u.id = ape.user_id
             JOIN sucursales s ON s.id_sucursal = c.id_sucursal
             {$sql_filtros}
-            ORDER BY {$sort->orderBy()}"
-        );
+            ORDER BY {$sort->orderBy()}";
+
+        // Exports run the same query without the page window, so the file
+        // carries every row the current filters match, not just this page.
+        if ($export = \App\Support\TableExport::fromRequest($request, $columns)) {
+            return $export->download(fn () => DB::select($seleccion), 'apertura_cierre_caja');
+        }
+
+        $aperturas = DB::select($seleccion);
 
         // Paginación manual
         $page = $request->input('page', 1);
