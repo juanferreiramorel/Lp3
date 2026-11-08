@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - {{ config('app.name') }}</title>
 
+    {{-- Esta pagina no extiende layouts/app, asi que trae por su cuenta el
+         icono y el manifest. Sin esto la pestana del login queda sin icono
+         mientras el resto del sistema si lo tiene. --}}
+    @include('layouts.pwa')
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 

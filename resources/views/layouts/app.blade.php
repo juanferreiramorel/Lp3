@@ -1,7 +1,6 @@
 <x-laravel-ui-adminlte::adminlte-layout>
     @push('third_party_stylesheets')
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <link rel="icon" type="image/x-icon" href="">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
