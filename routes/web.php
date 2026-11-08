@@ -65,7 +65,11 @@ Route::resource('taxes', App\Http\Controllers\TaxController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);
 Route::post('clientes/store-ajax', [App\Http\Controllers\ClienteController::class, 'storeAjax'])->name('clientes.store.ajax');
 // Consulta del padrón de la DNIT antes de crear un cliente.
-Route::get('clientes/consultar-documento', [App\Http\Controllers\ClienteController::class, 'consultarDocumento'])->name('clientes.consultar.documento');
+// El throttle acota la enumeración masiva del padrón: una persona cargando
+// clientes a mano no se acerca a ese ritmo.
+Route::get('clientes/consultar-documento', [App\Http\Controllers\ClienteController::class, 'consultarDocumento'])
+    ->middleware('throttle:30,1')
+    ->name('clientes.consultar.documento');
 Route::resource('clientes', App\Http\Controllers\ClienteController::class);
 
 // Rutas específicas para plantillas de contratos (ANTES del resource)

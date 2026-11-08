@@ -1070,6 +1070,19 @@ body.dark-mode input[type="time"]::-webkit-calendar-picker-indicator {
     overflow: hidden;
 }
 
+/* The CDN stylesheet caps the list height only for the `--default` theme, and
+   the full bootstrap4 theme sheet is not loaded, so with theme: 'bootstrap4'
+   nothing limited it and a long list ran down the whole page. Capped here, in
+   viewport units so it also fits a phone held in landscape. */
+.select2-container .select2-results > .select2-results__options,
+.select2-container--default .select2-results > .select2-results__options,
+.select2-container--bootstrap4 .select2-results > .select2-results__options {
+    max-height: min(18rem, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
 .select2-container--default .select2-results__option,
 .select2-container--bootstrap4 .select2-results__option {
     color: var(--ink-muted);
@@ -1510,6 +1523,23 @@ hr { border-top-color: var(--rule); }
     .input-group-search-modern .select2-container { width: 100% !important; }
     .input-group-search-modern { align-items: stretch; }
     .btn-buscar-modern { width: 100%; justify-content: center; }
+
+    /* On a phone the list gets more of the screen, and its rows get a
+       finger-sized target instead of a pointer-sized one. */
+    .select2-container .select2-results > .select2-results__options {
+        max-height: 55vh;
+    }
+
+    .select2-container .select2-results__option {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* The search field inside a dropdown must not trigger iOS zoom, which
+       happens below 16px and leaves the page scaled afterwards. */
+    .select2-container .select2-search--dropdown .select2-search__field {
+        font-size: 16px;
+    }
 }
 
 /* Anything that would push the page sideways is a bug, not a layout. */

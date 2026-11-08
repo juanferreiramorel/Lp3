@@ -456,10 +456,12 @@
                                 : $(document.body),
                         });
 
-                        // Select2 tags its own container with `select2`. Left
-                        // alone, the next pass would treat that container as a
-                        // select and rebuild it into an empty combo.
-                        $select.next('.select2-container').removeClass('select2');
+                        // The container keeps the `select2` class Select2 puts
+                        // on it: closing on an outside click is implemented by
+                        // looking for `.select2.select2-container--open`, so a
+                        // container without it can never be closed that way.
+                        // Nothing re-initialises it, because every selector
+                        // here and in the views is qualified with `select`.
                     });
             };
 

@@ -17,7 +17,10 @@ class ClienteController extends AppBaseController
     {
         $this->middleware('auth');
         $this->middleware('permission:clientes index')->only(['index']);
-        $this->middleware('permission:clientes create')->only(['create', 'store']);
+        // consultarDocumento reads the DNIT registry and reports whether a
+        // document already belongs to a client, so it carries the same
+        // permission as creating one: being logged in is not enough.
+        $this->middleware('permission:clientes create')->only(['create', 'store', 'consultarDocumento']);
         $this->middleware('permission:clientes edit')->only(['edit', 'update']);
         $this->middleware('permission:clientes destroy')->only(['destroy']);
     }

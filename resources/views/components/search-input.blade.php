@@ -205,13 +205,10 @@
                     width: '100%',
                 });
 
-                // Select2 tags the container it generates with the class
-                // `select2`. Any pass that selects `.select2` would then treat
-                // that container as a select and rebuild it into an empty
-                // combo. window.initSelects() skips this control by class, but
-                // the guard stays: it is what makes the combo safe no matter
-                // who runs a selector over the page next.
-                $select.next('.select2-container').removeClass('select2');
+                // The container keeps the `select2` class Select2 adds: closing
+                // on an outside click is implemented by looking for
+                // `.select2.select2-container--open`, so stripping it leaves a
+                // dropdown that never closes.
             });
         }
 
