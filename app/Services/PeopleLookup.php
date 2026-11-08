@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Reads the DNIT (ex SET) taxpayer registry through the private People API.
+ * Looks a document up in the people database behind the private People API.
+ *
+ * The service holds two sets: personas.db, which maps a cédula to a name and
+ * date of birth, and ruc.db, which maps a RUC to a trade name. It is an
+ * identification lookup, not a tax roll.
  *
  * Two shapes come back from the service and both are normalised here, so the
  * rest of the app only ever sees the fields a Cliente actually has:
@@ -20,7 +24,7 @@ use Illuminate\Support\Facades\Log;
 class PeopleLookup
 {
     /**
-     * Resolve a document into whatever the registry knows about it.
+     * Resolve a document into whatever the people database knows about it.
      *
      * @return array{found: bool, reason?: string, data?: array}
      */
@@ -51,9 +55,11 @@ class PeopleLookup
                 : $this->consultarRuc($documento);
         }
 
-        return $resultado === null
-            ? ['found' => false, 'reason' => 'not_found']
-            : ['found' => true, 'data' => $resultado];
+        if ($resultado !== null) {
+            return ['found' => true, 'data' => $resultado];
+        }
+
+        return ['found' => false, 'reason' => $this->rejected ? 'rejected' : 'not_found'];
     }
 
     public function isConfigured(): bool
@@ -81,7 +87,9 @@ class PeopleLookup
 
     private function consultarRuc(string $ruc): ?array
     {
-        $payload = $this->get('/', ['ruc' => $ruc]);
+        // The service indexes a RUC without its check digit and returns the dv
+        // as its own field, so "80028545-0" has to be asked for as "80028545".
+        $payload = $this->get('/', ['ruc' => explode('-', $ruc)[0]]);
 
         if (!is_array($payload)) {
             return null;
@@ -106,8 +114,12 @@ class PeopleLookup
 
         $documento = (string) ($payload['ruc'] ?? $ruc);
 
-        if (!empty($payload['dv']) && !str_contains($documento, '-')) {
-            $documento .= '-' . $payload['dv'];
+        // A check digit of "0" is falsy in PHP, so !empty() would silently drop
+        // the dv of every RUC that ends in zero.
+        $dv = trim((string) ($payload['dv'] ?? ''));
+
+        if ($dv !== '' && !str_contains($documento, '-')) {
+            $documento .= '-' . $dv;
         }
 
         return [
@@ -121,6 +133,9 @@ class PeopleLookup
         ];
     }
 
+    /** True once the service has answered 401/403: a bad token, not a bad document. */
+    private bool $rejected = false;
+
     private function get(string $path, array $query): ?array
     {
         try {
@@ -129,11 +144,25 @@ class PeopleLookup
                 ->timeout(config('services.people.timeout', 8))
                 ->get(rtrim(config('services.people.base_url'), '/') . $path, $query);
         } catch (\Throwable $e) {
-            // The registry being unreachable must never block loading a client
+            // The service being unreachable must never block loading a client
             // by hand, so this is logged and reported as "not found".
             Log::warning('People lookup failed', [
                 'path' => $path,
                 'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        // A rejected token is a configuration fault, not an answer about the
+        // document. Reporting it as "we could not find it" would hide a broken
+        // integration behind an empty result, and nobody would go looking.
+        if (in_array($response->status(), [401, 403], true)) {
+            $this->rejected = true;
+
+            Log::warning('People lookup rejected the token', [
+                'path' => $path,
+                'status' => $response->status(),
             ]);
 
             return null;

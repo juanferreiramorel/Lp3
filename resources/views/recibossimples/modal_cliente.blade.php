@@ -14,7 +14,7 @@
                 @csrf
 
                 {{-- The document comes first because it is the key that fills in
-                     the rest: it is looked up against the DNIT registry, and it
+                     the rest: it is looked up in the people database, and it
                      is also what tells us the person is already a client. --}}
                 <div class="cliente-lookup mb-4">
                     <label for="modal_clie_ci" class="d-block">CI / RUC <span class="text-danger" aria-hidden="true">*</span></label>
@@ -30,7 +30,7 @@
                         </button>
                     </div>
                     <small class="text-muted d-block mt-1" id="lookup-ayuda">
-                        Buscamos el nombre en el padrón de la DNIT. Si no aparece, cargalo a mano.
+                        Buscamos el nombre en la base de personas. Si no aparece, cargalo a mano.
                     </small>
                     <small class="text-danger d-none" id="error_clie_ci"></small>
                     <div class="alert mt-2 mb-0 py-2 px-3 d-none" id="lookup-estado" role="status"></div>
@@ -132,7 +132,7 @@
     }
     window.modalClienteInitialized = true;
 
-    // ---- Consulta del documento contra el padrón de la DNIT ----------------
+    // ---- Consulta del documento en la base de personas ---------------------
     (function configurarBuscadorDocumento() {
         const $documento = $('#modal_clie_ci');
         const $boton = $('#btnBuscarDocumento');
@@ -178,7 +178,7 @@
 
             ultimaConsulta = documento;
             cargando(true);
-            mostrarEstado('alert-info', 'Consultando el padrón...');
+            mostrarEstado('alert-info', 'Buscando la persona...');
 
             enCurso = $.getJSON(url, { documento: documento })
                 .done(function(respuesta) {
@@ -193,12 +193,28 @@
                         }
 
                         const nombre = $.trim((datos.nombre || '') + ' ' + (datos.apellido || ''));
-                        let mensaje = 'Encontrado: <strong></strong>.';
-                        mostrarEstado('alert-success', mensaje);
+                        // A RUC that is not ACTIVO still gets found, and the
+                        // receipt would be issued against it without anyone
+                        // noticing, so the whole notice turns into a warning.
+                        const situacion = $.trim(datos.estado || '').toUpperCase();
+                        const irregular = situacion !== '' && situacion !== 'ACTIVO';
+
+                        mostrarEstado(irregular ? 'alert-warning' : 'alert-success', 'Encontrado: <strong></strong>.');
                         $estado.find('strong').text(nombre);
+
+                        if (irregular) {
+                            $estado.append(' Figura como <strong></strong> en la base: confirmá antes de emitirle.');
+                            $estado.find('strong').last().text(situacion);
+                        }
 
                         if (datos.tipo === 'empresa') {
                             $estado.append(' Es una empresa, así que el apellido queda vacío.');
+                        } else if (!datos.apellido) {
+                            // Some documents only exist in the RUC set, which
+                            // keeps the whole name in one field. Splitting
+                            // "APELLIDO APELLIDO NOMBRE NOMBRE" by guessing
+                            // gets it wrong often enough to be worth asking.
+                            $estado.append(' Vino el nombre completo en un solo campo: separá el apellido si hace falta.');
                         }
                         if (!datos.fecha_nacimiento) {
                             $estado.append(' Falta la fecha de nacimiento: cargala a mano.');
@@ -225,7 +241,7 @@
                     const respuesta = xhr.responseJSON || {};
                     mostrarEstado(
                         'alert-warning',
-                        respuesta.message || 'No pudimos consultar el padrón. Cargá los datos a mano.'
+                        respuesta.message || 'No pudimos hacer la búsqueda. Cargá los datos a mano.'
                     );
                 })
                 .always(function() {

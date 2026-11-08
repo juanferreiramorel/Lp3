@@ -35,7 +35,7 @@ class ListadoExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyl
     /**
      * A spreadsheet treats a cell starting with = + - @ or a control character
      * as a formula. Client names and observations in this system are typed by
-     * people and also come from an external registry, so a value like
+     * people and also come from an external service, so a value like
      * `=HYPERLINK(...)` would run the moment someone opened the file. Prefixing
      * it with an apostrophe makes the spreadsheet show it literally.
      *

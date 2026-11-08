@@ -64,8 +64,8 @@ Route::resource('productos', App\Http\Controllers\ProductoController::class);
 Route::resource('taxes', App\Http\Controllers\TaxController::class);
 Route::resource('users', App\Http\Controllers\UserController::class);
 Route::post('clientes/store-ajax', [App\Http\Controllers\ClienteController::class, 'storeAjax'])->name('clientes.store.ajax');
-// Consulta del padrón de la DNIT antes de crear un cliente.
-// El throttle acota la enumeración masiva del padrón: una persona cargando
+// Búsqueda en la base de personas antes de crear un cliente.
+// El throttle acota la enumeración masiva de la base: una persona cargando
 // clientes a mano no se acerca a ese ritmo.
 Route::get('clientes/consultar-documento', [App\Http\Controllers\ClienteController::class, 'consultarDocumento'])
     ->middleware('throttle:30,1')

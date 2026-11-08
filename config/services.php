@@ -38,7 +38,7 @@ return [
     ],
 
     /*
-     * People: the DNIT (ex SET) taxpayer registry, exposed as a private REST
+     * People: the people and identification database, exposed as a private REST
      * API. Used to resolve a CI or RUC into a name before a client is created.
      * The token is a JWT the service issues; it never reaches the browser.
      */

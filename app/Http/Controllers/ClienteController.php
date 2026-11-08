@@ -17,7 +17,7 @@ class ClienteController extends AppBaseController
     {
         $this->middleware('auth');
         $this->middleware('permission:clientes index')->only(['index']);
-        // consultarDocumento reads the DNIT registry and reports whether a
+        // consultarDocumento reads the people database and reports whether a
         // document already belongs to a client, so it carries the same
         // permission as creating one: being logged in is not enough.
         $this->middleware('permission:clientes create')->only(['create', 'store', 'consultarDocumento']);
@@ -404,7 +404,7 @@ class ClienteController extends AppBaseController
      * Resolve a CI or RUC before the rest of the form is filled in.
      *
      * Answers two questions in one round trip: is this person already a client
-     * (so nobody creates a duplicate), and what does the DNIT registry know
+     * (so nobody creates a duplicate), and what does the people database know
      * about them (so the name and date of birth do not have to be typed).
      */
     public function consultarDocumento(Request $request, PeopleLookup $people)
@@ -446,15 +446,26 @@ class ClienteController extends AppBaseController
             ]);
         }
 
+        // A rejected token and a missing one are configuration faults: saying
+        // "we could not find it" would send the user hunting for a document
+        // that the service never got asked about.
         $mensajes = [
-            'not_configured' => 'La consulta al padrón no está configurada todavía. Cargá los datos a mano.',
+            'not_configured' => 'La búsqueda de personas no está configurada todavía. Cargá los datos a mano.',
+            'rejected' => 'La búsqueda de personas rechazó la credencial. Avisá a sistemas y cargá los datos a mano.',
             'empty' => 'Ingresá un CI o RUC para buscar.',
+        ];
+
+        $razon = $resultado['reason'] ?? '';
+
+        $estados = [
+            'not_configured' => 'no_configurado',
+            'rejected' => 'no_configurado',
         ];
 
         return response()->json([
             'success' => true,
-            'estado' => $resultado['reason'] === 'not_configured' ? 'no_configurado' : 'sin_resultados',
-            'message' => $mensajes[$resultado['reason'] ?? ''] ?? 'No encontramos ese documento en el padrón. Podés cargarlo a mano.',
+            'estado' => $estados[$razon] ?? 'sin_resultados',
+            'message' => $mensajes[$razon] ?? 'No encontramos ese documento. Podés cargarlo a mano.',
         ]);
     }
 
