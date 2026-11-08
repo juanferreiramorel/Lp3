@@ -33,7 +33,12 @@ class AppServiceProvider extends ServiceProvider
                     ->where('route_name', $routeName)
                     ->where('is_active', true)
                     ->orderByDesc('updated_at')
-                    ->get();
+                    ->get()
+                    // Only offer help the user is actually allowed to open.
+                    // Without this the button appeared for everyone and then
+                    // the request behind it answered 403.
+                    ->filter(fn ($topic) => \App\Support\HelpAccess::canRead($topic))
+                    ->values();
             }
 
             $view->with('helpTopicsForRoute', $helpTopics);

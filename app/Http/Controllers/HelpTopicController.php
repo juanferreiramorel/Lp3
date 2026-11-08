@@ -15,7 +15,12 @@ class HelpTopicController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:ayuda index')->only(['index', 'show', 'file']);
+        // `ayuda index` administers the help module: it lists, and from there
+        // topics are created and edited. Reading the manual for a screen is a
+        // different thing, gated per topic by its own permission_slug inside
+        // show() and file(). Requiring `ayuda index` to read meant anyone who
+        // could use Clientes but not administer help got a 403.
+        $this->middleware('permission:ayuda index')->only(['index']);
         $this->middleware('permission:ayuda create')->only(['create', 'store']);
         $this->middleware('permission:ayuda edit')->only(['edit', 'update']);
         $this->middleware('permission:ayuda destroy')->only(['destroy']);
@@ -112,8 +117,10 @@ class HelpTopicController extends Controller
 
         if (!$helpTopic) {
             Alert::toast('Tema de ayuda no encontrado', 'error');
-            return redirect()->route('ayuda.index');
+            return redirect()->route('home');
         }
+
+        abort_unless(\App\Support\HelpAccess::canRead($helpTopic), 403);
 
         return view('ayuda.show')->with('helpTopic', $helpTopic);
     }
@@ -180,12 +187,14 @@ class HelpTopicController extends Controller
 
         if (!$helpTopic || !$helpTopic->pdf_path) {
             Alert::toast('Archivo no disponible', 'error');
-            return redirect()->route('ayuda.index');
+            return redirect()->route('home');
         }
+
+        abort_unless(\App\Support\HelpAccess::canRead($helpTopic), 403);
 
         if (!Storage::disk('public')->exists($helpTopic->pdf_path)) {
             Alert::toast('El archivo no existe en el servidor', 'error');
-            return redirect()->route('ayuda.index');
+            return redirect()->route('home');
         }
 
         return response()->file(Storage::disk('public')->path($helpTopic->pdf_path));

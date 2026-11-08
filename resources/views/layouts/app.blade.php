@@ -148,7 +148,7 @@
 
                 <!-- Shortcuts (After Search) -->
                 @if(count($shortcuts) > 0)
-                    <ul class="navbar-nav ml-2">
+                    <ul class="navbar-nav ml-2 navbar-shortcuts">
                         @foreach($shortcuts as $access)
                             <li class="nav-item d-none d-md-block mr-1">
                                 <a href="{{ $access['url'] }}" class="navbar-btn-icon" title="{{ $access['title'] }}">
@@ -203,7 +203,7 @@
                                     <div class="user-avatar-letter user-image img-circle" aria-hidden="true">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                                 @endif
                             </div>
-                            <span class="d-none d-md-inline ml-2">{{ Auth::user()->name }}</span>
+                            <span class="d-none d-md-inline ml-2 user-name-navbar">{{ Auth::user()->name }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                             <!-- User Header (List Style) -->

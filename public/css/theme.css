@@ -1477,6 +1477,51 @@ hr { border-top-color: var(--rule); }
 .table-empty p { color: var(--ink-muted); font-weight: 550; }
 
 /* --------------------------------------------------------------------------
+   19b. Tablet navbar
+   At 1024px the bar holds more controls than fit: it overflowed by 53px, the
+   search box was squeezed to 29px and the user's name ran past the right edge
+   of the screen. The least load-bearing controls step aside before anything
+   gets clipped, and the search keeps a width it can actually be typed into.
+   -------------------------------------------------------------------------- */
+.main-header.navbar {
+    flex-wrap: nowrap;
+}
+
+.main-header form {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.main-header .search-input-group {
+    min-width: 150px;
+}
+
+.user-name-navbar {
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1199.98px) {
+    /* Recently visited pages are a convenience; the menu still reaches them.
+       Dropping these alone buys back enough room for the search box and the
+       account name, so nothing else has to go at tablet width. */
+    .navbar-shortcuts { display: none !important; }
+}
+
+@media (max-width: 991.98px) {
+    /* Below this the breadcrumb and the search cannot both be read. */
+    .navbar-breadcrumb { display: none !important; }
+    .main-header .search-input-group { min-width: 120px; }
+
+    /* The avatar already identifies the account and the name is in the menu
+       it opens. The selector matches navbar-custom.css's own three-class rule,
+       which otherwise outranks a plain one even with !important. */
+    .user-menu .user-name-navbar.d-none.d-md-inline { display: none !important; }
+}
+
+/* --------------------------------------------------------------------------
    20. Small screens
    The counter is worked from a phone as often as from the desktop, so the
    controls have to stay reachable rather than merely fit.
