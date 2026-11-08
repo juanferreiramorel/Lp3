@@ -10,3 +10,7 @@ public/storage
 .phpunit.result.cache
 .DS_Store
 Thumbs.db
+
+# Datos de Postgres del entorno local: 101 MB que no tienen por que
+# viajar al contexto de build.
+docker/postgres_data

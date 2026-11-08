@@ -1,0 +1,113 @@
+# Production stack for Dokploy ("Compose" deployment type).
+#
+# Domain routing and TLS are configured in Dokploy, which attaches Traefik to
+# the `app` service over dokploy-network on port 80. No host ports are
+# published: the database is reachable only from inside taperp_internal.
+#
+# Every secret comes from the environment Dokploy injects. The ${VAR:?...}
+# form makes the stack refuse to start when one is missing, which is far
+# better than booting with an empty APP_KEY and encrypting sessions with it.
+name: taperp-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE is required}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      # Keeps index and sort order stable regardless of the host locale.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - taperp_pgdata:/var/lib/postgresql/data
+    networks:
+      - taperp_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 768M
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: taperp-app:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: ${APP_NAME:-TAPERP}
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?APP_KEY is required}
+      APP_URL: ${APP_URL:?APP_URL is required}
+
+      LOG_CHANNEL: stack
+      LOG_LEVEL: warning
+
+      # The host is the service name: the database never leaves the internal
+      # network, so there is no port to publish and nothing to expose.
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: ${DB_DATABASE:?DB_DATABASE is required}
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      SESSION_LIFETIME: "120"
+      QUEUE_CONNECTION: sync
+      FILESYSTEM_DISK: local
+
+      # People lookup. Without a token the CI/RUC search reports that it is
+      # not configured and the form still takes data by hand.
+      PEOPLE_API_BASE: ${PEOPLE_API_BASE:-https://people.lanzapy.com}
+      PEOPLE_API_JWT: ${PEOPLE_API_JWT:-}
+      PEOPLE_API_TIMEOUT: ${PEOPLE_API_TIMEOUT:-8}
+    volumes:
+      # Anything a user uploads lives in a volume. Without these, every
+      # redeploy rebuilds the image and the files are gone, while the rows
+      # in the database keep pointing at them.
+      - taperp_img:/var/www/html/public/img
+      - taperp_uploads:/var/www/html/public/uploads
+      - taperp_archivos:/var/www/html/public/archivos
+      - taperp_storage_app:/var/www/html/storage/app
+    networks:
+      - taperp_internal
+      - dokploy-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "php -r \"exit(@file_get_contents('http://127.0.0.1/login') === false ? 1 : 0);\""
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+
+volumes:
+  taperp_pgdata:
+  taperp_img:
+  taperp_uploads:
+  taperp_archivos:
+  taperp_storage_app:
+
+networks:
+  taperp_internal:
+    driver: bridge
+  dokploy-network:
+    external: true
