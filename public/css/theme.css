@@ -1496,6 +1496,27 @@ hr { border-top-color: var(--rule); }
     min-width: 150px;
 }
 
+/* The shortcuts carry whatever a route humanises to, and one of them is
+   "Buscar productos recibos". Left to grow, a long label pushed the block
+   wide enough to sit under the search box. It clips instead of overlapping,
+   and each label gets a ceiling. */
+.navbar-shortcuts {
+    min-width: 0;
+    overflow: hidden;
+    flex-shrink: 1;
+}
+
+.navbar-shortcuts .nav-item { min-width: 0; }
+
+.navbar-shortcuts .navbar-btn-icon span {
+    display: inline-block;
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
 .user-name-navbar {
     max-width: 10rem;
     overflow: hidden;
@@ -1561,6 +1582,47 @@ hr { border-top-color: var(--rule); }
     .modal-footer > .btn { width: 100%; margin: 0; }
 
     .pagination { flex-wrap: wrap; row-gap: 0.25rem; }
+
+    /* The action row inside a mobile card held four labelled buttons side by
+       side and ran off the edge. A grid gives each one a full-width half-row
+       and a target worth tapping, and the joined btn-group geometry — shared
+       borders, negative margins, squared middles — has to be undone for it. */
+    .btn-group.d-flex {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.375rem;
+    }
+
+    .btn-group.d-flex > .btn,
+    .btn-group.d-flex > form,
+    .btn-group.d-flex > form > .btn {
+        width: 100%;
+        margin: 0 !important;
+        border-radius: var(--radius-sm) !important;
+        min-height: 42px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-group.d-flex > .btn:not(:first-child) { margin-left: 0 !important; }
+}
+
+/* The mobile cards' buttons sit outside a table, so they do not get the quiet
+   row-action treatment. They keep their colours, taken from the palette rather
+   than from Bootstrap's defaults. */
+.btn-success,
+body.dark-mode .btn-success {
+    background-color: var(--valid-text);
+    border-color: var(--valid-text);
+    color: #ffffff;
+}
+
+.btn-success:hover,
+body.dark-mode .btn-success:hover {
+    background-color: color-mix(in srgb, var(--valid-text) 85%, #000);
+    border-color: color-mix(in srgb, var(--valid-text) 85%, #000);
+    color: #ffffff;
 }
 
 @media (max-width: 640px) {

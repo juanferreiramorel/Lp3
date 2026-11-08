@@ -28,14 +28,24 @@ class HelpAccess
             return false;
         }
 
-        $slug = trim((string) (is_array($topic) ? ($topic['permission_slug'] ?? '') : ($topic->permission_slug ?? '')));
-
-        if ($slug === '') {
-            return Auth::check();
-        }
-
         $user = Auth::user();
 
-        return $user !== null && $user->can($slug);
+        if ($user === null) {
+            return false;
+        }
+
+        $get = fn (string $key) => is_array($topic) ? ($topic[$key] ?? null) : ($topic->{$key} ?? null);
+
+        // A deactivated topic is a draft or a retired manual. Only whoever
+        // administers the help module should still reach it; otherwise
+        // switching a topic off would hide it from the menu while its URL
+        // kept serving the file.
+        if (!filter_var($get('is_active'), FILTER_VALIDATE_BOOLEAN)) {
+            return $user->can('ayuda index');
+        }
+
+        $slug = trim((string) $get('permission_slug'));
+
+        return $slug === '' ? true : $user->can($slug);
     }
 }
