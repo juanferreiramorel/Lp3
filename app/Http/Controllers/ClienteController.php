@@ -160,6 +160,18 @@ class ClienteController extends AppBaseController
             ->with('departamentos', $departamentos);
     }
 
+    /**
+     * The birth date has to reach the column as NULL when it is absent, not as
+     * an empty string: a company has no birth date and the column is nullable
+     * for exactly that reason.
+     */
+    private function fechaNacONull(array $input): ?string
+    {
+        $valor = trim((string) ($input['clie_fecha_nac'] ?? ''));
+
+        return $valor === '' ? null : $valor;
+    }
+
     public function store(Request $request)
     {
         $input = $request->all();
@@ -168,18 +180,16 @@ class ClienteController extends AppBaseController
             $input,
             [
                 'clie_nombre' => 'required',
-                'clie_apellido' => 'required',
+                'clie_apellido' => 'nullable',
                 'clie_ci' => 'required',
-                'clie_fecha_nac' => 'required|date',
+                'clie_fecha_nac' => 'nullable|date',
                 'id_departamento' => 'required|exists:departamentos,id_departamento',
                 'id_ciudad' => 'required|exists:ciudades,id_ciudad',
             ],
             [
                 'clie_nombre.required' => 'Campo nombre obligatorio',
-                'clie_apellido.required' => 'Campo apellido obligatorio',
                 'clie_ci.required' => 'Campo CI obligatorio',
                 'clie_ci.unique' => 'El dato de CI ya existe',
-                'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
                 'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
                 'id_departamento.required' => 'Campo departamento obligatorio',
                 'id_departamento.exists' => 'Campo departamento debe ser un departamento válido',
@@ -193,22 +203,28 @@ class ClienteController extends AppBaseController
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
-        # Obtener fecha actual
-        $fec_actual = Carbon::now();
-        # Parsear la fecha de nacimiento input clie_fecha_nac
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
+        # Una empresa no tiene fecha de nacimiento, asi que las reglas de
+        # edad solo corren cuando el dato vino.
+        $fecha_nac_cruda = $this->fechaNacONull($input);
 
-        ##validar edad del cliente
-        $edad = $fec_actual->diffInYears($fecha_nac);
-        if ($edad < 18) {
-            Alert::error('Error', 'El cliente debe ser mayor de 18 años.');
-            return redirect(route('clientes.create'))->withInput();
-        }
+        if ($fecha_nac_cruda !== null) {
+            $fec_actual = Carbon::now();
+            $fecha_nac = Carbon::parse($fecha_nac_cruda);
 
-        ## validar fecha mayor al actual
-        if ($fecha_nac > $fec_actual) {
-            Alert::error('Error', 'La fecha de nacimiento no puede ser mayor a la fecha actual.');
-            return redirect(route('clientes.create'))->withInput();
+            ## validar fecha mayor al actual. Va primero porque diffInYears
+            ## devuelve el valor absoluto: una fecha futura da una edad
+            ## positiva y saldria con el mensaje de menor de edad.
+            if ($fecha_nac > $fec_actual) {
+                Alert::error('Error', 'La fecha de nacimiento no puede ser mayor a la fecha actual.');
+                return redirect(route('clientes.create'))->withInput();
+            }
+
+            ##validar edad del cliente
+            $edad = $fec_actual->diffInYears($fecha_nac);
+            if ($edad < 18) {
+                Alert::error('Error', 'El cliente debe ser mayor de 18 años.');
+                return redirect(route('clientes.create'))->withInput();
+            }
         }
 
         ##validar cantidad de digitos del campo ci
@@ -231,11 +247,11 @@ class ClienteController extends AppBaseController
         # insertar datos en clientes
         DB::insert('INSERT INTO clientes (clie_nombre, clie_apellido, clie_ci, clie_telefono, clie_direccion, clie_fecha_nac, id_departamento, id_ciudad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
             strtoupper($input['clie_nombre']),
-            strtoupper($input['clie_apellido']),
+            strtoupper(trim((string) ($input['clie_apellido'] ?? ''))),
             $input['clie_ci'],
             isset($input['clie_telefono']) ? $input['clie_telefono'] : null,
             isset($input['clie_direccion']) ? strtoupper($input['clie_direccion']) : null,
-            $input['clie_fecha_nac'],
+            $fecha_nac_cruda,
             $input['id_departamento'],
             $input['id_ciudad']
         ]);
@@ -283,18 +299,16 @@ class ClienteController extends AppBaseController
             $input,
             [
                 'clie_nombre' => 'required',
-                'clie_apellido' => 'required',
+                'clie_apellido' => 'nullable',
                 'clie_ci' => 'required',
-                'clie_fecha_nac' => 'required|date',
+                'clie_fecha_nac' => 'nullable|date',
                 'id_departamento' => 'required|exists:departamentos,id_departamento',
                 'id_ciudad' => 'required|exists:ciudades,id_ciudad',
             ],
             [
                 'clie_nombre.required' => 'Campo nombre obligatorio',
-                'clie_apellido.required' => 'Campo apellido obligatorio',
                 'clie_ci.required' => 'Campo CI obligatorio',
                 'clie_ci.unique' => 'El dato de CI ya existe',
-                'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
                 'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
                 'id_departamento.required' => 'Campo departamento obligatorio',
                 'id_departamento.exists' => 'Campo departamento debe ser un departamento válido',
@@ -308,14 +322,15 @@ class ClienteController extends AppBaseController
             return redirect()->back()->withErrors($validacion)->withInput();
         }
 
-        # Obtener fecha actual
+        # Una empresa no tiene fecha de nacimiento, asi que las reglas de
+        # edad solo corren cuando el dato vino.
+        $fecha_nac_cruda = $this->fechaNacONull($input);
         $fec_actual = Carbon::now();
-        # Parsear la fecha de nacimiento input clie_fecha_nac
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
+        $fecha_nac = $fecha_nac_cruda !== null ? Carbon::parse($fecha_nac_cruda) : null;
 
         ##validar edad del cliente
-        $edad = $fec_actual->diffInYears($fecha_nac);
-        if ($edad < 18 || $fecha_nac > $fec_actual) {
+        $edad = $fecha_nac !== null ? $fec_actual->diffInYears($fecha_nac) : null;
+        if ($fecha_nac !== null && ($edad < 18 || $fecha_nac > $fec_actual)) {
             // Flash::error('El cliente debe ser mayor de 18 años y la fecha de nacimiento no puede ser mayor a la fecha actual.');
             Alert::error('Error', 'El cliente debe ser mayor de 18 años y la fecha de nacimiento no puede ser mayor a la fecha actual.');
             return redirect()->back()->withInput();
@@ -358,11 +373,11 @@ class ClienteController extends AppBaseController
         WHERE id_cliente = ?',
             [
                 strtoupper($input['clie_nombre']),
-                strtoupper($input['clie_apellido']),
+                strtoupper(trim((string) ($input['clie_apellido'] ?? ''))),
                 $input['clie_ci'],
                 isset($input['clie_telefono']) ? $input['clie_telefono'] : null,
                 isset($input['clie_direccion']) ? strtoupper($input['clie_direccion']) : null,
-                $input['clie_fecha_nac'],
+                $fecha_nac_cruda,
                 $input['id_departamento'],
                 $input['id_ciudad'],
                 $id
@@ -478,17 +493,15 @@ class ClienteController extends AppBaseController
             $input,
             [
                 'clie_nombre' => 'required',
-                'clie_apellido' => 'required',
+                'clie_apellido' => 'nullable',
                 'clie_ci' => 'required',
-                'clie_fecha_nac' => 'required|date',
+                'clie_fecha_nac' => 'nullable|date',
                 'id_departamento' => 'required|exists:departamentos,id_departamento',
                 'id_ciudad' => 'required|exists:ciudades,id_ciudad',
             ],
             [
                 'clie_nombre.required' => 'Campo nombre obligatorio',
-                'clie_apellido.required' => 'Campo apellido obligatorio',
                 'clie_ci.required' => 'Campo CI obligatorio',
-                'clie_fecha_nac.required' => 'Campo fecha de nacimiento obligatorio',
                 'clie_fecha_nac.date' => 'Campo fecha de nacimiento debe ser una fecha válida',
                 'id_departamento.required' => 'Campo departamento obligatorio',
                 'id_departamento.exists' => 'Campo departamento debe ser un departamento válido',
@@ -504,23 +517,32 @@ class ClienteController extends AppBaseController
             ], 422);
         }
 
-        // Validar edad del cliente
-        $fec_actual = Carbon::now();
-        $fecha_nac = Carbon::parse($input['clie_fecha_nac']);
-        $edad = $fec_actual->diffInYears($fecha_nac);
-        if ($edad < 18) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['clie_fecha_nac' => ['El cliente debe ser mayor de 18 años.']]
-            ], 422);
-        }
+        // Una empresa no tiene fecha de nacimiento, asi que las reglas de
+        // edad solo corren cuando el dato vino.
+        $fecha_nac_cruda = $this->fechaNacONull($input);
 
-        // Validar fecha mayor al actual
-        if ($fecha_nac > $fec_actual) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['clie_fecha_nac' => ['La fecha de nacimiento no puede ser mayor a la fecha actual.']]
-            ], 422);
+        if ($fecha_nac_cruda !== null) {
+            $fec_actual = Carbon::now();
+            $fecha_nac = Carbon::parse($fecha_nac_cruda);
+
+            // Validar fecha mayor al actual. Va primero porque diffInYears
+            // devuelve el valor absoluto: una fecha futura da una edad
+            // positiva y saldria con el mensaje de menor de edad.
+            if ($fecha_nac > $fec_actual) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['clie_fecha_nac' => ['La fecha de nacimiento no puede ser mayor a la fecha actual.']]
+                ], 422);
+            }
+
+            // Validar edad del cliente
+            $edad = $fec_actual->diffInYears($fecha_nac);
+            if ($edad < 18) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['clie_fecha_nac' => ['El cliente debe ser mayor de 18 años.']]
+                ], 422);
+            }
         }
 
         // Validar cantidad de dígitos del campo CI
@@ -551,11 +573,11 @@ class ClienteController extends AppBaseController
             RETURNING id_cliente, clie_nombre, clie_apellido, clie_ci',
             [
                 strtoupper($input['clie_nombre']),
-                strtoupper($input['clie_apellido']),
+                strtoupper(trim((string) ($input['clie_apellido'] ?? ''))),
                 $input['clie_ci'],
                 $input['clie_telefono'] ?? '',
                 strtoupper($input['clie_direccion'] ?? ''),
-                $input['clie_fecha_nac'],
+                $fecha_nac_cruda,
                 $input['id_departamento'],
                 $input['id_ciudad']
             ]

@@ -23,8 +23,8 @@
 
 <!-- Cli Apellido Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('clie_apellido', 'Apellido:') !!}
-    {!! Form::text('clie_apellido', null, ['class' => 'form-control', 'required', 'placeholder' => 'Ingrese el Apellido']) !!}
+    {!! Form::label('clie_apellido', 'Apellido:') !!} <small class="text-muted">(opcional)</small>
+    {!! Form::text('clie_apellido', null, ['class' => 'form-control', 'placeholder' => 'Vacio si es una empresa']) !!}
 </div>
 
 @if ($esEdicion)
@@ -64,8 +64,8 @@
 
 <!-- Clie Fecha Nac Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('clie_fecha_nac', 'Fecha de Nacimiento:') !!}
-    {!! Form::date('clie_fecha_nac', null, ['class' => 'form-control','id'=>'clie_fecha_nac', 'required', 'placeholder' => 'Ingrese la Fecha de Nacimiento']) !!}
+    {!! Form::label('clie_fecha_nac', 'Fecha de Nacimiento:') !!} <small class="text-muted">(opcional)</small>
+    {!! Form::date('clie_fecha_nac', null, ['class' => 'form-control','id'=>'clie_fecha_nac', 'placeholder' => 'Ingrese la Fecha de Nacimiento']) !!}
 </div>
 
 <script>

@@ -38,14 +38,14 @@
 
                         <!-- Apellido Field -->
                         <div class="form-group col-md-6 col-12">
-                            <label for="modal_clie_apellido">Apellido: <span class="text-danger">*</span></label>
+                            <label for="modal_clie_apellido">Apellido: <small class="text-muted">(opcional)</small></label>
                             <input type="text" class="form-control" id="modal_clie_apellido" name="clie_apellido">
                             <small class="text-danger d-none" id="error_clie_apellido"></small>
                         </div>
 
                         <!-- Fecha Nacimiento Field -->
                         <div class="form-group col-md-6 col-12">
-                            <label for="modal_clie_fecha_nac">Fecha de Nacimiento: <span class="text-danger">*</span></label>
+                            <label for="modal_clie_fecha_nac">Fecha de Nacimiento: <small class="text-muted">(opcional)</small></label>
                             <input type="date" class="form-control" id="modal_clie_fecha_nac" name="clie_fecha_nac">
                             <small class="text-danger d-none" id="error_clie_fecha_nac"></small>
                         </div>
