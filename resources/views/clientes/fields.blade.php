@@ -1,3 +1,20 @@
+{{-- On a new client the document comes first: it is looked up in the people
+     database and fills in the rest. On an edit there is nothing to look up,
+     so the field stays where it always was. --}}
+@php($esEdicion = isset($clientes))
+
+@unless ($esEdicion)
+    <div class="col-12">
+        @include('partials.people_lookup', [
+            'idDocumento' => 'clie_ci',
+            'idNombre'    => 'clie_nombre',
+            'idApellido'  => 'clie_apellido',
+            'idFechaNac'  => 'clie_fecha_nac',
+            'idFoco'      => 'clie_telefono',
+        ])
+    </div>
+@endunless
+
 <!-- Clie Nombre Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('clie_nombre', 'Nombre:') !!}
@@ -10,11 +27,13 @@
     {!! Form::text('clie_apellido', null, ['class' => 'form-control', 'required', 'placeholder' => 'Ingrese el Apellido']) !!}
 </div>
 
+@if ($esEdicion)
 <!-- Clie Ci Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('clie_ci', 'Nro. Documento:') !!}
     {!! Form::text('clie_ci', null, ['class' => 'form-control', 'required', 'placeholder' => 'Ingrese el Nro. de Documento']) !!}
 </div>
+@endif
 
 <!-- Clie Telefono Field -->
 <div class="form-group col-sm-6">

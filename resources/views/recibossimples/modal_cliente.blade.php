@@ -16,25 +16,15 @@
                 {{-- The document comes first because it is the key that fills in
                      the rest: it is looked up in the people database, and it
                      is also what tells us the person is already a client. --}}
-                <div class="cliente-lookup mb-4">
-                    <label for="modal_clie_ci" class="d-block">CI / RUC <span class="text-danger" aria-hidden="true">*</span></label>
-                    <div class="d-flex flex-column flex-sm-row" style="gap: 0.5rem;">
-                        <input type="text" class="form-control" id="modal_clie_ci" name="clie_ci"
-                               inputmode="numeric" autocomplete="off" autofocus
-                               placeholder="1234567 o 80012345-1"
-                               aria-describedby="lookup-ayuda lookup-estado">
-                        <button type="button" class="btn btn-primary d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                                id="btnBuscarDocumento">
-                            <i class="fas fa-search mr-2" aria-hidden="true"></i>
-                            <span>Buscar</span>
-                        </button>
-                    </div>
-                    <small class="text-muted d-block mt-1" id="lookup-ayuda">
-                        Buscamos el nombre en la base de personas. Si no aparece, cargalo a mano.
-                    </small>
-                    <small class="text-danger d-none" id="error_clie_ci"></small>
-                    <div class="alert mt-2 mb-0 py-2 px-3 d-none" id="lookup-estado" role="status"></div>
-                </div>
+                @include('partials.people_lookup', [
+                    'idDocumento'  => 'modal_clie_ci',
+                    'idNombre'     => 'modal_clie_nombre',
+                    'idApellido'   => 'modal_clie_apellido',
+                    'idFechaNac'   => 'modal_clie_fecha_nac',
+                    'idFoco'       => 'modal_clie_telefono',
+                    'resetOn'      => '#modalCliente|hidden.bs.modal',
+                    'yaRegistrado' => 'Cerrá esta ventana y buscalo en la lista.',
+                ])
 
                 <hr>
 
@@ -133,144 +123,6 @@
     window.modalClienteInitialized = true;
 
     // ---- Consulta del documento en la base de personas ---------------------
-    (function configurarBuscadorDocumento() {
-        const $documento = $('#modal_clie_ci');
-        const $boton = $('#btnBuscarDocumento');
-        const $estado = $('#lookup-estado');
-        const url = @json(route('clientes.consultar.documento'));
-        let enCurso = null;
-        let ultimaConsulta = '';
-
-        function mostrarEstado(tipo, html) {
-            $estado
-                .removeClass('d-none alert-success alert-warning alert-info')
-                .addClass(tipo)
-                .html(html);
-        }
-
-        function limpiarEstado() {
-            $estado.addClass('d-none').empty();
-        }
-
-        function cargando(activo) {
-            $boton.prop('disabled', activo);
-            $boton.find('i')
-                .toggleClass('fa-search', !activo)
-                .toggleClass('fa-spinner fa-spin', activo);
-            $boton.find('span').text(activo ? 'Buscando...' : 'Buscar');
-        }
-
-        function buscar() {
-            const documento = $.trim($documento.val());
-
-            if (documento === '') {
-                mostrarEstado('alert-warning', 'Escribí un CI o RUC para buscar.');
-                $documento.trigger('focus');
-                return;
-            }
-
-            // Evita repetir la misma consulta cuando el campo no cambió.
-            if (documento === ultimaConsulta && enCurso === null) {
-                return;
-            }
-
-            if (enCurso) { enCurso.abort(); }
-
-            ultimaConsulta = documento;
-            cargando(true);
-            mostrarEstado('alert-info', 'Buscando la persona...');
-
-            enCurso = $.getJSON(url, { documento: documento })
-                .done(function(respuesta) {
-                    if (respuesta.estado === 'encontrado') {
-                        const datos = respuesta.datos || {};
-
-                        $('#modal_clie_nombre').val(datos.nombre || '');
-                        $('#modal_clie_apellido').val(datos.apellido || '');
-                        if (datos.documento) { $documento.val(datos.documento); }
-                        if (datos.fecha_nacimiento) {
-                            $('#modal_clie_fecha_nac').val(datos.fecha_nacimiento);
-                        }
-
-                        const nombre = $.trim((datos.nombre || '') + ' ' + (datos.apellido || ''));
-                        // A RUC that is not ACTIVO still gets found, and the
-                        // receipt would be issued against it without anyone
-                        // noticing, so the whole notice turns into a warning.
-                        const situacion = $.trim(datos.estado || '').toUpperCase();
-                        const irregular = situacion !== '' && situacion !== 'ACTIVO';
-
-                        mostrarEstado(irregular ? 'alert-warning' : 'alert-success', 'Encontrado: <strong></strong>.');
-                        $estado.find('strong').text(nombre);
-
-                        if (irregular) {
-                            $estado.append(' Figura como <strong></strong> en la base: confirmá antes de emitirle.');
-                            $estado.find('strong').last().text(situacion);
-                        }
-
-                        if (datos.tipo === 'empresa') {
-                            $estado.append(' Es una empresa, así que el apellido queda vacío.');
-                        } else if (!datos.apellido) {
-                            // Some documents only exist in the RUC set, which
-                            // keeps the whole name in one field. Splitting
-                            // "APELLIDO APELLIDO NOMBRE NOMBRE" by guessing
-                            // gets it wrong often enough to be worth asking.
-                            $estado.append(' Vino el nombre completo en un solo campo: separá el apellido si hace falta.');
-                        }
-                        if (!datos.fecha_nacimiento) {
-                            $estado.append(' Falta la fecha de nacimiento: cargala a mano.');
-                        }
-
-                        $('#modal_clie_telefono').trigger('focus');
-                        return;
-                    }
-
-                    if (respuesta.estado === 'ya_registrado') {
-                        const cliente = respuesta.cliente || {};
-                        mostrarEstado('alert-warning', 'Ese documento ya es cliente: <strong></strong>. Cerrá esta ventana y buscalo en la lista.');
-                        $estado.find('strong').text(cliente.nombre || '');
-                        return;
-                    }
-
-                    mostrarEstado('alert-warning', respuesta.message || 'No encontramos ese documento. Cargá los datos a mano.');
-                    $('#modal_clie_nombre').trigger('focus');
-                })
-                .fail(function(xhr, estadoTexto) {
-                    if (estadoTexto === 'abort') { return; }
-
-                    ultimaConsulta = '';
-                    const respuesta = xhr.responseJSON || {};
-                    mostrarEstado(
-                        'alert-warning',
-                        respuesta.message || 'No pudimos hacer la búsqueda. Cargá los datos a mano.'
-                    );
-                })
-                .always(function() {
-                    enCurso = null;
-                    cargando(false);
-                });
-        }
-
-        $boton.on('click', buscar);
-
-        // Enter busca en lugar de enviar el formulario.
-        $documento.on('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                buscar();
-            }
-        });
-
-        $documento.on('blur', function() {
-            if ($.trim($(this).val()) !== '') { buscar(); }
-        });
-
-        $documento.on('input', limpiarEstado);
-
-        $('#modalCliente').on('hidden.bs.modal', function() {
-            limpiarEstado();
-            ultimaConsulta = '';
-        });
-    })();
 
     // Verificar que los elementos existen
     const $modal = $('#modalCliente');
