@@ -17,9 +17,13 @@ use App\Http\Controllers\HelpTopicController;
 |
 */
 
+// La raiz muestra el login, pero solo a quien no entro todavia. Sin el
+// middleware guest, alguien ya autenticado que cae aca (porque escribio el
+// dominio, o porque el login lo mando por intended()) ve el formulario de
+// nuevo y concluye que no pudo entrar, estando adentro.
 Route::get('/', function () {
     return view('auth.login');
-});
+})->middleware('guest');
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
