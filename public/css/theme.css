@@ -1789,3 +1789,33 @@ body.dark-mode .btn-success:hover {
 
 /* Anything that would push the page sideways is a bug, not a layout. */
 html, body { max-width: 100%; overflow-x: hidden; }
+
+/* --------------------------------------------------------------------------
+   Test-environment watermark (partials/marca_agua.blade.php)
+   Above everything visually, never in the way: no pointer events, and the
+   colour is the voided ink at 7%, so it marks the screen without competing
+   with what is on it. It prints too, on purpose: a test invoice that leaves
+   the printer should say so.
+   -------------------------------------------------------------------------- */
+.marca-agua {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+}
+
+.marca-agua span {
+    transform: rotate(-30deg);
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: clamp(36px, 7vw, 96px);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--voided);
+    opacity: 0.07;
+}

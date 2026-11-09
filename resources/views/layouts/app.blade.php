@@ -52,6 +52,8 @@
              only renders its own pushes, so the stack lives here instead. --}}
         @stack('styles')
 
+        @include('partials.marca_agua')
+
         @php
             $helpTopicsForRoute = ($helpTopicsForRoute ?? collect());
             $hasHelpTopics = $helpTopicsForRoute->isNotEmpty();

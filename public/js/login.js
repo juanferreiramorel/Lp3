@@ -78,13 +78,29 @@
     // steps() and not a curve: a thermal head advances the paper line by
     // line. A smooth curve reads as a web animation; the jumps read as a
     // machine.
+    // Rest position is measured, not assumed, and only once the fonts are in:
+    // with the fallback mono the acknowledgement wraps onto two lines, the
+    // measurement comes out 30px too tall and the sheet rests with its top
+    // tucked under the printer. A slow font never holds the sheet back for
+    // more than a moment.
+    const fuentesListas = () => Promise.race([
+        document.fonts ? document.fonts.ready : Promise.resolve(),
+        esperar(800),
+    ]);
+
+    // Puts the sheet back exactly at rest, measured now.
+    const asentar = () => {
+        mover([{ transform: `translateY(${adentro()}px)` }], { duration: 0 });
+    };
+
     const imprimir = async () => {
+        await fuentesListas();
         const reposo = adentro();
 
         // After a plain post that came back with an error, the sheet is
         // already out: printing it again would only delay the correction.
         if (quieto || hoja.dataset.imprimir === 'no') {
-            mover([{ transform: `translateY(${reposo}px)` }], { duration: 0 });
+            asentar();
             return;
         }
 
@@ -93,8 +109,19 @@
             [{ transform: 'translateY(-100%)' }, { transform: `translateY(${reposo}px)` }],
             { duration: 1000, easing: 'steps(36, end)' }
         ));
+        // If a font or the layout settled while the paper was moving, the
+        // last step corrects for it instead of leaving it a few pixels off.
+        asentar();
         ponerLed(false);
     };
+
+    // The acknowledgement can wrap differently at another width, which
+    // changes how much of the sheet stays inside the printer.
+    let reajuste = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(reajuste);
+        reajuste = setTimeout(() => { if (!ocupado) { asentar(); } }, 120);
+    });
 
     // ---- 2. Errors ----------------------------------------------------------
     const mostrarError = (mensaje) => {

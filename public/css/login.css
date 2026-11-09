@@ -113,12 +113,12 @@ body.pantalla-login {
     clip-path: inset(0 -160px -320px -160px);
 }
 
-/* drop-shadow, not box-shadow: box-shadow draws a rectangle under the torn
-   edge, drop-shadow follows its teeth. */
+/* A hard offset shadow, zero blur: the way printed paper sits on a desk,
+   not a glow. drop-shadow and not box-shadow, because box-shadow draws a
+   rectangle under the torn edge and drop-shadow follows its teeth. */
 .hoja {
     transform-origin: 50% 0;
-    filter: drop-shadow(0 1px 1px rgba(24, 24, 27, 0.06))
-            drop-shadow(0 14px 22px rgba(24, 24, 27, 0.10));
+    filter: drop-shadow(3px 3px 0 rgba(24, 24, 27, 0.16));
 }
 
 /* With scripts on, the sheet starts inside the printer and login.js feeds

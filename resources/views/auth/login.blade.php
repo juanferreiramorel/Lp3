@@ -43,6 +43,8 @@
 </head>
 <body class="pantalla-login">
 
+@include('partials.marca_agua')
+
 <main class="mesa">
 
     {{-- ============================ LA IMPRESORA ============================ --}}
