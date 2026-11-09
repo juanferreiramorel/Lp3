@@ -91,7 +91,7 @@
         ponerLed(true);
         await terminar(mover(
             [{ transform: 'translateY(-100%)' }, { transform: `translateY(${reposo}px)` }],
-            { duration: 1500, easing: 'steps(52, end)' }
+            { duration: 1000, easing: 'steps(36, end)' }
         ));
         ponerLed(false);
     };

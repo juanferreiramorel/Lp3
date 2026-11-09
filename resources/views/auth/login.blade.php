@@ -111,7 +111,7 @@
 
                     <div class="raya-pesada" aria-hidden="true"></div>
 
-                    <h1 class="titulo">Entrá a tu caja</h1>
+                    <h1 class="titulo">Ingresar al sistema</h1>
                     <p class="subtitulo dato">
                         @if ($comprobante['empresa'])
                             {{ mb_strtoupper($comprobante['empresa']) }} &nbsp;·&nbsp;
