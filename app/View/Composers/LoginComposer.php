@@ -14,9 +14,9 @@ use Throwable;
  * RUC and the invoice timbrado in force.
  *
  * Everything shown here is already printed on every invoice the business
- * hands out, so it is safe before authentication. The one operational line
- * (a timbrado about to expire or run out) is shown only when it needs
- * attention, and without the exact stock unless the stock is the problem.
+ * hands out, so it is safe before authentication. Operational state (a
+ * timbrado about to expire or run out, or none in force) is deliberately
+ * NOT shown here: this page is public, and that belongs behind sign-in.
  */
 class LoginComposer
 {
@@ -35,7 +35,6 @@ class LoginComposer
             'empresa'  => null,
             'ruc'      => null,
             'timbrado' => null,
-            'aviso'    => null,
             'fecha'    => self::DIAS[$ahora->dayOfWeek] . ' ' . $ahora->format('d/m/y'),
             'hora'     => $ahora->format('H:i'),
         ];
@@ -67,39 +66,11 @@ class LoginComposer
                         . ' — '
                         . $timbrado->fecha_vencimiento->format('d/m/y'),
                 ];
-
-                $datos['aviso'] = $this->aviso($timbrado);
-            } elseif (Timbrado::facturas()->exists()) {
-                // There are invoice timbrados, but none in force: the
-                // business cannot invoice today, and this is the first
-                // screen anyone sees in the morning.
-                $datos['aviso'] = 'No hay timbrado de facturas vigente: hoy no se puede facturar.';
             }
         } catch (Throwable $e) {
             Log::warning('Login receipt header unavailable', ['error' => $e->getMessage()]);
         }
 
         return $datos;
-    }
-
-    private function aviso(Timbrado $timbrado): ?string
-    {
-        $partes = [];
-
-        if ($timbrado->proximoAVencer()) {
-            $dias = $timbrado->dias_hasta_vencimiento;
-            $partes[] = $dias === 1
-                ? 'El timbrado vence mañana'
-                : "El timbrado vence en {$dias} días";
-        }
-
-        if ($timbrado->proximoAAgotarse()) {
-            $quedan = $timbrado->facturas_disponibles;
-            $partes[] = $quedan === 1
-                ? 'queda 1 factura del rango'
-                : "quedan {$quedan} facturas del rango";
-        }
-
-        return $partes ? ucfirst(implode(' · ', $partes)) . '.' : null;
     }
 }

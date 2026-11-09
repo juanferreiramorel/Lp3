@@ -174,9 +174,6 @@
                     </form>
 
                     <footer class="colofon dato">
-                        @if ($comprobante['aviso'])
-                            <p class="colofon-aviso">{{ $comprobante['aviso'] }}</p>
-                        @endif
                         <span class="colofon-linea">
                             <span>{{ config('app.name') }}</span>
                             <span>{{ request()->getHost() }}</span>

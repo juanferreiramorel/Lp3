@@ -444,12 +444,6 @@ body.pantalla-login {
     color: var(--ink-faint);
 }
 
-.colofon-aviso {
-    margin: 0 0 8px;
-    font-weight: 500;
-    color: var(--voided-text);
-}
-
 .colofon-linea {
     display: flex;
     flex-wrap: wrap;
