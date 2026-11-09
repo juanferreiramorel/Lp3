@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer('auth.login', \App\View\Composers\LoginComposer::class);
+
         View::composer('layouts.app', function ($view) {
             $routeName = optional(Route::current())->getName();
             $helpTopics = collect();

@@ -51,7 +51,7 @@ class LoginController extends Controller
             ],
             [
                 'email.required'    => 'El nombre de usuario es obligatorio.',
-                'password.required' => 'La contrasena es obligatoria.',
+                'password.required' => 'La contraseña es obligatoria.',
             ]
         );
 
@@ -62,22 +62,46 @@ class LoginController extends Controller
         );
 
         if (!empty($inactiveUser)) {
-            return back()
-                ->withErrors(['email' => 'El usuario se encuentra inactivo.'])
-                ->withInput($request->except('password'));
+            return $this->rechazar($request, 'El usuario se encuentra inactivo.');
         }
 
         // Intentar autenticacion y regenerar la sesion por seguridad
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->intended($this->redirectTo);
+            $destino = redirect()->intended($this->redirectTo)->getTargetUrl();
+
+            // The sign-in screen posts with fetch so it can print the
+            // receipt and tear it off before leaving. It needs to know
+            // where to go, not to be redirected there behind its back.
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => $destino]);
+            }
+
+            return redirect($destino);
+        }
+
+        return $this->rechazar(
+            $request,
+            'El usuario o la contraseña no son correctos.'
+        );
+    }
+
+    /**
+     * One shape for every refusal, for both the fetch flow and the plain
+     * form post that still works without JavaScript.
+     */
+    private function rechazar(Request $request, string $mensaje)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $mensaje,
+                'errors'  => ['email' => [$mensaje]],
+            ], 422);
         }
 
         return back()
-            ->withErrors([
-                'email' => 'El nombre de usuario y/o la contrasena no son correctos. Por favor, intentalo de nuevo.',
-            ])
+            ->withErrors(['email' => $mensaje])
             ->withInput($request->except('password'));
     }
 

@@ -1,462 +1,202 @@
+@php
+    // The torn edge of a thermal receipt. Fixed, not random: an edge that
+    // changes on every load reads as an effect, one that stays reads as paper.
+    $desgarro = 'M0 0 L0 7.2 L12.1 12.0 L22.5 14.6 L30.4 4.9 L37.0 4.7 L48.3 10.2 L59.8 3.2 L70.9 5.3 L81.1 6.9 L93.2 10.0 L103.7 16.7 L116.0 10.4 L123.3 10.1 L137.6 9.4 L146.4 3.1 L150.8 11.8 L159.5 4.9 L168.2 7.5 L177.7 9.0 L184.8 7.3 L192.5 10.4 L206.6 20.3 L214.2 7.1 L221.7 8.9 L232.3 6.5 L245.7 3.1 L250.5 7.9 L262.5 6.3 L267.8 6.6 L275.8 7.6 L290.2 9.0 L303.3 11.4 L315.5 7.7 L321.3 13.9 L332.9 8.2 L340.4 3.0 L351.3 6.7 L357.2 9.4 L367.6 19.3 L378.2 4.1 L391.5 11.3 L401.7 6.9 L409.0 4.9 L416.4 17.0 L426.8 4.5 L436.9 4.4 L451.9 6.2 L463.6 3.3 L469.0 7.4 L482.6 11.4 L496.3 8.1 L501.0 4.9 L514.9 4.0 L527.2 8.8 L540.6 6.8 L546.6 15.1 L551.7 3.5 L556.2 10.8 L565.6 6.8 L579.4 8.5 L588.5 3.6 L599.6 10.7 L611.5 9.8 L623.4 7.8 L637.2 8.2 L650.2 5.1 L656.1 11.4 L660.9 7.8 L669.9 4.4 L679.1 14.4 L692.2 6.5 L706.9 9.3 L718.3 9.7 L732.4 4.6 L747.1 18.6 L754.2 10.0 L765.9 17.3 L771.2 17.9 L776.7 10.9 L780.0 4.8 L780 0 Z';
+
+    $version = fn (string $ruta) => asset($ruta) . '?v=' . (@filemtime(public_path($ruta)) ?: '1');
+
+    $hayError = $errors->any();
+    $mensajeError = $errors->first();
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - {{ config('app.name') }}</title>
+    <title>Entrar · {{ config('app.name') }}</title>
 
     {{-- Esta pagina no extiende layouts/app, asi que trae por su cuenta el
-         icono y el manifest. Sin esto la pestana del login queda sin icono
-         mientras el resto del sistema si lo tiene. --}}
+         icono y el manifest. --}}
     @include('layouts.pwa')
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {{-- Marks the page as script-capable before first paint, so the sheet
+         can start inside the printer. If login.js never arrives, the
+         fallback below shows the sheet anyway: a login that stays hidden
+         because a file failed to load is a locked door. --}}
+    <script>
+        document.documentElement.classList.add('js');
+        setTimeout(function () {
+            if (!window.__comprobanteListo) {
+                document.documentElement.classList.remove('js');
+            }
+        }, 2500);
+    </script>
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* Dark Blue / Slate Gradient to match TAP ERP Header */
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Canvas for Particle Network */
-        #networkCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        /* Glass Card */
-        .login-card {
-            position: relative;
-            z-index: 10;
-            width: 420px;
-            max-width: 90%;
-            padding: 50px 40px;
-            background: rgba(30, 41, 59, 0.7); /* Darker glass */
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
-            color: #fff;
-            overflow: hidden;
-            animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        @keyframes cardEntrance {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* Avatar / Logo */
-        .avatar-container {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 20px auto;
-            background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); /* Cyan gradient */
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3); /* Cyan shadow */
-            transition: transform 0.3s;
-        }
-
-        .avatar-container:hover {
-            transform: scale(1.05) rotate(5deg);
-        }
-        
-        .avatar-container i {
-            font-size: 40px;
-            color: #fff;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-
-        .login-header h2 {
-            text-align: center;
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            letter-spacing: -0.5px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        .login-header p {
-            text-align: center;
-            font-size: 15px;
-            margin-bottom: 35px;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        /* Inputs */
-        .input-group {
-            position: relative;
-            margin-bottom: 25px;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 16px 20px 16px 50px;
-            background: rgba(15, 23, 42, 0.6); /* Darker input bg */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            outline: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 15px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .input-group input:focus {
-            background: rgba(15, 23, 42, 0.8);
-            border-color: #22d3ee; /* Cyan border */
-            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1); /* Cyan glow */
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.4);
-            transition: 0.3s;
-        }
-
-        .input-group input:focus + i {
-            color: #22d3ee; /* Cyan icon */
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        /* Button */
-        .btn-submit {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            outline: none;
-            background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); /* Cyan gradient */
-            color: #fff;
-            font-size: 16px;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3);
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-        }
-
-        .btn-submit::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%); /* Reverse gradient */
-            transition: 0.5s;
-            z-index: -1;
-            opacity: 0;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.4);
-        }
-        
-        .btn-submit:hover::before {
-            opacity: 1;
-        }
-
-        .btn-submit:active {
-            transform: translateY(0);
-        }
-
-        /* Footer Links */
-        .footer-links {
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-bottom: 1px solid transparent;
-        }
-
-        .footer-links a:hover {
-            color: #22d3ee;
-            border-bottom-color: #22d3ee;
-        }
-
-        /* Alerts */
-        .alert {
-            background: rgba(254, 202, 202, 0.1);
-            border: 1px solid rgba(254, 202, 202, 0.2);
-            color: #fecaca;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-
-        .is-invalid {
-            border-color: #ef4444 !important;
-            background: rgba(239, 68, 68, 0.1) !important;
-        }
-        
-        .invalid-feedback {
-            color: #fecaca;
-            font-size: 12px;
-            margin-top: 5px;
-            margin-left: 5px;
-        }
-
-    </style>
+    {{-- theme.css is the single source of the product's tokens; login.css
+         only lays out this screen with them. --}}
+    <link rel="stylesheet" href="{{ $version('css/theme.css') }}">
+    <link rel="stylesheet" href="{{ $version('css/login.css') }}">
 </head>
-<body>
+<body class="pantalla-login">
 
-    <!-- Canvas Background -->
-    <canvas id="networkCanvas"></canvas>
+<main class="mesa">
 
-    <!-- Glass Card -->
-    <div class="login-card">
-        
-        <div class="avatar-container">
-            <i class="fas fa-user-lock"></i>
-        </div>
-
-        <div class="login-header">
-            <h2>{{ config('app.name') }}</h2>
-            <p>Acceso al Sistema</p>
-        </div>
-
-        <!-- System Messages -->
-        @if(session('flash_notification'))
-            @foreach(session('flash_notification') as $message)
-                <div class="alert" style="background: rgba(34, 211, 238, 0.1); border-color: rgba(34, 211, 238, 0.2); color: #a5f3fc; animation: none;">
-                    <i class="fas fa-info-circle"></i> {{ $message['message'] }}
-                </div>
-            @endforeach
-        @endif
-
-        @if($errors->any())
-            <div class="alert">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div style="flex:1">
-                   @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
-                   @endforeach
-                </div>
-            </div>
-        @endif
-
-        <!-- Form -->
-        <form method="POST" action="{{ url('/login') }}">
-            @csrf
-
-            <!-- Username -->
-            <div class="input-group">
-                <input type="text" name="email" placeholder="Usuario / Correo" value="{{ old('email') }}" required autofocus>
-                <i class="fas fa-user"></i>
-            </div>
-
-            <!-- Password -->
-            <div class="input-group">
-                <input type="password" name="password" placeholder="Contraseña" required class="@error('password') is-invalid @enderror">
-                <i class="fas fa-lock"></i>
-                @error('password')
-                    <span class="invalid-feedback">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <button type="submit" class="btn-submit">
-                INGRESAR SISTEMA
-            </button>
-
-            <div class="footer-links">
-                <a href="{{ route('register') }}">Crear cuenta</a>
-            </div>
-        </form>
+    {{-- ============================ LA IMPRESORA ============================ --}}
+    <div class="impresora" aria-hidden="true">
+        <span>{{ strtoupper(config('app.name')) }}</span>
+        <span class="impresora-estado">
+            <span class="led" id="led" data-estado="lista"></span>
+            <span id="led-texto">LISTA</span>
+        </span>
+        <span class="ranura"></span>
     </div>
 
-    <!-- Particle Network Script -->
-    <script>
-        const canvas = document.getElementById('networkCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let width, height;
-        let particles = [];
-        
-        // Configuration
-        const particleCount = 60; // Number of dots
-        const connectionDistance = 150; // Distance to connect
-        const mouseDistance = 200; // Mouse interaction range
-        
-        // Mouse state
-        const mouse = { x: null, y: null };
+    <div class="boca">
+        <div class="hoja" id="hoja" data-imprimir="{{ $hayError ? 'no' : 'si' }}">
 
-        // Resize handler
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            initParticles();
-        }
+            {{-- Top edge: inside the printer while the sheet hangs. It only
+                 shows when the ticket is torn off on the way in. --}}
+            <svg class="desgarro desgarro-arriba" id="borde-arriba" viewBox="0 0 780 22" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <path transform="translate(0 22) scale(1 -1)" d="{{ $desgarro }}"/>
+            </svg>
 
-        // Particle Class
-        class Particle {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 1.5; // Velocity X
-                this.vy = (Math.random() - 0.5) * 1.5; // Velocity Y
-                this.size = Math.random() * 2 + 1;
-                // Subtle Cyan/Teal particles
-                this.color = `rgba(34, 211, 238, ${Math.random() * 0.4 + 0.1})`;
-            }
+            <div class="papel">
+                <svg class="grano" aria-hidden="true" focusable="false">
+                    <filter id="grano"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
+                    <rect width="100%" height="100%" filter="url(#grano)"/>
+                </svg>
 
-            update() {
-                // Move
-                this.x += this.vx;
-                this.y += this.vy;
+                {{-- The acknowledgement. It sits at the very top, against the
+                     slot, because paper leaving a printer always has the
+                     newest line closest to the mouth. It is filled in only
+                     after the server accepts the credentials. --}}
+                <div class="acuse dato" id="acuse" aria-hidden="true">
+                    <span class="acuse-ok">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"></path></svg>
+                        ACCESO CONCEDIDO
+                    </span>
+                    <span class="acuse-detalle"><span id="acuse-usuario"></span> &nbsp;·&nbsp; <span id="acuse-hora"></span></span>
+                </div>
 
-                // Bounce off edges
-                if (this.x < 0 || this.x > width) this.vx *= -1;
-                if (this.y < 0 || this.y > height) this.vy *= -1;
+                <div class="contenido">
 
-                // Mouse Interaction
-                if (mouse.x != null) {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    <header class="cabecera">
+                        <div class="marca">
+                            <svg class="marca-icono" viewBox="0 0 32 32" role="img" aria-label="{{ config('app.name') }}" focusable="false">
+                                <rect width="32" height="32" rx="8" fill="currentColor"/>
+                                <path d="M9 7h14v15l-2.333 2-2.333-2-2.334 2-2.333-2-2.334 2L9 22z" fill="var(--paper-raised)"/>
+                                <rect x="12" y="11" width="8" height="1.7" rx="0.85" fill="currentColor"/>
+                                <rect x="12" y="14.8" width="5.4" height="1.7" rx="0.85" fill="currentColor"/>
+                            </svg>
+                            <span class="marca-texto"><span class="marca-tap">TAP</span> <span class="marca-erp">ERP</span></span>
+                        </div>
 
-                    if (distance < mouseDistance) {
-                        const forceDirectionX = dx / distance;
-                        const forceDirectionY = dy / distance;
-                        const force = (mouseDistance - distance) / mouseDistance;
-                        const directionX = forceDirectionX * force * 3; // Push strength
-                        const directionY = forceDirectionY * force * 3;
-                        
-                        // Optional: attract/repel logic could go here
-                    }
-                }
-            }
+                        @if ($comprobante['ruc'] || $comprobante['timbrado'])
+                            <dl class="datos-fiscales dato">
+                                @if ($comprobante['ruc'])
+                                    <dt>RUC</dt><dd>{{ $comprobante['ruc'] }}</dd>
+                                @endif
+                                @if ($comprobante['timbrado'])
+                                    <dt>TIMBRADO</dt><dd>{{ $comprobante['timbrado']['numero'] }}</dd>
+                                    <dt>EXPEDICIÓN</dt><dd>{{ $comprobante['timbrado']['expedicion'] }}</dd>
+                                    <dt>VIGENCIA</dt><dd>{{ $comprobante['timbrado']['vigencia'] }}</dd>
+                                @endif
+                            </dl>
+                        @endif
+                    </header>
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
-        }
+                    <div class="raya-pesada" aria-hidden="true"></div>
 
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
-        }
+                    <h1 class="titulo">Entrá a tu caja</h1>
+                    <p class="subtitulo dato">
+                        @if ($comprobante['empresa'])
+                            {{ mb_strtoupper($comprobante['empresa']) }} &nbsp;·&nbsp;
+                        @endif
+                        {{ $comprobante['fecha'] }} &nbsp;<span id="reloj">{{ $comprobante['hora'] }}</span>
+                    </p>
 
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
+                    @if (session('flash_notification'))
+                        @foreach (session('flash_notification') as $aviso)
+                            <p class="aviso aviso-info" role="status">{{ $aviso['message'] }}</p>
+                        @endforeach
+                    @endif
 
-            // Update and draw particles
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
+                    <form method="POST" action="{{ url('/login') }}" id="form-login" novalidate>
+                        @csrf
 
-                // Draw connections
-                for (let j = i; j < particles.length; j++) {
-                    let dx = particles[i].x - particles[j].x;
-                    let dy = particles[i].y - particles[j].y;
-                    let distance = Math.sqrt(dx*dx + dy*dy);
+                        <div class="renglon">
+                            <label class="renglon-etiqueta" for="usuario">Usuario</label>
+                            <span class="renglon-campo">
+                                <input id="usuario" name="email" type="text"
+                                       value="{{ old('email') }}"
+                                       autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+                                       aria-describedby="login-error"
+                                       @if ($hayError) aria-invalid="true" @endif
+                                       @unless ($hayError) autofocus @endunless>
+                            </span>
+                        </div>
 
-                    if (distance < connectionDistance) {
-                        ctx.beginPath();
-                        // Cyan connections
-                        ctx.strokeStyle = `rgba(34, 211, 238, ${0.2 * (1 - distance / connectionDistance)})`;
-                        ctx.lineWidth = 1;
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
-                    }
-                }
+                        <div class="renglon">
+                            <label class="renglon-etiqueta" for="clave">Contraseña</label>
+                            <span class="renglon-campo">
+                                <input id="clave" name="password" type="password"
+                                       autocomplete="current-password"
+                                       aria-describedby="login-error"
+                                       @if ($hayError) aria-invalid="true" autofocus @endif>
+                                <button type="button" class="ojo" id="ojo" aria-label="Mostrar contraseña" aria-pressed="false">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
 
-                // Draw connection to mouse
-                if (mouse.x != null) {
-                    let dx = particles[i].x - mouse.x;
-                    let dy = particles[i].y - mouse.y;
-                    let distance = Math.sqrt(dx*dx + dy*dy);
+                        <p class="aviso aviso-error" id="login-error" role="alert" @unless ($hayError) hidden @endunless>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6"></path><path d="M12 16.5v.5"></path></svg>
+                            <span id="login-error-texto">{{ $mensajeError }}</span>
+                        </p>
 
-                    if (distance < mouseDistance) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(34, 211, 238, ${(1 - distance / mouseDistance) * 0.4})`;
-                        ctx.lineWidth = 1.5;
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(mouse.x, mouse.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-            requestAnimationFrame(animate);
-        }
+                        <div class="renglon-total">
+                            <span class="renglon-etiqueta renglon-etiqueta-fuerte">Acceso</span>
+                            <span class="guia" aria-hidden="true"></span>
+                            <button type="submit" class="entrar" id="entrar">
+                                <span id="entrar-texto">Entrar al sistema</span>
+                                <span id="entrar-espera" hidden>Verificando…</span>
+                            </button>
+                        </div>
 
-        // Event Listeners
-        window.addEventListener('resize', resize);
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.x;
-            mouse.y = e.y;
-        });
-        window.addEventListener('mouseout', () => {
-             mouse.x = undefined;
-             mouse.y = undefined;
-        });
+                        <p class="solo-lector" role="status" id="estado"></p>
+                    </form>
 
-        // Initialize
-        resize();
-        animate();
-    </script>
+                    <footer class="colofon dato">
+                        @if ($comprobante['aviso'])
+                            <p class="colofon-aviso">{{ $comprobante['aviso'] }}</p>
+                        @endif
+                        <span class="colofon-linea">
+                            <span>{{ config('app.name') }}</span>
+                            <span>{{ request()->getHost() }}</span>
+                            <span>¿Olvidaste la contraseña? Pedile a sistemas que la restablezca.</span>
+                        </span>
+                    </footer>
+
+                </div>
+            </div>
+
+            {{-- Bottom edge: the cut of the previous ticket. --}}
+            <svg class="desgarro" viewBox="0 0 780 22" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <path d="{{ $desgarro }}"/>
+            </svg>
+
+        </div>
+    </div>
+
+</main>
+
+<script src="{{ $version('js/login.js') }}"></script>
 </body>
 </html>
