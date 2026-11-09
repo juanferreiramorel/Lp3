@@ -189,9 +189,11 @@ body.pantalla-login {
 /* --------------------------------------------------------------------------
    Receipt header
    -------------------------------------------------------------------------- */
+/* The mark spans the full height of the fiscal block, RUC to VIGENCIA,
+   so the header reads as two columns of equal weight. */
 .cabecera {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 28px;
     flex-wrap: wrap;
@@ -200,21 +202,22 @@ body.pantalla-login {
 .marca {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 16px;
 }
 
 .marca-icono {
     display: block;
-    width: 30px;
-    height: 30px;
+    width: 72px;
+    height: 72px;
     flex-shrink: 0;
     color: var(--stamp);
 }
 
 .marca-texto {
-    font-size: 16px;
+    font-size: 34px;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    line-height: 1;
 }
 
 .marca-tap { color: var(--ink); }
@@ -464,4 +467,6 @@ body.pantalla-login {
     .guia { display: none; }
     .entrar { flex: 1 1 100%; }
     .datos-fiscales { text-align: left; }
+    .marca-icono { width: 52px; height: 52px; }
+    .marca-texto { font-size: 26px; }
 }
