@@ -1,7 +1,7 @@
 {
-    "name": "laravel/laravel",
+    "name": "juanferreiramorel/taperp",
     "type": "project",
-    "description": "The Laravel Framework.",
+    "description": "An ERP for small businesses in Paraguay: sales, SET timbrados, receipts, cash, purchases and stock.",
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
