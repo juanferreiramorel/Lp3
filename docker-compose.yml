@@ -55,6 +55,19 @@ services:
     depends_on:
       - db
 
+  # Chromium behind an HTTP API: prints contracts so the PDF matches the
+  # editor. Not published to the host; the app reaches it as gotenberg:3000.
+  gotenberg:
+    image: gotenberg/gotenberg:8.40.0
+    container_name: laravel_gotenberg
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --chromium-disable-javascript=true
+      - --chromium-deny-private-ips=true
+    networks:
+      - laravel
+
 networks:
   laravel:
     driver: bridge

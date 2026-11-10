@@ -48,4 +48,14 @@ return [
         'timeout' => (int) env('PEOPLE_API_TIMEOUT', 8),
     ],
 
+    /*
+     * Gotenberg: Chromium behind an HTTP API, used to print contracts so the
+     * PDF matches the editor. It runs as its own container on the stack's
+     * internal network and is never published.
+     */
+    'gotenberg' => [
+        'url' => env('GOTENBERG_URL', 'http://gotenberg:3000'),
+        'timeout' => (int) env('GOTENBERG_TIMEOUT', 30),
+    ],
+
 ];

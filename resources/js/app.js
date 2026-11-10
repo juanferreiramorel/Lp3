@@ -1,6 +1,7 @@
 import './bootstrap';
 // import 'admin-lte'; // Comentado: AdminLTE se carga desde CDN en app.blade.php
 import {
+    PageBreak,
     Alignment,
     BlockQuote,
     Bold,
@@ -38,7 +39,7 @@ import 'ckeditor5/ckeditor5.css';
 const contratoPlugins = [
     Essentials, Bold, Italic, Underline, Strikethrough, Font, Paragraph, Heading,
     List, Indent, IndentBlock, Alignment, Link, BlockQuote, Table, TableToolbar,
-    PasteFromOffice, GeneralHtmlSupport, SourceEditing, Undo,
+    PasteFromOffice, GeneralHtmlSupport, SourceEditing, Undo, PageBreak,
     Image, ImageCaption, ImageInsert, ImageStyle, ImageTextAlternative,
     ImageToolbar, ImageUpload, PictureEditing, SimpleUploadAdapter
 ];
@@ -53,7 +54,7 @@ const getToolbarConfig = () => ({
         'numberedList', 'bulletedList', '|',
         'indent', 'outdent', '|',
         'link', 'insertImage', 'uploadImage', '|',
-        'insertTable', '|',
+        'insertTable', 'pageBreak', '|',
         'undo', 'redo', '|',
         'sourceEditing'
     ],
@@ -68,17 +69,17 @@ const getFontSizeConfig = () => ({
     options: [9, 11, 12, 13, 14, 'default', 18, 20, 22, 24, 26, 28, 36, 48]
 });
 
+// Only fonts the PDF renderer has with the same metrics. Gotenberg prints
+// Times New Roman, Arial and Courier New with Liberation Serif, Sans and Mono,
+// which are cut to identical widths, so every line breaks at the same word.
+// Georgia, Tahoma, Verdana and the rest fell back to other fonts on paper.
+// supportAllValues keeps contracts that already use one of those readable.
 const getFontFamilyConfig = () => ({
     options: [
         'default',
-        'Times New Roman, Times, serif',
-        'Arial, Helvetica, sans-serif',
-        'Courier New, Courier, monospace',
-        'Georgia, serif',
-        'Lucida Sans Unicode, Lucida Grande, sans-serif',
-        'Tahoma, Geneva, sans-serif',
-        'Trebuchet MS, Helvetica, sans-serif',
-        'Verdana, Geneva, sans-serif'
+        'Times New Roman, Times, Liberation Serif, serif',
+        'Arial, Helvetica, Liberation Sans, sans-serif',
+        'Courier New, Courier, Liberation Mono, monospace'
     ],
     supportAllValues: true
 });
@@ -171,6 +172,7 @@ const buildContratoEditorConfig = (overrides = {}) => {
 // Expo global para usar en Blade
 window.CKEDITOR_CONFIG = {
     Alignment,
+    PageBreak,
     BlockQuote,
     Bold,
     ClassicEditor,

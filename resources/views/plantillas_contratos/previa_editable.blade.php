@@ -109,6 +109,7 @@
                                 <div id="editor-previa-wrapper" class="editor-hoja-papel d-none">
                                     <div id="editor-previa"></div>
                                 </div>
+<p class="leyenda-corte"><i class="fas fa-cut"></i> La línea punteada marca dónde termina cada página en el PDF. Para forzar una página nueva, usá el botón «Salto de página» de la barra.</p>
                             </div>
 
                             <small class="form-text text-muted mt-2">

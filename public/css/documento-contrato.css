@@ -1,0 +1,159 @@
+/* ==========================================================================
+   TAP ERP — The contract sheet
+   --------------------------------------------------------------------------
+   ONE description of how a contract looks, used everywhere a contract is
+   drawn: the template editor, the generated-contract editor, the read-only
+   views and the PDF (which is also what "Imprimir" prints).
+
+   Before this file there were three: the editor drew a 17cm-wide sheet in
+   CKEditor's defaults, the PDF a 14.9cm one with its own heading sizes, and
+   the print popup a third with every paragraph justified. Nothing written in
+   one could look the same in another.
+
+   Geometry is A4 with 2cm margins, in centimetres on screen too, so a line
+   breaks at the same word in the editor and on paper. The PDF is rendered by
+   Chromium (Gotenberg), the same engine family as the editor, and its fonts
+   are metric-compatible with the three the editor offers.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Typography — the editor's content area and the PDF share every rule.
+   CKEditor's own content stylesheet (ckeditor5-content.css) is the base in
+   both places; these rules sit on top of it.
+   -------------------------------------------------------------------------- */
+.documento,
+.editor-hoja-papel .ck-content {
+    font-family: "Times New Roman", Times, "Liberation Serif", serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #000;
+    text-align: left;
+    overflow-wrap: break-word;
+}
+
+.documento p,
+.editor-hoja-papel .ck-content p {
+    margin: 0 0 1em;
+}
+
+.documento h1, .documento h2, .documento h3, .documento h4,
+.editor-hoja-papel .ck-content h1, .editor-hoja-papel .ck-content h2,
+.editor-hoja-papel .ck-content h3, .editor-hoja-papel .ck-content h4 {
+    font-weight: bold;
+    line-height: 1.25;
+    margin: 1em 0 0.5em;
+    break-after: avoid;
+}
+
+.documento h1, .editor-hoja-papel .ck-content h1 { font-size: 2em; }
+.documento h2, .editor-hoja-papel .ck-content h2 { font-size: 1.5em; }
+.documento h3, .editor-hoja-papel .ck-content h3 { font-size: 1.17em; }
+.documento h4, .editor-hoja-papel .ck-content h4 { font-size: 1em; }
+
+.documento ul, .documento ol,
+.editor-hoja-papel .ck-content ul, .editor-hoja-papel .ck-content ol {
+    margin: 0 0 1em;
+    padding-left: 2em;
+}
+
+.documento table,
+.editor-hoja-papel .ck-content table {
+    border-collapse: collapse;
+}
+
+.documento td, .documento th,
+.editor-hoja-papel .ck-content td, .editor-hoja-papel .ck-content th {
+    border: 1px solid #000;
+    padding: 4pt 6pt;
+    vertical-align: top;
+}
+
+.documento tr,
+.documento figure,
+.documento img {
+    break-inside: avoid;
+}
+
+/* A forced page break (the toolbar's "salto de página") is invisible on
+   paper: it only ends the page. */
+.documento .page-break {
+    break-after: page;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.documento .page-break > * { display: none; }
+
+/* --------------------------------------------------------------------------
+   2. The sheet on screen — every contract editor and viewer.
+   The editable area IS an A4 page: 21cm wide, 2cm of padding, so its text
+   column is exactly the 17cm the PDF prints.
+   -------------------------------------------------------------------------- */
+.editor-hoja-papel {
+    padding: 32px 16px;
+    background-color: #e4e4e7;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+.editor-hoja-papel .ck.ck-editor {
+    width: 21cm;
+    margin: 0 auto;
+}
+
+.editor-hoja-papel .ck.ck-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.editor-hoja-papel .ck.ck-editor__main > .ck-editor__editable {
+    position: relative;
+    box-sizing: border-box;
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 2cm;
+    background-color: #fff;
+    border: 0;
+    box-shadow: 0 1px 2px rgba(24, 24, 27, 0.08), 0 8px 24px -8px rgba(24, 24, 27, 0.16);
+}
+
+/* CKEditor's editing UI gives the first and last blocks an extra margin
+   (var(--ck-spacing-large), 14.4px) that does not exist on paper. It pushed
+   every line 0.38cm down, enough to end page 1 one line early. */
+.editor-hoja-papel .ck.ck-editor__main > .ck-editor__editable > :first-child { margin-top: 0; }
+.editor-hoja-papel .ck.ck-editor__main > .ck-editor__editable > :last-child { margin-bottom: 0; }
+
+/* Read-only views show the sheet without a toolbar. */
+.editor-hoja-papel.contrato-lectura .ck.ck-toolbar { display: none; }
+
+/* --------------------------------------------------------------------------
+   3. Where the page will end.
+   A dashed line every 25.7cm of text (29.7cm page minus 2cm top and bottom
+   margins), starting 2cm down. It is drawn on a layer that begins at the
+   top margin, so no line lands above the first one. It is a guide, not a
+   promise: Chromium never splits a line of text, so a page may end a line
+   earlier than the mark, never later.
+   -------------------------------------------------------------------------- */
+.editor-hoja-papel .ck.ck-editor__main > .ck-editor__editable::before {
+    content: "";
+    position: absolute;
+    top: 2cm;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cline x1='0' y1='99.5' x2='100' y2='99.5' stroke='%230284c7' stroke-width='1' stroke-dasharray='6 5' vector-effect='non-scaling-stroke' opacity='0.55'/%3E%3C/svg%3E");
+    background-size: 100% 25.7cm;
+    background-repeat: repeat-y;
+}
+
+.leyenda-corte {
+    margin: 10px auto 0;
+    width: 21cm;
+    max-width: 100%;
+    font-size: 12px;
+    color: #52525b;
+}

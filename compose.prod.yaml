@@ -74,6 +74,11 @@ services:
       PEOPLE_API_BASE: ${PEOPLE_API_BASE:-https://people.lanzapy.com}
       PEOPLE_API_JWT: ${PEOPLE_API_JWT:-}
       PEOPLE_API_TIMEOUT: ${PEOPLE_API_TIMEOUT:-8}
+
+      # Contract PDFs are printed by Chromium in the taperp-pdf service, so
+      # they match the editor. If it is down, the app falls back to DomPDF
+      # and logs it, rather than refusing to hand out the contract.
+      GOTENBERG_URL: http://taperp-pdf:3000
     volumes:
       # Anything a user uploads lives in a volume. Without these, every
       # redeploy rebuilds the image and the files are gone, while the rows
@@ -97,6 +102,34 @@ services:
       resources:
         limits:
           cpus: "2"
+          memory: 1G
+
+  # Gotenberg: Chromium behind an HTTP API. Only on the internal network,
+  # never published. Named taperp-pdf rather than gotenberg because the app
+  # also sits on the shared dokploy-network, where a generic name could
+  # resolve to another stack's container. JavaScript is off and private IPs
+  # are denied: contract HTML is user-written, and the renderer must not be
+  # usable to reach anything inside the server.
+  taperp-pdf:
+    image: gotenberg/gotenberg:8.40.0
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --chromium-disable-javascript=true
+      - --chromium-deny-private-ips=true
+      - --api-timeout=30s
+    networks:
+      - taperp_internal
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
           memory: 1G
 
 volumes:

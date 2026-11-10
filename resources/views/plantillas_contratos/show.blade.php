@@ -100,21 +100,6 @@
         </div>
     </div>
 
-        @push('page_css')
-
-        <style>
-            /* Estilos específicos para modo lectura */
-            .contrato-lectura .ck.ck-toolbar {
-                display: none !important;
-            }
-            
-            .contrato-lectura .ck-editor__main > .ck-editor__editable {
-                min-height: 500px !important;
-                max-height: 70vh !important;
-            }
-        </style>
-    @endpush
-
         @push('page_scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {

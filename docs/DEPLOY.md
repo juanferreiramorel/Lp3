@@ -44,6 +44,19 @@ the required ones is missing, rather than booting with an empty value.
 `APP_ENV`, `APP_DEBUG` and the database host are fixed in the compose file:
 production never runs with debug on, and the host is always the `db` service.
 
+## Contract PDFs
+
+Contracts are printed by Chromium in the `taperp-pdf` service (Gotenberg), so
+the PDF matches what was written in the editor. It is on the internal network
+only, runs with JavaScript off and private IPs denied (contract HTML is
+user-written), and needs no configuration: the app reaches it at
+`http://taperp-pdf:3000`.
+
+If it is down, the PDF still downloads through DomPDF and the app logs
+`Contract PDF fell back to DomPDF`. That PDF will **not** match the editor, so
+the log line is worth alerting on. Every PDF response carries an `X-Pdf-Motor`
+header (`chromium` or `dompdf`) saying which one produced it.
+
 ## What survives a redeploy
 
 Every redeploy rebuilds the image, so anything written inside the container is

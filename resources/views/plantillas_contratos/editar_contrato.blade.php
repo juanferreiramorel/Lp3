@@ -76,7 +76,7 @@
                             ]) !!}
 
                             <!-- Contenedor del editor con formato de hoja -->
-                            <div class="editor-wrap">
+                            <div>
                                 <!-- Mensaje de carga -->
                                 <div id="editor-loading" class="text-center p-5 editor-loading">
                                     <div class="spinner-border text-primary" role="status">
@@ -93,6 +93,7 @@
                                 </div>
                             </div>
 
+                            <p class="leyenda-corte"><i class="fas fa-cut"></i> La línea punteada marca dónde termina cada página en el PDF. Para forzar una página nueva, usá el botón «Salto de página» de la barra.</p>
                             <small class="form-text text-muted mt-2">
                                 <i class="fas fa-edit"></i>
                                 Modifique el contenido según sea necesario. Puede copiar y pegar desde Word.
@@ -138,15 +139,8 @@
     @push('page_css')
 
         <style>
-            /* Contenedor del editor (Escritorio) */
-            .editor-wrap {
-                background-color: #525659;
-                padding: 40px 0;
-                overflow-x: auto;
-                text-align: center;
-                border: 1px solid #ccc;
-            }
-
+            /* The sheet itself (size, margins, typography, page marks) lives
+               in public/css/documento-contrato.css, shared with the PDF. */
             .editor-loading {
                 border: 1px solid #d1d5db;
                 border-radius: 6px;
@@ -154,66 +148,11 @@
                 margin: 20px;
             }
 
-            /* Toolbar pegajosa y centrada */
-            .ck.ck-toolbar {
-                position: sticky !important;
-                top: 0;
-                z-index: 1000;
-                border: none !important;
-                border-bottom: 1px solid #c4c4c4 !important;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                width: 21cm !important; /* Ancho igual a la hoja */
-                margin: 0 auto !important;
-                border-radius: 0 !important;
-            }
-
-            /* Estilos de la Hoja A4 */
-            .ck-editor__editable {
-                width: 21cm !important;
-                min-height: 29.7cm !important;
-                padding: 2cm 2cm !important;
-                margin: 0 auto !important;
-                background-color: white !important;
-                box-shadow: 0 0 15px rgba(0,0,0,0.3) !important;
-                border: none !important; /* El borde lo da el shadow */
-                text-align: left; /* Reset del center del padre */
-                
-                /* Tipografía exacta de impresión */
-                font-family: "Times New Roman", Times, serif !important;
-                font-size: 12pt !important;
-                line-height: 1.6 !important; /* Coincide con impresión */
-                color: #000 !important;
-            }
-
-            /* Fix para tablas en modo editor: Evita que se vean deformes o con doble espaciado */
-            .ck-content table {
-                border-collapse: collapse !important; 
-            }
-
-            /* Ajustes finos para el contenido */
-            .ck-content p {
-                margin-bottom: 1em !important; /* Coincide con impresión */
-                text-indent: 0;
-            }
-            
-            .ck-content h1, .ck-content h2, .ck-content h3 {
-                margin-top: 12pt;
-                margin-bottom: 6pt;
-            }
-
-            /* Optimización para justificado en Firefox */
-            .ck-content [style*="text-align:justify"] {
-                text-align: justify;
-                text-justify: inter-word;
-            }
-
             .card-footer {
                 position: relative;
                 z-index: 10 !important;
                 background: white !important;
             }
-
-
         </style>
     @endpush
 

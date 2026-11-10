@@ -24,6 +24,7 @@ The interface is in Spanish, because the people who use it are.
 - PostgreSQL (16 in production; the development compose still runs 9.5)
 - AdminLTE 3 and Bootstrap 4, assets built with Vite
 - Docker: nginx and php-fpm in one container for production
+- Contract PDFs printed by Chromium through [Gotenberg](https://gotenberg.dev), so they match the editor
 
 ## Running it locally
 

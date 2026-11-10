@@ -526,7 +526,7 @@ class PlantillaContratoController extends AppBaseController
     /**
      * Descargar contrato en PDF
      */
-    public function descargarPdf($idContratoGenerado)
+    public function descargarPdf(Request $request, $idContratoGenerado)
     {
         $contrato = DB::selectOne(
             'SELECT cg.*,
@@ -544,11 +544,20 @@ class PlantillaContratoController extends AppBaseController
             return redirect()->route('plantillas_contratos.index');
         }
 
-        $pdf = Pdf::loadView('plantillas_contratos.pdf', ['contrato' => $contrato]);
+        [$pdf, $motor] = app(\App\Services\ContratoPdf::class)->generar($contrato);
 
         $nombreArchivo = 'Contrato_' . $contrato->clie_apellido . '_' . $contrato->clie_ci . '_' . date('YmdHis') . '.pdf';
 
-        return $pdf->download($nombreArchivo);
+        // ?ver=1 opens it in the browser's own viewer, which is what the
+        // "Imprimir" button uses: printing the PDF itself is the only way the
+        // printout is guaranteed to be the PDF.
+        $disposicion = $request->boolean('ver') ? 'inline' : 'attachment';
+
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => $disposicion . '; filename="' . str_replace('"', '', $nombreArchivo) . '"',
+            'X-Pdf-Motor'         => $motor,
+        ]);
     }
 
     /**

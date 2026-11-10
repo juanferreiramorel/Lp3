@@ -15,6 +15,8 @@
         <link rel="stylesheet" href="{{ asset('css/navbar-custom.css') }}?v={{ $cssVersion('css/navbar-custom.css') }}">
         {{-- Loaded last: the token layer that both files above resolve against. --}}
         <link rel="stylesheet" href="{{ asset('css/theme.css') }}?v={{ $cssVersion('css/theme.css') }}">
+        {{-- How a contract looks, shared by every contract editor, viewer and the PDF. --}}
+        <link rel="stylesheet" href="{{ asset('css/documento-contrato.css') }}?v={{ $cssVersion('css/documento-contrato.css') }}">
 
         {{-- Manifest, icons and service worker registration: makes the app
              installable on a phone at the counter. --}}

@@ -68,6 +68,7 @@
     <div id="editor-plantilla-wrapper" class="editor-hoja-papel">
         {!! Form::textarea('contenido_plantilla', null, ['class' => 'form-control', 'id' => 'contenido_plantilla']) !!}
     </div>
+    <p class="leyenda-corte"><i class="fas fa-cut"></i> La línea punteada marca dónde termina cada página en el PDF. Para forzar una página nueva, usá el botón «Salto de página» de la barra.</p>
 
     <small class="form-text text-muted mt-2">
         <i class="fas fa-question-circle"></i>
